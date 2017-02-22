@@ -25,26 +25,26 @@ public class ModelTest {
 	
 	public void costPerClickTest() {
 		Model myModel = new Model("test_click_log.csv");
-		assertEquals("Correct cost per click:", 4.85, myModel.totalImpressions());
+		assertEquals("Correct cost per click:", 4.85, myModel.costPerClick());
 	}
 	
 	public void totalClicksTest() {
 		Model myModel = new Model("test_click_log.csv");
-		assertEquals("Correct total number of clicks:", 1079, myModel.totalImpressions());
+		assertEquals("Correct total number of clicks:", 1079, myModel.totalClicks());
 	}
 	
 	public void clickThroughRateTest() {
 		Model myModel = new Model("test_impression_log.csv", "test_impression_log.csv");
-		assertEquals("Correct click-through-rate:", 0.0489, myModel.totalImpressions());
+		assertEquals("Correct click-through-rate:", 0.0489, myModel.clickThroughRate());
 	}
 	
 	public void totalConversionsTest() {
 		Model myModel = new Model("test_server_log.csv");
-		assertEquals("Correct total number of conversions:", 95, myModel.totalImpressions());
+		assertEquals("Correct total number of conversions:", 95, myModel.totalConverions());
 	}
 	
 	public void totalCostTest() {
 		Model myModel = new Model("test_impression_log.csv", "test_impression_log.csv");
-		assertEquals("Correct total cost:", 5250.71, myModel.totalImpressions());
+		assertEquals("Correct total cost:", 5250.71, myModel.totalCost());
 	}
 }
