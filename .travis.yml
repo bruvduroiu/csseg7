@@ -1,1 +1,4 @@
 language: java
+
+notifications:
+  slack: csseg7:SbU27bN9RRyw3zL3kWOncXnz
