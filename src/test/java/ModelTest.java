@@ -14,7 +14,7 @@ public class ModelTest {
 	/**
 	 * Needs JUnitTest 4.11 or higher - ordering of tests.
 	 * Changed test to load data just once. A at the beginning of loading test makes sure
-	 * loading tests will run first. I also corrected test format.
+	 * that tests that load data will run first. I also corrected test format.
 	 */
 
 	Model myModel = new Model();
