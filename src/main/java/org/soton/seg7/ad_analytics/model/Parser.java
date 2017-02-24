@@ -1,19 +1,12 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 import com.mongodb.DBObject;
-import com.mongodb.util.JSON;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 /**
  * Created by bogdanbuduroiu on 22/02/2017.
@@ -53,27 +46,41 @@ public class Parser {
     // No need to have an instance of the Parser
     private Parser() { }
 
-    public static List<DBObject> parseCSV(String csvFile) {
-        String[] headings;
+    public static JSONObject parseCSV(File csvFile) {
+        if (csvFile.getName().equals("click_log.csv"))
+            return parseClicks(csvFile);
+        else if (csvFile.getName().equals("impression_log.csv"))
+            return parseImpressions(csvFile);
+        else if (csvFile.getName().equals("server_log.csv"))
+            return parseServer(csvFile);
+        else
+            return new JSONObject().put("error", "something happened");
+    }
+
+    private static JSONObject parseClicks(File csvFile) {
+
+        String[] headers;
         String line;
         String csvSplitBy = ",";
-        List<DBObject> list = new ArrayList<>();
-        DBObject jsonFile = new BasicDBObject();
+        JSONArray jsonArray = new JSONArray();
+        JSONObject jsonObject;
 
         // Total click-cost map of day -> hour -> total
-        Map<String, Map<String, Float>> dayTotals = new HashMap<>();
+        Map<String, Map<String, Float>> dayTotalCosts = new HashMap<>();
+
+        // Total num clicks map of day -> hour -> total
+        Map<String, Map<String, Integer>> dayClicks = new HashMap<>();
 
         // Total click-cost map of hour -> total
-        Map<String, Float> hourTotals = new HashMap<>();
+        Map<String, Float> hourTotalCosts = new HashMap<>();
 
-        jsonFile.put("collection", csvFile);
-        list.add(jsonFile);
+        // Total num clicks map of hour -> total
+        Map<String, Integer> hourClicks = new HashMap<>();
 
         try {
-            final String PATH = new File("").getAbsolutePath() + "/static/analytics_csv/" + csvFile + ".csv";
-            BufferedReader br = new BufferedReader(new FileReader(PATH));
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headings = br.readLine().split(csvSplitBy);
+            headers = br.readLine().split(csvSplitBy);
 
 
             while ((line = br.readLine()) != null) {
@@ -81,37 +88,147 @@ public class Parser {
 
                 // use comma as separator
                 String[] data = line.split(csvSplitBy);
-                DBObject row = new BasicDBObject();
-                String daydate = data[0].split(":")[0];
-                String day = daydate.split(" ")[0];
-                String hour = daydate.split(" ")[1];
 
-                for (int i=0; i < headings.length;i++) {
-                    row.put(headings[i], data[i]);
-                }
+                JSONObject row = new JSONObject();
+
+                String day = data[0].split(":")[0].split(" ")[0];
+                String hour = data[0].split(":")[0].split(" ")[1];
+
+                for (int i=0; i < headers.length;i++)
+                    row.put(headers[i], data[i]);
 
                 // Whenever the parser finds a new date, reset the sums in the hashmap
-                if (!dayTotals.containsKey(day))
-                    hourTotals = new HashMap<>();
+                if (!dayTotalCosts.containsKey(day))
+                    hourTotalCosts = new HashMap<>();
+
+                if (!dayClicks.containsKey(day))
+                    hourClicks = new HashMap<>();
 
                 // Get total cost of ads per hour
-                hourTotals.put(
+                hourTotalCosts.put(
                         hour,
-                        hourTotals.containsKey(hour)
-                            ? hourTotals.get(hour) + new Float(data[2])
-                            : new Float(data[2])
+                        hourTotalCosts.containsKey(hour)
+                                ? hourTotalCosts.get(hour) + new Float(data[2])
+                                : new Float(data[2])
                 );
 
-                dayTotals.put(day, hourTotals);
+                hourClicks.put(
+                        hour,
+                        hourClicks.containsKey(hour)
+                                ? hourClicks.get(hour) + 1
+                                : 1
+                );
 
-                list.add(row);
+                dayTotalCosts.put(day, hourTotalCosts);
+                dayClicks.put(day, hourClicks);
+
+                jsonArray.put(row);
             }
-            list.add(new BasicDBObject(dayTotals));
+
+            jsonObject = new JSONObject()
+                    .put("collection", "click_log")
+                    .put("dayCost", dayTotalCosts)
+                    .put("dayNum", dayClicks)
+                    .put("data", jsonArray);
+
+            insertIntoDB(jsonObject);
+
+            return jsonObject;
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return list;
+        return new JSONObject().put("error", "exception occurred while parsing the csv file");
+    }
+
+    private static JSONObject parseImpressions(File csvFile) {
+
+        String[] headers;
+        String line;
+        JSONArray jsonArray = new JSONArray();
+        JSONObject jsonObject;
+        String csvSplitBy = ",";
+
+        Map<String, Map<String, Float>> dayTotalCost = new HashMap<>();
+
+        Map<String, Map<String, Integer>> dayTotalImpressions = new HashMap<>();
+
+        Map<String, Float> hourTotalCost = new HashMap<>();
+
+        Map<String, Integer> hourTotalImpressions = new HashMap<>();
+
+        try {
+
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+
+            headers = br.readLine().split(csvSplitBy);
+
+            while((line = br.readLine()) != null) {
+                String[] data = line.split(csvSplitBy);
+
+                JSONObject row = new JSONObject();
+
+                String day = data[0].split(":")[0].split(" ")[0];
+                String hour = data[0].split(":")[0].split(" ")[1];
+
+                for (int i = 0; i < headers.length; i++)
+                    row.put(headers[i],data[i]);
+
+                if (!dayTotalCost.containsKey(hour))
+                    hourTotalCost = new HashMap<>();
+
+                if (!dayTotalImpressions.containsKey(hour))
+                    hourTotalImpressions = new HashMap<>();
+
+                // Get total cost of ads per hour
+                hourTotalCost.put(
+                        hour,
+                        hourTotalCost.containsKey(hour)
+                                ? hourTotalCost.get(hour) + new Float(data[data.length - 1])
+                                : new Float(data[data.length - 1])
+                );
+
+                hourTotalImpressions.put(
+                        hour,
+                        hourTotalImpressions.containsKey(hour)
+                                ? hourTotalImpressions.get(hour) + 1
+                                : 1
+                );
+
+                dayTotalCost.put(day, hourTotalCost);
+                dayTotalImpressions.put(day, hourTotalImpressions);
+
+                jsonArray.put(row);
+            }
+
+            jsonObject = new JSONObject()
+                    .put("collection", "impression_log")
+                    .put("dayCost", dayTotalCost)
+                    .put("dayNum", dayTotalImpressions)
+                    .put("data", jsonArray);
+
+            insertIntoDB(jsonObject);
+
+
+            return jsonObject;
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new JSONObject().put("error", "exception occurred while parsing the csv file");
+    }
+
+    private static JSONObject parseServer(File csvFile) {
+        // TODO implement function
+        return new JSONObject().put("error", "function not implemented yet.");
+    }
+
+    private static void insertIntoDB(JSONObject jsonObject) {
+
+        DBHandler handler = DBHandler.getDBConnection(27017);
+
+        handler.insertData(jsonObject, jsonObject.get("collection").toString());
     }
 }

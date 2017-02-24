@@ -1,6 +1,7 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.*;
+import com.mongodb.util.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -27,7 +28,7 @@ public class DBHandler {
         return (handler = new DBHandler(port));
     }
 
-    public String sendQuery(DBObject query, String collection) {
+    public String sendQuery(JSONObject query, String collection) {
 
         JSONArray array = new JSONArray();
 
@@ -37,7 +38,7 @@ public class DBHandler {
         DB db = dbClient.getDB("analytics_data");
         DBCollection coll = db.getCollection(collection);
 
-        DBCursor cursor = coll.find(query);
+        DBCursor cursor = coll.find(BasicDBObject.parse(query.toString()));
 
         while(cursor.hasNext())
             array.put(cursor.next());
@@ -45,7 +46,7 @@ public class DBHandler {
         return array.toString();
     }
 
-    public String insertData(List<DBObject> insertion, String collection) {
+    public String insertData(JSONObject insertion, String collection) {
 
         if (dbClient == null)
             return new JSONObject().append("error", "database not initialized").toString();
@@ -53,7 +54,7 @@ public class DBHandler {
         DB db = dbClient.getDB("analytics_data");
         DBCollection coll = db.getCollection(collection);
 
-        coll.insert(insertion);
+        coll.insert(BasicDBObject.parse(insertion.toString()));
 
         return new JSONObject()
                 .append("status", "ok")
@@ -61,20 +62,32 @@ public class DBHandler {
                 .toString();
     }
 
-    public JSONArray retrieveAllDocuments(String collection) {
-        JSONArray array = new JSONArray();
+    public JSONObject retrieveAllDocuments(String collection) {
+        BasicDBList bsonArray = new BasicDBList();
+        DBObject allQuery = new BasicDBObject();
+        DBObject removeId = new BasicDBObject("_id", 0);
 
         if (dbClient == null)
-            return new JSONArray().put(new JSONObject().append("error", "database not initialized"));
+            return new JSONObject().put("error", "database not initialized");
 
         DB db = dbClient.getDB("analytics_data");
         DBCollection coll = db.getCollection(collection);
 
-        DBCursor cursor = coll.find();
+        DBCursor cursor = coll.find(allQuery, removeId);
 
         while (cursor.hasNext())
-            array.put(cursor.next());
+            bsonArray.add(cursor.next());
 
-        return array;
+        return new JSONObject(bsonArray.get(0).toString());
+    }
+
+    public JSONObject dropCollection(String collection) {
+        if (dbClient == null)
+            new JSONObject().put("error", "database not initialized");
+
+        DB db = dbClient.getDB("analytics_data");
+        db.getCollection(collection).drop();
+
+        return new JSONObject().put("success", "removed " + collection);
     }
 }
