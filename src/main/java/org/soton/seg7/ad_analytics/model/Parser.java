@@ -7,6 +7,7 @@ import com.mongodb.util.JSON;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ public class Parser {
     // No need to have an instance of the Parser
     private Parser() { }
 
-    public static List<DBObject> parseCSV(String path, String csvFile) {
+    public static List<DBObject> parseCSV(String csvFile) {
         String[] headings;
         String line;
         String csvSplitBy = ",";
@@ -69,7 +70,7 @@ public class Parser {
         list.add(jsonFile);
 
         try {
-            final String PATH = path + csvFile + ".csv";
+            final String PATH = new File("").getAbsolutePath() + "/static/analytics_csv/" + csvFile + ".csv";
             BufferedReader br = new BufferedReader(new FileReader(PATH));
 
             headings = br.readLine().split(csvSplitBy);
@@ -85,9 +86,6 @@ public class Parser {
                 String day = daydate.split(" ")[0];
                 String hour = daydate.split(" ")[1];
 
-                System.out.println("Day: " + day +"; Hour: " + hour);
-
-                System.out.println(data[0].split(":")[0]);
                 for (int i=0; i < headings.length;i++) {
                     row.put(headings[i], data[i]);
                 }
