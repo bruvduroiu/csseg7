@@ -1,7 +1,6 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.*;
-import com.mongodb.util.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -13,17 +12,19 @@ import java.util.List;
 public class DBHandler {
 
 
-    MongoClient dbClient;
+    private static MongoClient dbClient;
+    private static DBHandler handler;
 
-    public boolean openConnection(int port) {
+    private DBHandler(int port) {
+        dbClient = new MongoClient("localhost", port);
+    }
 
-        try {
-            dbClient = new MongoClient("localhost", port);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+    public static DBHandler getDBConnection(int port) {
+
+        if (handler != null)
+            return handler;
+
+        return (handler = new DBHandler(port));
     }
 
     public String sendQuery(DBObject query, String collection) {
