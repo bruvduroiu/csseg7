@@ -2,6 +2,7 @@ import static org.junit.Assert.*;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 import org.junit.Test;
+import org.soton.seg7.ad_analytics.model.Model;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

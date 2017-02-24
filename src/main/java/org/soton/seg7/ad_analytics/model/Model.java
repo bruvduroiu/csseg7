@@ -1,3 +1,4 @@
+package org.soton.seg7.ad_analytics.model;
 
 public class Model {
 	
