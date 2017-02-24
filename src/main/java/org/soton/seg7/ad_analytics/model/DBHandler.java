@@ -16,7 +16,7 @@ public class DBHandler {
     private static DBHandler handler;
 
     private DBHandler(int port) {
-        dbClient = new MongoClient("localhost", port);
+        dbClient = new MongoClient("127.0.0.1", port);
     }
 
     public static DBHandler getDBConnection(int port) {
