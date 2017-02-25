@@ -20,7 +20,7 @@ public class MainView extends Application {
 
         initRootLayout();
 
-        showPersonOverview();
+        showOverview();
     }
 
     /**
@@ -30,7 +30,7 @@ public class MainView extends Application {
         try {
             // Load root layout from fxml file.
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainApp.class.getResource("view/RootLayout.fxml"));
+            loader.setLocation(MainView.class.getResource("view/RootLayout.fxml"));
             rootLayout = (BorderPane) loader.load();
 
             // Show the scene containing the root layout.
@@ -42,17 +42,15 @@ public class MainView extends Application {
         }
     }
 
-    /**
-     * Shows the person overview inside the root layout.
-     */
-    public void showPersonOverview() {
+   
+    public void showOverview() {
         try {
-            // Load person overview.
+            // Load overview.
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainApp.class.getResource("view/Overview.fxml"));
+            loader.setLocation(MainView.class.getResource("view/Overview.fxml"));
             AnchorPane personOverview = (AnchorPane) loader.load();
 
-            // Set person overview into the center of root layout.
+            // Set overview into the center of root layout.
             rootLayout.setCenter(personOverview);
         } catch (IOException e) {
             e.printStackTrace();
