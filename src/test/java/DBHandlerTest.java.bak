@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 /**
  * Created by Sam Law on 25/02/2017.
