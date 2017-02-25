@@ -4,7 +4,14 @@ import com.mongodb.*;
 import com.mongodb.util.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,16 +23,17 @@ public class DBHandler {
     private static MongoClient dbClient;
     private static DBHandler handler;
 
-    private DBHandler(int port) {
-        dbClient = new MongoClient("127.0.0.1", port);
+    private DBHandler() throws MongoAuthException {
+        if ((dbClient = initializeDatabase()) == null)
+            throw new MongoAuthException();
     }
 
-    public static DBHandler getDBConnection(int port) {
+    public static DBHandler getDBConnection() throws MongoAuthException{
 
         if (handler != null)
             return handler;
 
-        return (handler = new DBHandler(port));
+        return (handler = new DBHandler());
     }
 
     public String sendQuery(JSONObject query, String collection) {
@@ -89,5 +97,53 @@ public class DBHandler {
         db.getCollection(collection).drop();
 
         return new JSONObject().put("success", "removed " + collection);
+    }
+
+    private static MongoClient initializeDatabase() {
+
+        try {
+
+            JSONParser parser = new JSONParser();
+
+            final String object = parser.parse(new FileReader(new File("").getAbsolutePath() + "/static/config.json")).toString();
+            final JSONObject config = new JSONObject(object);
+
+            final String HOST = config.get("host").toString();
+            final Integer PORT = Integer.parseInt(config.get("port").toString());
+            final String USER = config.get("user").toString();
+            final String PASS = config.get("pass").toString();
+            final String DB_STRING = config.get("db").toString();
+
+            System.out.println(HOST);
+            System.out.println(PORT);
+            System.out.println(USER);
+            System.out.println(PASS);
+            System.out.println(DB_STRING);
+
+            List<ServerAddress> addresses = new ArrayList<>();
+            addresses.add(new ServerAddress(HOST, PORT));
+
+            List<MongoCredential> credentials = new ArrayList<>();
+            credentials.add(
+                    MongoCredential.createCredential(
+                            USER,
+                            DB_STRING,
+                            PASS.toCharArray()
+                    )
+            );
+
+            MongoClient client = new MongoClient(addresses, credentials);
+
+            return client;
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

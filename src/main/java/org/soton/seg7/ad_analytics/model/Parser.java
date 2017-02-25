@@ -137,6 +137,8 @@ public class Parser {
 
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
         }
 
         return new JSONObject().put("error", "exception occurred while parsing the csv file");
@@ -215,6 +217,8 @@ public class Parser {
         }
         catch (IOException e) {
             e.printStackTrace();
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
         }
 
         return new JSONObject().put("error", "exception occurred while parsing the csv file");
@@ -225,9 +229,9 @@ public class Parser {
         return new JSONObject().put("error", "function not implemented yet.");
     }
 
-    private static void insertIntoDB(JSONObject jsonObject) {
+    private static void insertIntoDB(JSONObject jsonObject) throws MongoAuthException {
 
-        DBHandler handler = DBHandler.getDBConnection(27017);
+        DBHandler handler = DBHandler.getDBConnection();
 
         handler.insertData(jsonObject, jsonObject.get("collection").toString());
     }

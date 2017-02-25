@@ -7,6 +7,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.soton.seg7.ad_analytics.model.DBHandler;
+import org.soton.seg7.ad_analytics.model.MongoAuthException;
 import org.soton.seg7.ad_analytics.model.Parser;
 
 import static org.junit.Assert.*;
@@ -30,28 +31,39 @@ public class ParserTest {
     @Test
     public void testClickParse() {
 
-        DBHandler handler = DBHandler.getDBConnection(27017);
+        DBHandler handler = null;
 
-        handler.dropCollection("click_log");
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("click_log");
 
-        JSONObject parse = Parser.parseCSV(clickFile);
-        String parseAnalytics = parse.toString();
-        String resAnalytics = handler.retrieveAllDocuments("click_log").toString();
+            JSONObject parse = Parser.parseCSV(clickFile);
+            String parseAnalytics = parse.toString();
+            String resAnalytics = handler.retrieveAllDocuments("click_log").toString();
 
-        assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
     public void testImpressionsParse() {
 
-        DBHandler handler = DBHandler.getDBConnection(27017);
+        DBHandler handler = null;
 
-        handler.dropCollection("impression_log");
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_log");
 
-        JSONObject parse = Parser.parseCSV(impressionsFile);
-        String parseAnalytics = parse.toString();
-        String resAnalytics = handler.retrieveAllDocuments("impression_log").toString();
+            JSONObject parse = Parser.parseCSV(impressionsFile);
+            String parseAnalytics = parse.toString();
+            String resAnalytics = handler.retrieveAllDocuments("impression_log").toString();
 
-        assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+
     }
 }
