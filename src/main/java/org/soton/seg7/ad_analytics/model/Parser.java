@@ -1,9 +1,8 @@
 package org.soton.seg7.ad_analytics.model;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.io.*;
 import java.util.*;

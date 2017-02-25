@@ -2,9 +2,12 @@ package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -22,15 +25,15 @@ public class DBQuery {
     private static final DBObject ALL_QUERY = new BasicDBObject();
     private static DBObject fieldModifier;
 
-    public static Map<String, Object> getNumImpressions() throws MongoAuthException{
+    public static Map<String, Map<Integer, Integer>> getNumImpressions() throws MongoAuthException {
         return getCountMetric(COL_IMPRESSIONS);
     }
 
-    public static Map<String, Object> getNumClicks() throws MongoAuthException {
+    public static Map<String, Map<Integer, Integer>> getNumClicks() throws MongoAuthException {
         return getCountMetric(COL_CLICKS);
     }
 
-    public static Map<String, Object> getNumConversions() throws MongoAuthException {
+    public static Map<String, Map<Integer, Integer>> getNumConversions() throws MongoAuthException {
         return getCountMetric(COL_SERVER);
     }
 
@@ -64,7 +67,7 @@ public class DBQuery {
     private static Integer getTotalMetric(String collection, String metric) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
         fieldModifier = new BasicDBObject();
-        fieldModifier.put("total", 1);
+        fieldModifier.put(metric, 1);
 
         JSONObject jsonResult = new JSONObject(
                 handler.sendQuery(
@@ -78,10 +81,12 @@ public class DBQuery {
         return jsonResult.getInt(metric);
     }
 
-    private static Map<String, Object> getCountMetric(String collection) throws MongoAuthException {
+    private static Map<String, Map<Integer, Integer>> getCountMetric(String collection) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
         fieldModifier = new BasicDBObject();
         fieldModifier.put("dayNum", 1);
+
+        Map<String, Map<Integer, Integer>> countMap = new HashMap<>();
 
         JSONObject jsonResult = new JSONObject(
                 handler.sendQuery(
@@ -94,19 +99,46 @@ public class DBQuery {
         jsonResult.remove("_id");
         jsonResult = jsonResult.getJSONObject("dayNum");
 
-        return jsonResult.toMap();
+        Iterator<?> keys = jsonResult.keys();
+
+        while (keys.hasNext()) {
+            String key = (String) keys.next();
+            String value = jsonResult.get(key).toString();
+            value = value.substring(1, value.length()-1);           //remove curly brackets
+            System.out.println(value);
+            String[] keyValuePairs = value.split(",");              //split the string to creat key-value pairs
+            Map<Integer,Integer> map = new HashMap<>();
+
+            for(String pair : keyValuePairs)                        //iterate over the pairs
+            {
+                String[] entry = pair.split(":");                   //split the pairs to get key and value
+                map.put(Integer.parseInt(entry[0].trim().replace("\"","")), Integer.parseInt(entry[1].trim()));          //add them to the hashmap and trim whitespaces
+            }
+            countMap.put(key, map);
+        }
+
+        System.out.println(countMap);
+
+        return countMap;
+
     }
 
-    public static Map<String, Object> getCTROverTime() throws MongoAuthException {
-        Map<String, Object> numImpressions = getNumImpressions();
-        Map<String, Object> numClicks = getNumClicks();
+    public static Map<String, Map<Integer, Double>> getCTROverTime() throws MongoAuthException {
+        Map<String, Map<Integer, Integer>> numImpressions = getNumImpressions();
+        Map<String, Map<Integer, Integer>> numClicks = getNumClicks();
 
-        Map<String, Map<String, Double>> ctrMap = new HashMap<>();
-        Map<String, Double> hourCtrMap = new HashMap<>();
+        Map<String, Map<Integer, Double>> ctrMap = new HashMap<>();
 
         for (String day : numImpressions.keySet()) {
+            Map<Integer, Double> hourCtrMap = new HashMap<>();
+            Map<Integer, Integer> impressionsHour = numImpressions.get(day);
+            Map<Integer, Integer> clicksHour = numClicks.get(day);
 
+            for (Integer hour : impressionsHour.keySet())
+                hourCtrMap.put(hour, Double.parseDouble(clicksHour.get(hour).toString())/Double.parseDouble(impressionsHour.get(hour).toString()));
+
+            ctrMap.put(day, hourCtrMap);
         }
-        return null;
+        return ctrMap;
     }
 }

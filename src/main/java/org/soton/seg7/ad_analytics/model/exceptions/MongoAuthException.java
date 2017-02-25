@@ -1,4 +1,4 @@
-package org.soton.seg7.ad_analytics.model;
+package org.soton.seg7.ad_analytics.model.exceptions;
 
 /**
  * Created by bogdanbuduroiu on 25/02/2017.

@@ -4,12 +4,13 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.soton.seg7.ad_analytics.model.DBHandler;
 import org.soton.seg7.ad_analytics.model.DBQuery;
-import org.soton.seg7.ad_analytics.model.MongoAuthException;
+import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.model.Parser;
 
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -73,7 +74,7 @@ public class ParserTest {
             handler.dropCollection("click_log");
 
             Parser.parseCSV(clickFile);
-            Map<String, Object> resNumClicks = DBQuery.getNumClicks();
+            Map<String, Map<Integer, Integer>> resNumClicks = DBQuery.getNumClicks();
 
             assertEquals("Correct Num Clicks file:", expectedJsonMap, resNumClicks);
         } catch (MongoAuthException e) {
@@ -83,7 +84,7 @@ public class ParserTest {
 
     @Test
     public void testImpressionDayNum() {
-        final Map<String, Object> expectedJsonMap = new JSONObject("{ \"2015-01-01\" : { \"22\" : 1100, \"12\" : 2126, \"23\" : 733, \"13\" : 2026, \"14\" : 2073, \"15\" : 2091, \"16\" : 2126, \"17\" : 2116, \"18\" : 2143, \"19\" : 2128, \"20\" : 1915, \"21\" : 1472 }, \"2015-01-02\" : { \"00\" : 320, \"01\" : 117, \"02\" : 114, \"03\" : 112, \"04\" : 290, \"05\" : 635, \"06\" : 1034, \"07\" : 1324, \"08\" : 1671, \"09\" : 1834, \"10\" : 499 } }".replace(" ", "")).toMap();
+        final Map<String, Object> expectedJsonMap = new JSONObject("{2015-01-01:{16:2126, 17:2116, 18:2143, 19:2128, 20:1915, 21:1472, 22:1100, 23:733, 12:2126, 13:2026, 14:2073, 15:2091}, 2015-01-02:{0:320, 1:117, 2:114, 3:112, 4:290, 5:635, 6:1034, 7:1324, 8:1671, 9:1834, 10:499}}".replace(" ", "")).toMap();
 
         DBHandler handler;
 
@@ -92,7 +93,7 @@ public class ParserTest {
             handler.dropCollection("impression_log");
 
             Parser.parseCSV(impressionsFile);
-            Map<String, Object> resNumImpressions = DBQuery.getNumImpressions();
+            Map<String, Map<Integer, Integer>> resNumImpressions = DBQuery.getNumImpressions();
 
             assertEquals("Correct Num Impressions in file", expectedJsonMap, resNumImpressions);
         } catch (MongoAuthException e) {
@@ -111,7 +112,7 @@ public class ParserTest {
             handler.dropCollection("server_log");
 
             Parser.parseCSV(serverFile);
-            Map<String, Object> resNumConversions = DBQuery.getNumConversions();
+            Map<String, Map<Integer, Integer>> resNumConversions = DBQuery.getNumConversions();
 
             assertEquals("Correct num of Conversions", expectedJsonMap, resNumConversions);
         } catch (MongoAuthException e) {
@@ -136,6 +137,28 @@ public class ParserTest {
             Double result = DBQuery.getTotalCTR();
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testCTROverTime() {
+        final Map<String, Map<Integer, Double>> expectedCtrMap = new HashMap<>();
+
+        DBHandler handler;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("click_log");
+            handler.dropCollection("impression_log");
+
+            Parser.parseCSV(clickFile);
+            Parser.parseCSV(impressionsFile);
+
+            Map<String, Map<Integer, Double>> result = DBQuery.getCTROverTime();
+
+            assertEquals("Correct Hashmap", expectedCtrMap, result);
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }

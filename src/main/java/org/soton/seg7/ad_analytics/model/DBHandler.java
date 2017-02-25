@@ -1,14 +1,13 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.*;
-import com.mongodb.util.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
