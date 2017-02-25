@@ -23,9 +23,40 @@ public class DBHandler {
     private static MongoClient dbClient;
     private static DBHandler handler;
 
+    private String HOST;
+    private int PORT;
+    private String USER;
+    private String PASS;
+    private String DB_STRING;
+
+
     private DBHandler() throws MongoAuthException {
+        JSONParser parser = new JSONParser();
+
+        final String object;
+        try {
+            object = parser.parse(
+                    new FileReader(
+                            new File("").getAbsolutePath() + "/static/config.json"
+                    )
+            ).toString();
+
+            final JSONObject config = new JSONObject(object);
+
+            HOST = config.get("host").toString();
+            PORT = Integer.parseInt(config.get("port").toString());
+            USER = config.get("user").toString();
+            PASS = config.get("pass").toString();
+            DB_STRING = config.get("db").toString();
+
         if ((dbClient = initializeDatabase()) == null)
             throw new MongoAuthException();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static DBHandler getDBConnection() throws MongoAuthException{
@@ -36,22 +67,22 @@ public class DBHandler {
         return (handler = new DBHandler());
     }
 
-    public String sendQuery(JSONObject query, String collection) {
+    public JSONArray sendQuery(DBObject query, DBObject fields, String collection) {
 
         JSONArray array = new JSONArray();
 
         if (dbClient == null)
-            return new JSONObject().append("error", "database not initialized").toString();
+            return new JSONArray().put(new JSONObject().put("error", "database not initialized"));
 
-        DB db = dbClient.getDB("analytics_data");
+        DB db = dbClient.getDB(DB_STRING);
         DBCollection coll = db.getCollection(collection);
 
-        DBCursor cursor = coll.find(BasicDBObject.parse(query.toString()));
+        DBCursor cursor = coll.find(query, fields);
 
         while(cursor.hasNext())
             array.put(cursor.next());
 
-        return array.toString();
+        return array;
     }
 
     public String insertData(JSONObject insertion, String collection) {
@@ -59,7 +90,7 @@ public class DBHandler {
         if (dbClient == null)
             return new JSONObject().append("error", "database not initialized").toString();
 
-        DB db = dbClient.getDB("analytics_data");
+        DB db = dbClient.getDB(DB_STRING);
         DBCollection coll = db.getCollection(collection);
 
         coll.insert(BasicDBObject.parse(insertion.toString()));
@@ -78,7 +109,7 @@ public class DBHandler {
         if (dbClient == null)
             return new JSONObject().put("error", "database not initialized");
 
-        DB db = dbClient.getDB("analytics_data");
+        DB db = dbClient.getDB(DB_STRING);
         DBCollection coll = db.getCollection(collection);
 
         DBCursor cursor = coll.find(allQuery, removeId);
@@ -93,57 +124,28 @@ public class DBHandler {
         if (dbClient == null)
             new JSONObject().put("error", "database not initialized");
 
-        DB db = dbClient.getDB("analytics_data");
+        DB db = dbClient.getDB(DB_STRING);
         db.getCollection(collection).drop();
 
         return new JSONObject().put("success", "removed " + collection);
     }
 
-    private static MongoClient initializeDatabase() {
+    private MongoClient initializeDatabase() {
 
-        try {
+        List<ServerAddress> addresses = new ArrayList<>();
+        addresses.add(new ServerAddress(HOST, PORT));
 
-            JSONParser parser = new JSONParser();
+        List<MongoCredential> credentials = new ArrayList<>();
+        credentials.add(
+                MongoCredential.createCredential(
+                        USER,
+                        DB_STRING,
+                        PASS.toCharArray()
+                )
+        );
 
-            final String object = parser.parse(new FileReader(new File("").getAbsolutePath() + "/static/config.json")).toString();
-            final JSONObject config = new JSONObject(object);
+        MongoClient client = new MongoClient(addresses, credentials);
 
-            final String HOST = config.get("host").toString();
-            final Integer PORT = Integer.parseInt(config.get("port").toString());
-            final String USER = config.get("user").toString();
-            final String PASS = config.get("pass").toString();
-            final String DB_STRING = config.get("db").toString();
-
-            System.out.println(HOST);
-            System.out.println(PORT);
-            System.out.println(USER);
-            System.out.println(PASS);
-            System.out.println(DB_STRING);
-
-            List<ServerAddress> addresses = new ArrayList<>();
-            addresses.add(new ServerAddress(HOST, PORT));
-
-            List<MongoCredential> credentials = new ArrayList<>();
-            credentials.add(
-                    MongoCredential.createCredential(
-                            USER,
-                            DB_STRING,
-                            PASS.toCharArray()
-                    )
-            );
-
-            MongoClient client = new MongoClient(addresses, credentials);
-
-            return client;
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+        return client;
     }
 }
