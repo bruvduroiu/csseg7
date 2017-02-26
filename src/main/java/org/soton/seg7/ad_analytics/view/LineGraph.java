@@ -1,4 +1,4 @@
-package controller.model;
+package org.soton.seg7.ad_analytics.view;
 
 import javafx.collections.ObservableList;
 import javafx.scene.chart.LineChart;

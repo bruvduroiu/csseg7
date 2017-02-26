@@ -1,4 +1,4 @@
-package controller;
+package org.soton.seg7.ad_analytics.view;
 
 import java.io.IOException;
 

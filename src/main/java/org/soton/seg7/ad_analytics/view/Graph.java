@@ -1,4 +1,4 @@
-package controller.model;
+package org.soton.seg7.ad_analytics.view;
 
 
 import javafx.beans.property.SimpleStringProperty;
