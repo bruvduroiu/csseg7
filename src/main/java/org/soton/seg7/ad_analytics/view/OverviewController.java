@@ -7,30 +7,26 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
 public class OverviewController {
+
     @FXML
     private TableView<Graph> graphTable;
     @FXML
     private TableColumn<Graph, String> graphTitleColumn;
- 
     @FXML
     private Label graphTitleLabel;
-   @FXML
-   private LineChart lineChart;
+    @FXML
+    private LineChart lineChart;
 
     // Reference to the main application.
     private MainView mainView;
 
-   
     public OverviewController() {
     }
     
     @FXML
     private void initialize() {
-       
         graphTitleColumn.setCellValueFactory(cellData -> cellData.getValue().graphTitleProperty());
-        
         showGraphDetails(null);
-
         // Listen for selection changes and show the person details when changed.
         graphTable.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> showGraphDetails(newValue));
@@ -44,8 +40,6 @@ public class OverviewController {
 
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
-
-        
         graphTable.setItems(mainView.getGraphData());
     }
 }

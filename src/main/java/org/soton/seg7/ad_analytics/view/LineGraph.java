@@ -7,14 +7,10 @@ public class LineGraph extends Graph{
 	
 	public LineGraph(String graphTitle){
 		super(graphTitle);
-		
-        
-        
 	}
 
 	@Override
 	public ObservableList getData() {
 		return null;
-		
 	}
 }

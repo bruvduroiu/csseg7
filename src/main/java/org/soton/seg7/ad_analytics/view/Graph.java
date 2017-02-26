@@ -1,26 +1,19 @@
 package org.soton.seg7.ad_analytics.view;
 
-
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
-
-
 public abstract class Graph {
 
     private final StringProperty graphTitle;
-    
 
-    
     public Graph() {
         this(null);
     }
 
-   
     public Graph(String graphTitle) {
         this.graphTitle = new SimpleStringProperty(graphTitle);
-        
     }
 
     public String getGraphTitle() {
@@ -35,8 +28,6 @@ public abstract class Graph {
         return graphTitle;
     }
 
-
 	public abstract ObservableList getData();
 
-    
 }
