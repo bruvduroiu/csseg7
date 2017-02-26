@@ -24,43 +24,24 @@ public class ParserTest {
     File impressionsFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/impression_log.csv");
     File serverFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/server_log.csv");
 
+    
     @Test
-    public void testClickParse() {
+    public void testImpressionDayNum() {
+        final Map<String, Object> expectedJsonMap = new JSONObject("{2015-01-01:{12:2126, 13:2026, 14:2073, 15:2091, 16:1683}}".replace(" ", "")).toMap();
 
-        DBHandler handler = null;
-
-        try {
-            handler = DBHandler.getDBConnection();
-            handler.dropCollection("click_log");
-
-            JSONObject parse = Parser.parseCSV(clickFile);
-            String parseAnalytics = parse.toString();
-            String resAnalytics = handler.retrieveAllDocuments("click_log").toString();
-
-            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
-        } catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testImpressionsParse() {
-
-        DBHandler handler = null;
+        DBHandler handler;
 
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("impression_log");
 
-            JSONObject parse = Parser.parseCSV(impressionsFile);
-            String parseAnalytics = parse.toString();
-            String resAnalytics = handler.retrieveAllDocuments("impression_log").toString();
+            Parser.parseCSV(impressionsFile);
+            Map<String, Map<String, Integer>> resNumImpressions = DBQuery.getNumImpressions();
 
-            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+            assertEquals("Correct Num Impressions in file", expectedJsonMap, resNumImpressions);
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
-
     }
 
     @Test
@@ -77,25 +58,6 @@ public class ParserTest {
             Map<String, Map<String, Integer>> resNumClicks = DBQuery.getNumClicks();
 
             assertEquals("Correct Num Clicks file:", expectedJsonMap, resNumClicks);
-        } catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testImpressionDayNum() {
-        final Map<String, Object> expectedJsonMap = new JSONObject("{2015-01-01:{12:2126, 13:2026, 14:2073, 15:2091, 16:1683}}".replace(" ", "")).toMap();
-
-        DBHandler handler;
-
-        try {
-            handler = DBHandler.getDBConnection();
-            handler.dropCollection("impression_log");
-
-            Parser.parseCSV(impressionsFile);
-            Map<String, Map<String, Integer>> resNumImpressions = DBQuery.getNumImpressions();
-
-            assertEquals("Correct Num Impressions in file", expectedJsonMap, resNumImpressions);
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
@@ -140,6 +102,145 @@ public class ParserTest {
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
+    }
+    
+    @Test
+    public void testTotalClicks() {
+    	final Integer expectedResult = 499;
+
+        DBHandler handler;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("click_log");
+
+            Parser.parseCSV(clickFile);
+
+            Integer result = DBQuery.getTotalClicks();
+
+            assertEquals("Correct Num Clicks file:", expectedResult, result);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testTotalImpressions() {
+    	final Integer expectedResult = 9999;
+
+        DBHandler handler;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_log");
+
+            Parser.parseCSV(impressionsFile);
+
+            Integer result = DBQuery.getTotalImpressions();
+
+            assertEquals("Correct Num Clicks file:", expectedResult, result);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testTotalCostImpressions() {
+    	final Double expectedResult = 10.067485;
+
+        DBHandler handler;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("click_log");
+
+            Parser.parseCSV(clickFile);
+
+            Double result = DBQuery.getTotalCostImpressions();
+
+            assertEquals("Correct Num Clicks file:", expectedResult, result);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testTotalCostClick() {
+    	final Double expectedResult = 2460.598919;
+
+        DBHandler handler;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("click_log");
+
+            Parser.parseCSV(clickFile);
+
+            Double result = DBQuery.getTotalCostClicks();
+
+            assertEquals("Correct Num Clicks file:", expectedResult, result);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testTotalCostCampaign() {
+    	final Double expectedResult = 2470.666404;
+
+        DBHandler handler;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("click_log");
+
+            Parser.parseCSV(clickFile);
+
+            Double result = DBQuery.getTotalCostCampaign();
+
+            assertEquals("Correct Num Clicks file:", expectedResult, result);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testClickParse() {
+
+        DBHandler handler = null;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("click_log");
+
+            JSONObject parse = Parser.parseCSV(clickFile);
+            String parseAnalytics = parse.toString();
+            String resAnalytics = handler.retrieveAllDocuments("click_log").toString();
+
+            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testImpressionsParse() {
+
+        DBHandler handler = null;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_log");
+
+            JSONObject parse = Parser.parseCSV(impressionsFile);
+            String parseAnalytics = parse.toString();
+            String resAnalytics = handler.retrieveAllDocuments("impression_log").toString();
+
+            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Test
