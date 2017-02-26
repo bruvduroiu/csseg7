@@ -1,0 +1,7 @@
+{
+  "host": "vm9.blacknell.co.uk",
+  "port": 27017,
+  "user": "seg7",
+  "pass": "mydbsecret",
+  "db": "AdCampaign"
+}

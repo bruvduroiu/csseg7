@@ -1,0 +1,28 @@
+
+#graphChoicePane {
+	-fx-background-color: white;
+}
+
+#graphDisplayPane {
+	-fx-background-color: white;
+}
+
+#breakdownPane {
+	-fx-background-color: white;
+}
+
+#splitPane1{
+	-fx-background-color: white;
+}
+
+#splitPane2{
+	-fx-background-color: white;
+}
+
+#rootBackground {
+	-fx-background-color: white;
+}
+
+#mainTitle {
+	-fx-text-fill: skyblue ;
+}
