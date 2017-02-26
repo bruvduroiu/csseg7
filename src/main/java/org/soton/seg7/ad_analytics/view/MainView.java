@@ -1,11 +1,8 @@
 package org.soton.seg7.ad_analytics.view;
 
+import java.io.File;
 import java.io.IOException;
 
-import controller.model.Graph;
-import controller.model.LineGraph;
-
-import controller.view.OverviewController;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -55,7 +52,7 @@ public class MainView extends Application {
         try {
             // Load root layout from fxml file.
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainView.class.getResource("view/RootLayout.fxml"));
+            loader.setLocation(MainView.class.getResource("RootLayout.fxml"));
             rootLayout = (BorderPane) loader.load();
 
             // Show the scene containing the root layout.

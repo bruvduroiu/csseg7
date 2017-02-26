@@ -5,8 +5,6 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import controller.MainView;
-import controller.model.Graph;
 
 public class OverviewController {
     @FXML
