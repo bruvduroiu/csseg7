@@ -1,6 +1,5 @@
 package org.soton.seg7.ad_analytics.view;
 
-import java.io.File;
 import java.io.IOException;
 
 import javafx.application.Application;
@@ -69,7 +68,7 @@ public class MainView extends Application {
         try {
             // Load overview.
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainView.class.getResource("view/Overview.fxml"));
+            loader.setLocation(MainView.class.getResource("Overview.fxml"));
             AnchorPane overview = (AnchorPane) loader.load();
             
          // Give the controller access to the main app.
