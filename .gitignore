@@ -29,6 +29,7 @@ uto_complete)OA
 
 # IntelliJ
 /out/
+*.iml
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/

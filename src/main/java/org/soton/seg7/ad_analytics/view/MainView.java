@@ -15,12 +15,9 @@ public class MainView extends Application {
 
     private Stage primaryStage;
     private BorderPane rootLayout;
-    
 
-    
     private ObservableList<Graph> graphData = FXCollections.observableArrayList();
 
-    
     public MainView() {
         
     	graphData.add(new LineGraph("Click-through-rate"));

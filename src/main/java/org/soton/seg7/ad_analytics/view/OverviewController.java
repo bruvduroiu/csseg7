@@ -23,7 +23,6 @@ public class OverviewController {
    
     public OverviewController() {
     }
-
     
     @FXML
     private void initialize() {
@@ -36,14 +35,13 @@ public class OverviewController {
         graphTable.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> showGraphDetails(newValue));
     }
-    
+
     private void showGraphDetails(Graph graph){
     	if( graph != null){
     		graphTitleLabel.setText(graph.getGraphTitle());
     	}
     }
 
-   
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
 
