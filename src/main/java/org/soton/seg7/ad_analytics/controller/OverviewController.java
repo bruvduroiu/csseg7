@@ -1,4 +1,4 @@
-package org.soton.seg7.ad_analytics.model.controller;
+package org.soton.seg7.ad_analytics.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;

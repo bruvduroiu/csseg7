@@ -10,7 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import org.soton.seg7.ad_analytics.model.controller.OverviewController;
+import org.soton.seg7.ad_analytics.controller.OverviewController;
 
 public class MainView extends Application {
 
