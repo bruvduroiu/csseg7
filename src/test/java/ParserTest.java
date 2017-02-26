@@ -106,7 +106,7 @@ public class ParserTest {
     
     @Test
     public void testTotalClicks() {
-    	final Integer expectedResult = 499;
+    	final Double expectedResult = new Double(499);
 
         DBHandler handler;
 
@@ -116,7 +116,7 @@ public class ParserTest {
 
             Parser.parseCSV(clickFile);
 
-            Integer result = DBQuery.getTotalClicks();
+            Double result = DBQuery.getTotalClicks();
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
         } catch (MongoAuthException e) {
@@ -126,7 +126,7 @@ public class ParserTest {
     
     @Test
     public void testTotalImpressions() {
-    	final Integer expectedResult = 9999;
+    	final Double expectedResult = new Double(9999);
 
         DBHandler handler;
 
@@ -136,7 +136,7 @@ public class ParserTest {
 
             Parser.parseCSV(impressionsFile);
 
-            Integer result = DBQuery.getTotalImpressions();
+            Double result = DBQuery.getTotalImpressions();
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
         } catch (MongoAuthException e) {
@@ -146,7 +146,7 @@ public class ParserTest {
     
     @Test
     public void testTotalCostImpressions() {
-    	final Double expectedResult = 10.067485;
+    	final Float expectedResult = 10.067485f;
 
         DBHandler handler;
 
@@ -156,7 +156,7 @@ public class ParserTest {
 
             Parser.parseCSV(clickFile);
 
-            Double result = DBQuery.getTotalCostImpressions();
+            Float result = new Float(DBQuery.getTotalCostImpressions());
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
         } catch (MongoAuthException e) {

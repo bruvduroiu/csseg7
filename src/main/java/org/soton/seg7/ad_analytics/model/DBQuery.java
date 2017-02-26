@@ -44,11 +44,11 @@ public class DBQuery {
         return clicks/impressions;
     }
 
-    public static Integer getTotalClicks() throws MongoAuthException {
+    public static Double getTotalClicks() throws MongoAuthException {
         return getTotalMetric(COL_CLICKS, GET_TOTAL_NUM);
     }
 
-    public static Integer getTotalImpressions() throws MongoAuthException {
+    public static Double getTotalImpressions() throws MongoAuthException {
         return getTotalMetric(COL_IMPRESSIONS, GET_TOTAL_NUM);
     }
 
@@ -64,7 +64,7 @@ public class DBQuery {
         return getTotalCostImpressions() + getTotalCostClicks();
     }
 
-    private static Integer getTotalMetric(String collection, String metric) throws MongoAuthException {
+    private static Double getTotalMetric(String collection, String metric) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
         fieldModifier = new BasicDBObject();
         fieldModifier.put(metric, 1);
@@ -78,7 +78,7 @@ public class DBQuery {
         );
 
         jsonResult.remove("_id");
-        return jsonResult.getInt(metric);
+        return Double.parseDouble(jsonResult.get(metric).toString());
     }
 
     private static Map<String, Map<String, Integer>> getCountMetric(String collection) throws MongoAuthException {
