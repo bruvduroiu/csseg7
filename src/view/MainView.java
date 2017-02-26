@@ -2,7 +2,13 @@ package controller;
 
 import java.io.IOException;
 
+import controller.model.Graph;
+import controller.model.LineGraph;
+
+import controller.view.OverviewController;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
@@ -13,6 +19,27 @@ public class MainView extends Application {
 
     private Stage primaryStage;
     private BorderPane rootLayout;
+    
+
+    
+    private ObservableList<Graph> graphData = FXCollections.observableArrayList();
+
+    
+    public MainView() {
+        
+    	graphData.add(new LineGraph("Click-through-rate"));
+    	graphData.add(new LineGraph("Cost-per-click"));
+    	graphData.add(new LineGraph("Number of Clicks"));
+    	graphData.add(new LineGraph("Number of Conversions"));
+        graphData.add(new LineGraph("Number of Impressions"));
+        graphData.add(new LineGraph("Total Cost"));
+    }
+
+    public ObservableList<Graph> getGraphData() {
+        return graphData;
+    }
+
+   
 
     @Override
     public void start(Stage primaryStage) {
@@ -23,9 +50,7 @@ public class MainView extends Application {
         showOverview();
     }
 
-    /**
-     * Initializes the root layout.
-     */
+   
     public void initRootLayout() {
         try {
             // Load root layout from fxml file.
@@ -48,19 +73,20 @@ public class MainView extends Application {
             // Load overview.
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(MainView.class.getResource("view/Overview.fxml"));
-            AnchorPane personOverview = (AnchorPane) loader.load();
+            AnchorPane overview = (AnchorPane) loader.load();
+            
+         // Give the controller access to the main app.
+            OverviewController controller = loader.getController();
+            controller.setMainView(this);
 
             // Set overview into the center of root layout.
-            rootLayout.setCenter(personOverview);
+            rootLayout.setCenter(overview);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    /**
-     * Returns the main stage.
-     * @return
-     */
+   
     public Stage getPrimaryStage() {
         return primaryStage;
     }
