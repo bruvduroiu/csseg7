@@ -1,10 +1,12 @@
-package org.soton.seg7.ad_analytics.view;
+package org.soton.seg7.ad_analytics.model.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import org.soton.seg7.ad_analytics.view.Graph;
+import org.soton.seg7.ad_analytics.view.MainView;
 
 public class OverviewController {
 
