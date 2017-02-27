@@ -2,6 +2,9 @@ package org.soton.seg7.ad_analytics.model;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.soton.seg7.ad_analytics.model.exceptions.InvalidClickLogException;
+import org.soton.seg7.ad_analytics.model.exceptions.InvalidImpressionLogException;
+import org.soton.seg7.ad_analytics.model.exceptions.InvalidServerLogException;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.io.*;
@@ -23,7 +26,7 @@ public class Parser {
      *  from the header of the CSV file.
      *
      *  Also, the parser generates by-day and by-hour totals (only click cost atm),
-     *  and stores them into the MongoDB databse in the form:
+     *  and stores them into the MongoDB database in the form:
      *
      *      {
      *          'date1': {
@@ -45,6 +48,86 @@ public class Parser {
     // No need to have an instance of the Parser
     private Parser() { }
 
+    private static String csvDelimiter = ",";
+
+    public static boolean isValidImpressionLog(File csvFile) {
+
+        boolean isInputFileValidImpressionLog = true;
+        String[] headers;
+
+        if (!csvFile.getName().equals("impression_log.csv")) return false;
+
+        try {
+
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+
+            headers = br.readLine().split(csvDelimiter);
+
+            if (!headers[0].equals("Date")) return false;
+            if (!headers[1].equals("ID")) return false;
+            if (!headers[2].equals("Gender")) return false;
+            if (!headers[3].equals("Age")) return false;
+            if (!headers[4].equals("Income")) return false;
+            if (!headers[5].equals("Context")) return false;
+            if (!headers[6].equals("Impression Cost")) return false;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return isInputFileValidImpressionLog;
+    }
+
+    public static boolean isValidServerLog(File csvFile) {
+
+        boolean isInputFileValidServerLog = true;
+        String[] headers;
+
+        if (!csvFile.getName().equals("server_log.csv")) return false;
+
+        try {
+
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+
+            headers = br.readLine().split(csvDelimiter);
+
+            if (!headers[0].equals("Entry Date")) return false;
+            if (!headers[1].equals("ID")) return false;
+            if (!headers[2].equals("Exit Date")) return false;
+            if (!headers[3].equals("Pages Viewed")) return false;
+            if (!headers[4].equals("Conversion")) return false;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return isInputFileValidServerLog;
+    }
+
+    public static boolean isValidClickLog(File csvFile) {
+
+        boolean isInputFileValidClickLog = true;
+        String[] headers;
+
+        if (!csvFile.getName().equals("click_log.csv")) return false;
+
+        try {
+
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+
+            headers = br.readLine().split(csvDelimiter);
+
+            if (!headers[0].equals("Date")) return false;
+            if (!headers[1].equals("ID")) return false;
+            if (!headers[2].equals("Click Cost")) return false;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return isInputFileValidClickLog;
+    }
+
     public static JSONObject parseCSV(File csvFile) {
         if (csvFile.getName().equals("click_log.csv"))
             return parseClicks(csvFile);
@@ -60,7 +143,6 @@ public class Parser {
 
         String[] headers;
         String line;
-        String csvSplitBy = ",";
         JSONArray jsonArray = new JSONArray();
         JSONObject jsonObject;
         int totalClicks = 0;
@@ -81,14 +163,14 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvSplitBy);
+            headers = br.readLine().split(csvDelimiter);
 
 
             while ((line = br.readLine()) != null) {
 
 
                 // use comma as separator
-                String[] data = line.split(csvSplitBy);
+                String[] data = line.split(csvDelimiter);
 
                 JSONObject row = new JSONObject();
 
@@ -155,7 +237,6 @@ public class Parser {
         String line;
         JSONArray jsonArray = new JSONArray();
         JSONObject jsonObject;
-        String csvSplitBy = ",";
         int totalImpressions = 0;
         double totalCost = 0;
 
@@ -171,10 +252,10 @@ public class Parser {
 
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvSplitBy);
+            headers = br.readLine().split(csvDelimiter);
 
             while((line = br.readLine()) != null) {
-                String[] data = line.split(csvSplitBy);
+                String[] data = line.split(csvDelimiter);
 
                 JSONObject row = new JSONObject();
 
@@ -246,15 +327,14 @@ public class Parser {
 
         JSONArray jsonArray = new JSONArray();
         JSONObject jsonObject;
-        String csvSplitBy = ",";
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvSplitBy);
+            headers = br.readLine().split(csvDelimiter);
 
             while ((line = br.readLine()) != null) {
-                String[] data = line.split(csvSplitBy);
+                String[] data = line.split(csvDelimiter);
 
                 JSONObject row = new JSONObject();
 

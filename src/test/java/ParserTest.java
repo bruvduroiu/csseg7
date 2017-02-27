@@ -24,7 +24,21 @@ public class ParserTest {
     File impressionsFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/impression_log.csv");
     File serverFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/server_log.csv");
 
-    
+    @Test
+    public void testClickLogValidator() {
+        assertEquals(true, Parser.isValidClickLog(clickFile));
+    }
+
+    @Test
+    public void testServerLogValidator() {
+        assertEquals(true, Parser.isValidServerLog(serverFile));
+    }
+
+    @Test
+    public void testImpressionLogValidator() {
+        assertEquals(true, Parser.isValidImpressionLog(impressionsFile));
+    }
+
     @Test
     public void testImpressionDayNum() {
         final Map<String, Object> expectedJsonMap = new JSONObject("{2015-01-01:{12:2126, 13:2026, 14:2073, 15:2091, 16:1683}}".replace(" ", "")).toMap();
