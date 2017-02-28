@@ -34,7 +34,7 @@ public class OverviewController {
                 (observable, oldValue, newValue) -> showGraphDetails(newValue));
     }
 
-    private void showGraphDetails(Graph graph){
+    private void showGraphDetails(Graph graph) {
     	if( graph != null){
     		graphTitleLabel.setText(graph.getGraphTitle());
     	}

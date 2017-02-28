@@ -33,8 +33,6 @@ public class MainView extends Application {
         return graphData;
     }
 
-   
-
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -44,7 +42,6 @@ public class MainView extends Application {
         showOverview();
     }
 
-   
     public void initRootLayout() {
         try {
             // Load root layout from fxml file.
