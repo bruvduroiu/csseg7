@@ -1,4 +1,5 @@
 package org.soton.seg7.ad_analytics.controller;
+import com.mongodb.DB;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
@@ -25,6 +26,12 @@ public class OverviewController {
     private LineChart<String, Double> lineChart;
     @FXML
     private Stage stage;
+    @FXML
+    private Label totalCampaignCostLabel;
+    @FXML
+    private Label totalCostOfClicksLabel;
+    @FXML
+    private Label totalCostOfImpressionsLabel;
 
     // Reference to the main application.
     private MainView mainView;
@@ -41,12 +48,28 @@ public class OverviewController {
         list.add("Number of Conversions");
         list.add("Total Cost");
 
+        try {
+            // Display total cost of campaign in proper format
+            String totalCampaignCost = String.format("£%.2f", new Double(DBQuery.getTotalCostCampaign()/100));
+            totalCampaignCostLabel.setText(totalCampaignCost);
+
+            // Display total cost of clicks in proper format
+            String totalCostOfClicks = String.format("£%.2f", new Double(DBQuery.getTotalCostClicks()/100));
+            totalCostOfClicksLabel.setText(totalCostOfClicks);
+
+            // Display total cost of impressions in proper format
+            String totalCostOfImpressions = String.format("£%.2f", new Double(DBQuery.getTotalCostImpressions()/100));
+            totalCostOfImpressionsLabel.setText(totalCostOfImpressions);
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
 
         // Listen for selection changes and show the person details when changed.
         graphList.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> loadGraph(newValue));
 
     }
+
     private void loadGraph(String graph){
         switch (graph) {
             case "Cost per Click":
