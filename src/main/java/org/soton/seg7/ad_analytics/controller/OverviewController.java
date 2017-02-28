@@ -1,9 +1,7 @@
 package org.soton.seg7.ad_analytics.controller;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -12,6 +10,8 @@ import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 public class OverviewController {
@@ -52,7 +52,7 @@ public class OverviewController {
             case "Cost per Click":
                 loadCostPerClick();
                 break;
-            case "Number of Imrpessions":
+            case "Number of Impressions":
                 loadNumberOfImpressions();
                 break;
             case "Number of Clicks":
@@ -69,48 +69,99 @@ public class OverviewController {
                 break;
         }
     }
+
     private void loadTotalCost() {
-        XYChart.Series<String, Integer> series = new XYChart.Series<>();
-        try {
-            //TODO Implement Cost over time code
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
+        // needs implementation in DBQuery
+
     }
+
     private void loadNumberOfConversions() {
-        // TODO Auto-generated method stub
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        lineChart.setTitle("Number of Conversions / day");
+        lineChart.setTitle("Number of Conversions / Day");
 
         try {
             Map<String, Map<String, Integer>> conversionsMap = DBQuery.getNumConversions();
-            for (String day : conversionsMap.keySet())
+            ArrayList<String> days = new ArrayList<String>(conversionsMap.keySet());
+            Collections.sort(days);
+
+            for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, conversionsMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-
+            lineChart.getData().clear();
             lineChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
         }
-
     }
+
     private void loadClickThroughRate() {
-        // TODO Auto-generated method stub
+        XYChart.Series<String, Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Click Through Rate / Day");
 
+        try {
+            Map<String, Map<String, Double>> clickThroughRateMap = DBQuery.getCTROverTime();
+            ArrayList<String> days = new ArrayList<String>(clickThroughRateMap.keySet());
+            Collections.sort(days);
+
+            for (String day : days)
+                series.getData().add(new XYChart.Data<>(day, clickThroughRateMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
+
     private void loadNumberOfClicks() {
-        // TODO Auto-generated method stub
+        XYChart.Series<String, Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Number of Clicks / Day");
 
+        try {
+            Map<String, Map<String, Integer>> numberOfClicks = DBQuery.getNumClicks();
+            ArrayList<String> days = new ArrayList<String>(numberOfClicks.keySet());
+            Collections.sort(days);
+
+            for (String day : days)
+                series.getData().add(new XYChart.Data<>(day, numberOfClicks.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
+
     private void loadNumberOfImpressions() {
-        // TODO Auto-generated method stub
+        XYChart.Series<String, Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Number of Impressions / Day");
 
+        try {
+            Map<String, Map<String, Integer>> numberOfImpressions = DBQuery.getNumImpressions();
+            ArrayList<String> days = new ArrayList<String>(numberOfImpressions.keySet());
+            Collections.sort(days);
+
+            for (String day : days)
+                series.getData().add(new XYChart.Data<>(day, numberOfImpressions.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
+
     private void loadCostPerClick() {
-        // TODO Auto-generated method stub
+
+        // needs implementation in DBQuery
 
     }
+
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
 
