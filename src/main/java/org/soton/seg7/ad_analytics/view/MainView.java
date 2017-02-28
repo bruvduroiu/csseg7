@@ -1,6 +1,10 @@
 package org.soton.seg7.ad_analytics.view;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -11,6 +15,10 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.soton.seg7.ad_analytics.controller.OverviewController;
+import org.soton.seg7.ad_analytics.model.DBHandler;
+import org.soton.seg7.ad_analytics.model.DBQuery;
+import org.soton.seg7.ad_analytics.model.Parser;
+import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 public class MainView extends Application {
 
@@ -35,6 +43,7 @@ public class MainView extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+    	this.loadTestData();
         this.primaryStage = primaryStage;
 
         initRootLayout();
@@ -84,5 +93,41 @@ public class MainView extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+    
+    
+    //function that loads data to database and gets clicks data, and prints the data with description
+    // format of printed data: Entry with name: 2015-01-01 has key: 12  and value: 94
+    public void loadTestData(){
+    	File clickFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/click_log.csv");
+        File impressionsFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/impression_log.csv");
+        File serverFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/server_log.csv");
+
+    	DBHandler handler;
+    	try{
+    		//loading data
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_log");            
+            handler.dropCollection("server_log");
+            handler.dropCollection("click_log");
+            Parser.parseCSV(impressionsFile);
+            Parser.parseCSV(serverFile);
+            Parser.parseCSV(clickFile);
+            
+            //getting data from database
+            Map<String, Map<String, Integer>> clickCount = DBQuery.getNumClicks();
+            
+            //printing data
+            for (Map.Entry<String, Map<String, Integer>> entryMap : clickCount.entrySet()){
+            	String name = entryMap.getKey();
+            	Map<String, Integer> data = entryMap.getValue();
+            	for(Map.Entry<String, Integer> entry : data.entrySet()){
+            		System.out.println("Entry with name: "+name+" has key: "+entry.getKey()+ "  and value: " + entry.getValue());
+            	}
+            }
+
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
 }
