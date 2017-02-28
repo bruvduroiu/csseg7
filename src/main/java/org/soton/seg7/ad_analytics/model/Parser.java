@@ -2,9 +2,6 @@ package org.soton.seg7.ad_analytics.model;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.soton.seg7.ad_analytics.model.exceptions.InvalidClickLogException;
-import org.soton.seg7.ad_analytics.model.exceptions.InvalidImpressionLogException;
-import org.soton.seg7.ad_analytics.model.exceptions.InvalidServerLogException;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.io.*;
@@ -52,13 +49,11 @@ public class Parser {
 
     public static boolean isValidImpressionLog(File csvFile) {
 
-        boolean isInputFileValidImpressionLog = true;
         String[] headers;
 
         if (!csvFile.getName().equals("impression_log.csv")) return false;
 
         try {
-
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
             headers = br.readLine().split(csvDelimiter);
@@ -75,18 +70,16 @@ public class Parser {
             e.printStackTrace();
         }
 
-        return isInputFileValidImpressionLog;
+        return true;
     }
 
     public static boolean isValidServerLog(File csvFile) {
 
-        boolean isInputFileValidServerLog = true;
         String[] headers;
 
         if (!csvFile.getName().equals("server_log.csv")) return false;
 
         try {
-
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
             headers = br.readLine().split(csvDelimiter);
@@ -101,18 +94,16 @@ public class Parser {
             e.printStackTrace();
         }
 
-        return isInputFileValidServerLog;
+        return true;
     }
 
     public static boolean isValidClickLog(File csvFile) {
 
-        boolean isInputFileValidClickLog = true;
         String[] headers;
 
         if (!csvFile.getName().equals("click_log.csv")) return false;
 
         try {
-
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
             headers = br.readLine().split(csvDelimiter);
@@ -125,7 +116,7 @@ public class Parser {
             e.printStackTrace();
         }
 
-        return isInputFileValidClickLog;
+        return true;
     }
 
     public static JSONObject parseCSV(File csvFile) {
