@@ -1,5 +1,4 @@
 package org.soton.seg7.ad_analytics.controller;
-import com.mongodb.DB;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
@@ -16,6 +15,7 @@ import java.util.Collections;
 import java.util.Map;
 
 public class OverviewController {
+
     @FXML
     private ListView<String> graphList;
     @FXML
@@ -35,6 +35,7 @@ public class OverviewController {
 
     // Reference to the main application.
     private MainView mainView;
+
     public OverviewController() {
     }
 
