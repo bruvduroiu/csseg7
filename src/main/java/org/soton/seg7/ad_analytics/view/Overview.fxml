@@ -29,7 +29,7 @@
                             <items>
                                 <AnchorPane fx:id="graphChoicePane" maxWidth="292.0" minHeight="348.0" minWidth="292.0" prefHeight="348.0" prefWidth="292.0" SplitPane.resizableWithParent="false">
                                     <children>
-                                        <Button fx:id="changeCampaignButton" onAction="#handleChangeCampainButtonAction" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="262.0" text="Change Campaign" />
+                                        <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleChangeCampainButtonAction" prefHeight="25.0" prefWidth="262.0" text="Change Campaign" />
                                         <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="348.0" prefWidth="262.0" />
                                     </children>
                                 </AnchorPane>
@@ -108,31 +108,11 @@
                                                 <RowConstraints maxHeight="63.0" minHeight="10.0" prefHeight="40.0" vgrow="SOMETIMES" />
                                             </rowConstraints>
                                             <children>
-                                                <Label text="Age Range :">
-                                                    <font>
-                                                        <Font name="Constantia" size="12.0" />
-                                                    </font>
-                                                </Label>
-                                                <Label text="Gender : " GridPane.columnIndex="1">
-                                                    <font>
-                                                        <Font name="Constantia" size="12.0" />
-                                                    </font>
-                                                </Label>
-                                                <Label text="Income Range :" GridPane.columnIndex="2">
-                                                    <font>
-                                                        <Font name="Constantia" size="12.0" />
-                                                    </font>
-                                                </Label>
-                                                <Label text="Start Date: " GridPane.columnIndex="3">
-                                                    <font>
-                                                        <Font name="Constantia" size="12.0" />
-                                                    </font>
-                                                </Label>
-                                                <Label text="End Date :" GridPane.columnIndex="4">
-                                                    <font>
-                                                        <Font name="Constantia" size="12.0" />
-                                                    </font>
-                                                </Label>
+                                                <Label text="Age Range :" />
+                                                <Label text="Gender : " GridPane.columnIndex="1" />
+                                                <Label text="Income Range :" GridPane.columnIndex="2" />
+                                                <Label text="Start Date: " GridPane.columnIndex="3" />
+                                                <Label text="End Date :" GridPane.columnIndex="4" />
                                                 <MenuButton contentDisplay="BOTTOM" mnemonicParsing="false" prefHeight="27.0" prefWidth="89.0" text="Please Select" GridPane.rowIndex="1">
                                                     <items>
                                                         <MenuItem mnemonicParsing="false" text="&lt;25" />
@@ -218,7 +198,7 @@
                                         </GridPane>
                                         <AnchorPane layoutX="15.0" layoutY="108.0" prefHeight="291.0" prefWidth="668.0" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="108.0">
                                             <children>
-                                                <LineChart fx:id="lineChart" layoutX="14.0" layoutY="-19.0" prefHeight="381.0" prefWidth="668.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                <LineChart fx:id="lineChart" layoutX="14.0" layoutY="14.0" legendVisible="false" prefHeight="276.0" prefWidth="667.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="14.0">
                                                     <xAxis>
                                                         <CategoryAxis side="BOTTOM" />
                                                     </xAxis>
@@ -232,9 +212,9 @@
                                 </AnchorPane>
                                 <AnchorPane fx:id="breakdownPane" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0" SplitPane.resizableWithParent="false">
                                     <children>
-                                        <Label layoutX="14.0" layoutY="14.0" text="Breakdown : ">
+                                        <Label layoutX="14.0" layoutY="14.0" text="Breakdown: ">
                                             <font>
-                                                <Font name="Constantia" size="20.0" />
+                                                <Font name="System Font Regular" size="20.0" />
                                             </font></Label>
                                     </children>
                                 </AnchorPane>
