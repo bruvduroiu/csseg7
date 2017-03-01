@@ -8,10 +8,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+
 import org.soton.seg7.ad_analytics.controller.OverviewController;
 public class MainView extends Application {
-    private Stage primaryStage;
+    private static Stage primaryStage;
     private BorderPane rootLayout;
 
     public MainView() {
@@ -57,5 +59,25 @@ public class MainView extends Application {
     }
     public static void main(String[] args) {
         launch(args);
+    }
+    
+    //shows window for loading files
+    public static void showLoadStage(){
+    	try {
+            // Load overview.
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(MainView.class.getResource("FileLoaderView.fxml"));
+            AnchorPane fileLoad = loader.load();
+            
+            Stage loadFileStage = new Stage();
+            loadFileStage.setTitle("Load files");
+            loadFileStage.initModality(Modality.WINDOW_MODAL);
+            loadFileStage.initOwner(primaryStage);
+            Scene scene = new Scene(fileLoad);
+            loadFileStage.setScene(scene);
+            loadFileStage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
