@@ -4,6 +4,7 @@ import java.io.File;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -78,7 +79,11 @@ public class FileLoaderController {
 			Stage stage  = (Stage) source.getScene().getWindow();
 			stage.close();
     	} else {
-    		System.out.println("One of your files is invalid");
+			Alert invalidFileErrorBox = new Alert(Alert.AlertType.ERROR);
+			invalidFileErrorBox.setTitle("Invalid File/s Error");
+			invalidFileErrorBox.setHeaderText("Something wen't wrong!");
+			invalidFileErrorBox.setContentText("One of your files is in invalid format.");
+			invalidFileErrorBox.showAndWait();
     	}
     }
     
