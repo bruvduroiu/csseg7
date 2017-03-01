@@ -50,6 +50,11 @@ public class OverviewController {
         list.add("Number of Conversions");
         list.add("Total Cost");
 
+        graphList.scrollTo(5);
+        graphList.getSelectionModel().select(5);
+
+        loadTotalCost();
+
         try {
             // Display total cost of campaign in proper format
             String totalCampaignCost = String.format("£%.2f", new Double(DBQuery.getTotalCostCampaign()/100));
