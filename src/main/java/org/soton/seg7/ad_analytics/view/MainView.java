@@ -25,6 +25,7 @@ public class MainView extends Application {
         this.primaryStage = primaryStage;
         initRootLayout();
         showOverview();
+        showLoadStage();
     }
     public void initRootLayout() {
         try {
