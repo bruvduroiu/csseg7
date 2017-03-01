@@ -196,4 +196,5 @@ public class OverviewController {
     @FXML protected void handleChangeCampainButtonAction(ActionEvent event) {
         this.mainView.showLoadStage();
     }
+    
 }

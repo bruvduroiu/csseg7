@@ -10,7 +10,7 @@
 <?import javafx.scene.text.Font?>
 
 
-<AnchorPane prefHeight="400.0" prefWidth="500.0" stylesheets="@FileLoaderView.css" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.111">
+<AnchorPane prefHeight="400.0" prefWidth="500.0" stylesheets="@FileLoaderView.css" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.111" fx:controller="org.soton.seg7.ad_analytics.controller.FileLoaderController">
    <children>
       <Pane fx:id="LoadPane" prefHeight="400.0" prefWidth="500.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -40,9 +40,9 @@
                   <Label prefHeight="17.0" prefWidth="120.0" text="Click Log (.csv)" textAlignment="CENTER" />
                   <Label text="Server Log (.csv)" GridPane.rowIndex="1" />
                   <Label text="Impression Log (.csv)" GridPane.rowIndex="2" />
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="70.0" text="Open" GridPane.columnIndex="1" />
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="70.0" text="Open" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="70.0" text="Open" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Button onAction="#handleLoadClickButtonAction" mnemonicParsing="false" prefHeight="25.0" prefWidth="70.0" text="Open" GridPane.columnIndex="1" />
+                  <Button onAction="#handleLoadServerButtonAction" mnemonicParsing="false" prefHeight="25.0" prefWidth="70.0" text="Open" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Button onAction="#handleLoadImpressionButtonAction" mnemonicParsing="false" prefHeight="25.0" prefWidth="70.0" text="Open" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                   <Label text="File name" GridPane.columnIndex="2" />
                   <Label text="File name" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                   <Label text="File name" GridPane.columnIndex="2" GridPane.rowIndex="2" />

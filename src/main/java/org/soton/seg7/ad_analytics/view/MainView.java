@@ -12,6 +12,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import org.soton.seg7.ad_analytics.controller.OverviewController;
+import org.soton.seg7.ad_analytics.controller.FileLoaderController;
 public class MainView extends Application {
     private static Stage primaryStage;
     private BorderPane rootLayout;
@@ -71,11 +72,13 @@ public class MainView extends Application {
             
             Stage loadFileStage = new Stage();
             loadFileStage.setTitle("Load files");
+            //window modal -> you can't acces another components in overview
             loadFileStage.initModality(Modality.WINDOW_MODAL);
             loadFileStage.initOwner(primaryStage);
             Scene scene = new Scene(fileLoad);
             loadFileStage.setScene(scene);
             loadFileStage.showAndWait();
+            
         } catch (IOException e) {
             e.printStackTrace();
         }
