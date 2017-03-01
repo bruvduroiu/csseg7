@@ -24,5 +24,13 @@
 }
 
 #mainTitle {
-	-fx-text-fill: skyblue ;
+	-fx-text-fill: #0099cc ;
+}
+
+.default-color0.chart-series-line { -fx-stroke: #0099cc; }
+
+.chart-symbol { /* solid circle */
+	-fx-background-color: #0099cc;
+	-fx-background-radius: 5px;
+	-fx-padding: 5px;
 }
