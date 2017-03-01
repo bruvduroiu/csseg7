@@ -67,3 +67,6 @@ bin/
 \.settings/org\.eclipse\.jdt\.core\.prefs
 
 \.settings/
+
+# Ignore CSV files
+/static/analytics_csv

@@ -132,12 +132,10 @@ public class Parser {
 
     private static JSONObject parseClicks(File csvFile) {
 
-        String[] headers;
         String line;
-        JSONArray jsonArray = new JSONArray();
-        JSONObject jsonObject;
         int totalClicks = 0;
         double totalCost = 0;
+        JSONObject jsonObject = new JSONObject();
 
         // Total click-cost map of day -> hour -> total
         Map<String, Map<String, Float>> dayTotalCosts = new HashMap<>();
@@ -154,8 +152,9 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            br.readLine();
 
+            final long initTime = System.currentTimeMillis();
 
             while ((line = br.readLine()) != null) {
 
@@ -163,13 +162,8 @@ public class Parser {
                 // use comma as separator
                 String[] data = line.split(csvDelimiter);
 
-                JSONObject row = new JSONObject();
-
                 String day = data[0].split(":")[0].split(" ")[0];
                 String hour = data[0].split(":")[0].split(" ")[1];
-
-                for (int i=0; i < headers.length;i++)
-                    row.put(headers[i], data[i]);
 
                 // Whenever the parser finds a new date, reset the sums in the hashmap
                 if (!dayTotalCosts.containsKey(day))
@@ -196,7 +190,6 @@ public class Parser {
                 dayTotalCosts.put(day, hourTotalCosts);
                 dayClicks.put(day, hourClicks);
 
-                jsonArray.put(row);
                 totalClicks++;
                 totalCost += Double.parseDouble(data[2]);
             }
@@ -205,11 +198,15 @@ public class Parser {
                     .put("collection", "click_log")
                     .put("dayCost", dayTotalCosts)
                     .put("dayNum", dayClicks)
-                    .put("data", jsonArray)
                     .put("totalNum", totalClicks)
                     .put("totalCost", totalCost);
 
             insertIntoDB(jsonObject);
+
+            final long finalTime = System.currentTimeMillis();
+
+            System.out.printf("[DEBUG][PARSER] Parsed %s in %d sec.", csvFile.getName(), (finalTime-initTime)/1000);
+            System.out.println();
 
             return jsonObject;
 
@@ -224,9 +221,7 @@ public class Parser {
 
     private static JSONObject parseImpressions(File csvFile) {
 
-        String[] headers;
         String line;
-        JSONArray jsonArray = new JSONArray();
         JSONObject jsonObject;
         int totalImpressions = 0;
         double totalCost = 0;
@@ -243,18 +238,15 @@ public class Parser {
 
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            br.readLine();
+
+            final long initTime = System.currentTimeMillis();
 
             while((line = br.readLine()) != null) {
                 String[] data = line.split(csvDelimiter);
 
-                JSONObject row = new JSONObject();
-
                 String day = data[0].split(":")[0].split(" ")[0];
                 String hour = data[0].split(":")[0].split(" ")[1];
-
-                for (int i = 0; i < headers.length; i++)
-                    row.put(headers[i],data[i]);
 
                 // Reset the hour HashMaps for every new date
                 if (!dayTotalCost.containsKey(day))
@@ -283,7 +275,6 @@ public class Parser {
                 dayTotalCost.put(day, hourTotalCost);
                 dayTotalImpressions.put(day, hourTotalImpressions);
 
-                jsonArray.put(row);
                 totalImpressions++;
                 totalCost += Double.parseDouble(data[data.length - 1]);
             }
@@ -292,12 +283,15 @@ public class Parser {
                     .put("collection", "impression_log")
                     .put("dayCost", dayTotalCost)
                     .put("dayNum", dayTotalImpressions)
-                    .put("data", jsonArray)
                     .put("totalNum", totalImpressions)
                     .put("totalCost", totalCost);
 
             insertIntoDB(jsonObject);
 
+            final long finalTime = System.currentTimeMillis();
+
+            System.out.printf("[DEBUG][PARSER] Parsed %s in %d sec.", csvFile.getName(), (finalTime-initTime)/1000);
+            System.out.println();
             return jsonObject;
         }
         catch (IOException e) {
@@ -310,30 +304,25 @@ public class Parser {
     }
 
     private static JSONObject parseServer(File csvFile) {
-        String[] headers;
         String line;
 
         Map<String, Map<String, Integer>> dayConversions = new HashMap<>();
         Map<String, Integer> hourConversions = new HashMap<>();
 
-        JSONArray jsonArray = new JSONArray();
         JSONObject jsonObject;
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            br.readLine();
+
+            final long initTime = System.currentTimeMillis();
 
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(csvDelimiter);
 
-                JSONObject row = new JSONObject();
-
                 String day = data[0].split(":")[0].split(" ")[0];
                 String hour = data[0].split(":")[0].split(" ")[1];
-
-                for (int i = 0; i < headers.length; i++)
-                    row.put(headers[i],data[i]);
 
                 if (!dayConversions.containsKey(day))
                     hourConversions = new HashMap<>();
@@ -348,15 +337,18 @@ public class Parser {
 
                 dayConversions.put(day, hourConversions);
 
-                jsonArray.put(row);
             }
 
             jsonObject = new JSONObject()
                     .put("collection", "server_log")
-                    .put("dayNum", dayConversions)
-                    .put("data", jsonArray);
+                    .put("dayNum", dayConversions);
 
             insertIntoDB(jsonObject);
+
+            final long finalTime = System.currentTimeMillis();
+
+            System.out.printf("[DEBUG][PARSER] Parsed %s in %d sec.", csvFile.getName(), (finalTime-initTime)/1000);
+            System.out.println();
 
             return jsonObject;
 

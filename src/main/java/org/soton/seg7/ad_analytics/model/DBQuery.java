@@ -2,7 +2,6 @@ package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
@@ -38,17 +37,17 @@ public class DBQuery {
     }
 
     public static Double getTotalCTR() throws MongoAuthException {
-        double clicks = getTotalClicks();
-        double impressions = getTotalImpressions();
+        double clicks = getTotalNumClicks();
+        double impressions = getTotalNumImpressions();
 
         return clicks/impressions;
     }
 
-    public static Double getTotalClicks() throws MongoAuthException {
+    public static Double getTotalNumClicks() throws MongoAuthException {
         return getTotalMetric(COL_CLICKS, GET_TOTAL_NUM);
     }
 
-    public static Double getTotalImpressions() throws MongoAuthException {
+    public static Double getTotalNumImpressions() throws MongoAuthException {
         return getTotalMetric(COL_IMPRESSIONS, GET_TOTAL_NUM);
     }
 
@@ -133,8 +132,15 @@ public class DBQuery {
             Map<String, Integer> impressionsHour = numImpressions.get(day);
             Map<String, Integer> clicksHour = numClicks.get(day);
 
-            for (String hour : impressionsHour.keySet())
-                hourCtrMap.put(hour, Double.parseDouble(clicksHour.get(hour).toString())/Double.parseDouble(impressionsHour.get(hour).toString()));
+            for (String hour : impressionsHour.keySet()) {
+                if (clicksHour.get(hour) == null) {
+                    hourCtrMap.put(hour, 0d);
+                } else if (impressionsHour.get(hour) == null) {
+                    // Skip
+                } else {
+                    hourCtrMap.put(hour, Double.parseDouble(clicksHour.get(hour).toString()) / Double.parseDouble(impressionsHour.get(hour).toString()));
+                }
+            }
 
             ctrMap.put(day, hourCtrMap);
         }
