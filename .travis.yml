@@ -1,4 +1,6 @@
 language: java
+jdk:
+  - oraclejdk8
 
 notifications:
   slack: csseg7:SbU27bN9RRyw3zL3kWOncXnz
