@@ -1,12 +1,13 @@
 package org.soton.seg7.ad_analytics.controller;
 
 import java.io.File;
-
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import org.soton.seg7.ad_analytics.model.Parser;
 
 //controller of file loader
 //TODO pass overview controller and pass chosen files in handleSartLoadingButtonAction() function
@@ -50,7 +51,13 @@ public class FileLoaderController {
     
     //TODO pass values to overview controller
     @FXML protected void handleSartLoadingButtonAction(ActionEvent event){
-    	
+    	if(clickLog == null || serverLog == null ||impressionLog == null){
+    		System.out.println("There are som null files ");
+    	}else{
+    		Parser.parseCSV(clickLog);
+    		Parser.parseCSV(serverLog);
+    		Parser.parseCSV(impressionLog);
+    	}
     }
     
     //runs file chooser
