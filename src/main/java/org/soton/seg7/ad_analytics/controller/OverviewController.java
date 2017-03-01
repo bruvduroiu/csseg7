@@ -1,11 +1,15 @@
 package org.soton.seg7.ad_analytics.controller;
+import javafx.beans.binding.Bindings;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
@@ -19,20 +23,27 @@ public class OverviewController {
 
     @FXML
     private ListView<String> graphList;
-    @FXML
-    private Label graphTitleLabel;
+
     @FXML
     private ObservableList<String> list;
+
     @FXML
     private LineChart<String, Double> lineChart;
+
     @FXML
     private Stage stage;
+
     @FXML
     private Label totalCampaignCostLabel;
+
     @FXML
     private Label totalCostOfClicksLabel;
+
     @FXML
     private Label totalCostOfImpressionsLabel;
+
+    @FXML
+    private PieChart pieChart;
 
     // Reference to the main application.
     private MainView mainView;
@@ -42,6 +53,7 @@ public class OverviewController {
 
     @FXML
     private void initialize() {
+
         list = graphList.getItems();
         list.add("Cost per Click");
         list.add("Number of Impressions");
@@ -54,6 +66,8 @@ public class OverviewController {
         graphList.getSelectionModel().select(5);
 
         loadTotalCost();
+
+        loadPieChart();
 
         try {
             // Display total cost of campaign in proper format
@@ -97,6 +111,20 @@ public class OverviewController {
             case "Total Cost":
                 loadTotalCost();
                 break;
+        }
+    }
+
+    private void loadPieChart() {
+        try {
+            ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList(
+                    new PieChart.Data("Total Click Cost", DBQuery.getTotalCostClicks()),
+                    new PieChart.Data("Total Impression Cost", DBQuery.getTotalCostImpressions())
+            );
+            pieChart.setTitle("Campaign Cost Breakdown");
+            pieChart.getData().addAll(pieChartData);
+
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
         }
     }
 
