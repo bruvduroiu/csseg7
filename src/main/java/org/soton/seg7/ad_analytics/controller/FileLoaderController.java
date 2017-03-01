@@ -51,17 +51,19 @@ public class FileLoaderController {
     }
     
     //TODO pass values to overview controller
-    @FXML protected void handleSartLoadingButtonAction(ActionEvent event){
-    	if(clickLog == null || serverLog == null ||impressionLog == null){
-    		System.out.println("There are som null files ");
-    	}else{
-    		Parser.parseCSV(clickLog);
-    		Parser.parseCSV(serverLog);
-    		Parser.parseCSV(impressionLog);
-    		// close the dialog.
-    	    Node  source = (Node)  event.getSource(); 
-    	    Stage stage  = (Stage) source.getScene().getWindow();
-    	    stage.close();
+    @FXML protected void handleStartLoadingButtonAction(ActionEvent event) {
+    	if (clickLog == null || serverLog == null ||impressionLog == null) {
+			System.out.println("There are som null files");
+		} else if (Parser.isValidClickLog(clickLog) && Parser.isValidImpressionLog(impressionLog) && Parser.isValidServerLog(serverLog)) {
+			Parser.parseCSV(clickLog);
+			Parser.parseCSV(serverLog);
+			Parser.parseCSV(impressionLog);
+			// close the dialog.
+			Node  source = (Node)  event.getSource();
+			Stage stage  = (Stage) source.getScene().getWindow();
+			stage.close();
+    	} else {
+    		System.out.println("One of your files is invalid");
     	}
     }
     
