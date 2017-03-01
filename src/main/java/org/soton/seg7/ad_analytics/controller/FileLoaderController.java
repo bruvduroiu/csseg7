@@ -3,6 +3,7 @@ package org.soton.seg7.ad_analytics.controller;
 import java.io.File;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -57,6 +58,10 @@ public class FileLoaderController {
     		Parser.parseCSV(clickLog);
     		Parser.parseCSV(serverLog);
     		Parser.parseCSV(impressionLog);
+    		// close the dialog.
+    	    Node  source = (Node)  event.getSource(); 
+    	    Stage stage  = (Stage) source.getScene().getWindow();
+    	    stage.close();
     	}
     }
     
