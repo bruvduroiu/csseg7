@@ -8,7 +8,9 @@ import javafx.scene.control.Label;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import org.soton.seg7.ad_analytics.model.DBHandler;
 import org.soton.seg7.ad_analytics.model.Parser;
+import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 //controller of file loader
 //TODO pass overview controller and pass chosen files in handleSartLoadingButtonAction() function
@@ -33,28 +35,41 @@ public class FileLoaderController {
 	}
 	
 	//function that handles pressing of Click Log button
-    @FXML protected void handleLoadClickButtonAction(ActionEvent event) {
+    @FXML
+	protected void handleLoadClickButtonAction(ActionEvent event) {
         clickLog = fileChooser("Choose click log file: ");
         ClickLogT.setText(""+clickLog.getName());
     }
     
     //function that handles pressing of Server Log button
-    @FXML protected void handleLoadServerButtonAction(ActionEvent event) {
+    @FXML
+	protected void handleLoadServerButtonAction(ActionEvent event) {
         serverLog = fileChooser("Choose server log file: ");
         ServerLogT.setText(""+serverLog.getName());
     }
     
     //function that handles pressing of Impression Log button
-    @FXML protected void handleLoadImpressionButtonAction(ActionEvent event) {
+    @FXML
+	protected void handleLoadImpressionButtonAction(ActionEvent event) {
         impressionLog = fileChooser("Choose impression log file: ");
         ImpressionLogT.setText(""+impressionLog.getName());
     }
     
     //TODO pass values to overview controller
-    @FXML protected void handleStartLoadingButtonAction(ActionEvent event) {
+    @FXML
+	protected void handleStartLoadingButtonAction(ActionEvent event) {
     	if (clickLog == null || serverLog == null ||impressionLog == null) {
 			System.out.println("There are som null files");
 		} else if (Parser.isValidClickLog(clickLog) && Parser.isValidImpressionLog(impressionLog) && Parser.isValidServerLog(serverLog)) {
+			DBHandler handler = null;
+			try {
+				handler = DBHandler.getDBConnection();
+				handler.dropCollection("impression_log");
+				handler.dropCollection("server_log");
+				handler.dropCollection("click_log");
+			} catch (MongoAuthException e) {
+				e.printStackTrace();
+			}
 			Parser.parseCSV(clickLog);
 			Parser.parseCSV(serverLog);
 			Parser.parseCSV(impressionLog);
@@ -81,8 +96,7 @@ public class FileLoaderController {
     	if(file != null){
     		System.out.println("Chosen file: " + file);
     	}
-        
-    	
+
     	return file;
     }
 
