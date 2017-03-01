@@ -1,5 +1,6 @@
 package org.soton.seg7.ad_analytics.controller;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
@@ -189,5 +190,10 @@ public class OverviewController {
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
 
+    }
+    
+    //function that handles pressing of Change Campain button
+    @FXML protected void handleChangeCampainButtonAction(ActionEvent event) {
+        System.out.println("Button pressed");
     }
 }

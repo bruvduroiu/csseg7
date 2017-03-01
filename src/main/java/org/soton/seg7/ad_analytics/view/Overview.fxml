@@ -29,7 +29,7 @@
                             <items>
                                 <AnchorPane fx:id="graphChoicePane" maxWidth="292.0" minHeight="348.0" minWidth="292.0" prefHeight="348.0" prefWidth="292.0" SplitPane.resizableWithParent="false">
                                     <children>
-                                        <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="262.0" text="Change Campaign" />
+                                        <Button fx:id="changeCampaignButton" onAction="#handleChangeCampainButtonAction" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="262.0" text="Change Campaign" />
                                         <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="348.0" prefWidth="262.0" />
                                     </children>
                                 </AnchorPane>
