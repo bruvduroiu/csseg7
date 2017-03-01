@@ -96,9 +96,23 @@ public class OverviewController {
     }
 
     private void loadTotalCost() {
+        XYChart.Series<String, Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Total Cost / Day");
 
-        // needs implementation in DBQuery
+        try {
+            Map<String, Map<String, Double>> totalCostOverTime = DBQuery.getTotalCostOverTime();
+            ArrayList<String> days = new ArrayList<String>(totalCostOverTime.keySet());
+            Collections.sort(days);
 
+            for (String day : days)
+                series.getData().add(new XYChart.Data<>(day, totalCostOverTime.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadNumberOfConversions() {
@@ -182,9 +196,23 @@ public class OverviewController {
     }
 
     private void loadCostPerClick() {
+        XYChart.Series<String, Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Cost per Click / Day");
 
-        // needs implementation in DBQuery
+        try {
+            Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime();
+            ArrayList<String> days = new ArrayList<String>(costPerClick.keySet());
+            Collections.sort(days);
 
+            for (String day : days)
+                series.getData().add(new XYChart.Data<>(day, costPerClick.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setMainView(MainView mainView) {
