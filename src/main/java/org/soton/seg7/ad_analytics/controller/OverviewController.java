@@ -57,15 +57,15 @@ public class OverviewController {
 
         try {
             // Display total cost of campaign in proper format
-            String totalCampaignCost = String.format("£%.2f", new Double(DBQuery.getTotalCostCampaign()/100));
+            String totalCampaignCost = String.format("£%.2f", DBQuery.getTotalCostCampaign()/100);
             totalCampaignCostLabel.setText(totalCampaignCost);
 
             // Display total cost of clicks in proper format
-            String totalCostOfClicks = String.format("£%.2f", new Double(DBQuery.getTotalCostClicks()/100));
+            String totalCostOfClicks = String.format("£%.2f", DBQuery.getTotalCostClicks()/100);
             totalCostOfClicksLabel.setText(totalCostOfClicks);
 
             // Display total cost of impressions in proper format
-            String totalCostOfImpressions = String.format("£%.2f", new Double(DBQuery.getTotalCostImpressions()/100));
+            String totalCostOfImpressions = String.format("£%.2f", DBQuery.getTotalCostImpressions()/100);
             totalCostOfImpressionsLabel.setText(totalCostOfImpressions);
         } catch (MongoAuthException e) {
             e.printStackTrace();
