@@ -35,19 +35,19 @@ public class FileLoaderController {
 	//function that handles pressing of Click Log button
     @FXML protected void handleLoadClickButtonAction(ActionEvent event) {
         clickLog = fileChooser("Choose click log file: ");
-        ClickLogT.setText(""+clickLog);
+        ClickLogT.setText(""+clickLog.getName());
     }
     
     //function that handles pressing of Server Log button
     @FXML protected void handleLoadServerButtonAction(ActionEvent event) {
         serverLog = fileChooser("Choose server log file: ");
-        ServerLogT.setText(""+serverLog);
+        ServerLogT.setText(""+serverLog.getName());
     }
     
     //function that handles pressing of Impression Log button
     @FXML protected void handleLoadImpressionButtonAction(ActionEvent event) {
         impressionLog = fileChooser("Choose impression log file: ");
-        ImpressionLogT.setText(""+impressionLog);
+        ImpressionLogT.setText(""+impressionLog.getName());
     }
     
     //TODO pass values to overview controller
