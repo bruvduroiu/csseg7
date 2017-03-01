@@ -1,6 +1,10 @@
 package org.soton.seg7.ad_analytics.controller;
 
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -70,9 +74,16 @@ public class FileLoaderController {
 			} catch (MongoAuthException e) {
 				e.printStackTrace();
 			}
-			Parser.parseCSV(clickLog);
-			Parser.parseCSV(serverLog);
-			Parser.parseCSV(impressionLog);
+			ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			executors.submit(() -> Parser.parseCSV(clickLog));
+			executors.submit(() -> Parser.parseCSV(impressionLog));
+			executors.submit(() -> Parser.parseCSV(serverLog));
+			executors.shutdown();
+			try {
+				executors.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			// close the dialog.
 			Node  source = (Node)  event.getSource();
 			Stage stage  = (Stage) source.getScene().getWindow();
