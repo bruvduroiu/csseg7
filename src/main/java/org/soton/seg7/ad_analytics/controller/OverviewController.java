@@ -51,8 +51,8 @@ public class OverviewController {
 
     @FXML
     private void initialize() {
-
         list = graphList.getItems();
+        list.clear();
         list.add("Cost per Click");
         list.add("Number of Impressions");
         list.add("Number of Clicks");
@@ -252,8 +252,10 @@ public class OverviewController {
     }
     
     //function that handles pressing of Change Campain button
-    @FXML protected void handleChangeCampainButtonAction(ActionEvent event) {
+    @FXML
+    protected void handleChangeCampainButtonAction(ActionEvent event) {
         this.mainView.showLoadStage();
+        initialize();
     }
     
 }

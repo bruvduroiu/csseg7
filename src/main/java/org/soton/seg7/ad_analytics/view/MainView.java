@@ -24,8 +24,8 @@ public class MainView extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         initRootLayout();
-        showOverview();
         showLoadStage();
+        showOverview();
     }
     public void initRootLayout() {
         try {
@@ -79,7 +79,7 @@ public class MainView extends Application {
             Scene scene = new Scene(fileLoad);
             loadFileStage.setScene(scene);
             loadFileStage.showAndWait();
-            
+
         } catch (IOException e) {
             e.printStackTrace();
         }
