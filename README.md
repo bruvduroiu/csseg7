@@ -10,14 +10,13 @@ investigate analytics and metrics collected from Ad Auction Campaigns.
 The Ad Analytics Dashboard tool provides a graphical view of various metrics, using Line Charts
 and Pie Charts.
 
-## Installation
+## Installation & Run
 
-Download the ZIP file provided in the repository under Release folder.
-Inside you will find a JAR file named csseg7.jar
+Inside the main csseg folder you will find a JAR file named increment1.jar
 
 To run the application, use
 ```bash
-java -cp /out/artifacts/analyticscsseg7.jar org.soton.seg7.ad_analytics.view.MainView
+java -cp increment1.jar org.soton.seg7.ad_analytics.view.MainView
 ```
 
 ## Features
