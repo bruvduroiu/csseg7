@@ -34,5 +34,5 @@ Currently (v1.0.0), the application includes support for:
 
 ## Future Work
 
-[ ] Using Thread Pools to handle the parsing of large CSV files, for faster parsing
-[ ] Adding filtering capabilities
+- [ ] Using Thread Pools to handle the parsing of large CSV files, for faster parsing
+- [ ] Adding filtering capabilities
