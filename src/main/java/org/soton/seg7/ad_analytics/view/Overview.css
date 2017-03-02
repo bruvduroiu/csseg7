@@ -1,0 +1,36 @@
+
+#graphChoicePane {
+	-fx-background-color: white;
+}
+
+#graphDisplayPane {
+	-fx-background-color: white;
+}
+
+#breakdownPane {
+	-fx-background-color: white;
+}
+
+#splitPane1{
+	-fx-background-color: white;
+}
+
+#splitPane2{
+	-fx-background-color: white;
+}
+
+#rootBackground {
+	-fx-background-color: white;
+}
+
+#mainTitle {
+	-fx-text-fill: #0099cc ;
+}
+
+.default-color0.chart-series-line { -fx-stroke: #0099cc; }
+
+.chart-symbol { /* solid circle */
+	-fx-background-color: #0099cc;
+	-fx-background-radius: 5px;
+	-fx-padding: 5px;
+}
