@@ -135,7 +135,7 @@ public class Parser {
         String line;
         int totalClicks = 0;
         double totalCost = 0;
-        JSONObject jsonObject = new JSONObject();
+        JSONObject jsonObject;
 
         // Total click-cost map of day -> hour -> total
         Map<String, Map<String, Float>> dayTotalCosts = new HashMap<>();
