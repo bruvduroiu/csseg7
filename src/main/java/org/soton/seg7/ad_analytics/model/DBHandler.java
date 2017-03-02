@@ -36,7 +36,7 @@ public class DBHandler {
         try {
             object = parser.parse(
                     new FileReader(
-                            new File("").getAbsolutePath() + "/static/config.json"
+                            new File("static/config.json")
                     )
             ).toString();
 

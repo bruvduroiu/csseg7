@@ -118,6 +118,7 @@ public class OverviewController {
                     new PieChart.Data("Total Click Cost", DBQuery.getTotalCostClicks()),
                     new PieChart.Data("Total Impression Cost", DBQuery.getTotalCostImpressions())
             );
+            pieChart.getData().clear();
             pieChart.setTitle("Campaign Cost Breakdown");
             pieChart.getData().addAll(pieChartData);
 
