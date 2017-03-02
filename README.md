@@ -17,7 +17,7 @@ Inside you will find a JAR file named csseg7.jar
 
 To run the application, use
 ```bash
-java -cp csseg7.jar org.soton.seg7.ad_analytics.view.MainView
+java -cp /out/artifacts/analyticscsseg7.jar org.soton.seg7.ad_analytics.view.MainView
 ```
 
 ## Features
