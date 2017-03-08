@@ -3,6 +3,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.chart.BarChart;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
@@ -26,7 +27,7 @@ public class OverviewController {
     private ObservableList<String> list;
 
     @FXML
-    private LineChart<String, Double> lineChart;
+    private XYChart<String, Double> metricsChart;
 
     @FXML
     private Stage stage;
@@ -59,6 +60,7 @@ public class OverviewController {
         list.add("Click through Rate");
         list.add("Number of Conversions");
         list.add("Total Cost");
+        list.add("Click Cost Histogram");
 
         graphList.scrollTo(5);
         graphList.getSelectionModel().select(5);
@@ -90,6 +92,7 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph){
+        metricsChart = (LineChart<String, Double>) metricsChart;
         switch (graph) {
             case "Cost per Click":
                 loadCostPerClick();
@@ -108,6 +111,10 @@ public class OverviewController {
                 break;
             case "Total Cost":
                 loadTotalCost();
+                break;
+            case "Click Cost Histogram":
+                metricsChart = (BarChart<String, Double>) metricsChart;
+                loadHistogram();
                 break;
         }
     }
@@ -129,7 +136,7 @@ public class OverviewController {
 
     private void loadTotalCost() {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        lineChart.setTitle("Total Cost / Day");
+        metricsChart.setTitle("Total Cost / Day");
 
         try {
             Map<String, Map<String, Double>> totalCostOverTime = DBQuery.getTotalCostOverTime();
@@ -139,8 +146,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, totalCostOverTime.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
+            metricsChart.getData().clear();
+            metricsChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -149,7 +156,7 @@ public class OverviewController {
 
     private void loadNumberOfConversions() {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        lineChart.setTitle("Number of Conversions / Day");
+        metricsChart.setTitle("Number of Conversions / Day");
 
         try {
             Map<String, Map<String, Integer>> conversionsMap = DBQuery.getNumConversions();
@@ -159,8 +166,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, conversionsMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
+            metricsChart.getData().clear();
+            metricsChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -169,7 +176,7 @@ public class OverviewController {
 
     private void loadClickThroughRate() {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        lineChart.setTitle("Click Through Rate / Day");
+        metricsChart.setTitle("Click Through Rate / Day");
 
         try {
             Map<String, Map<String, Double>> clickThroughRateMap = DBQuery.getCTROverTime();
@@ -179,8 +186,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, clickThroughRateMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
+            metricsChart.getData().clear();
+            metricsChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -189,7 +196,7 @@ public class OverviewController {
 
     private void loadNumberOfClicks() {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        lineChart.setTitle("Number of Clicks / Day");
+        metricsChart.setTitle("Number of Clicks / Day");
 
         try {
             Map<String, Map<String, Integer>> numberOfClicks = DBQuery.getNumClicks();
@@ -199,8 +206,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, numberOfClicks.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
+            metricsChart.getData().clear();
+            metricsChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -209,7 +216,7 @@ public class OverviewController {
 
     private void loadNumberOfImpressions() {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        lineChart.setTitle("Number of Impressions / Day");
+        metricsChart.setTitle("Number of Impressions / Day");
 
         try {
             Map<String, Map<String, Integer>> numberOfImpressions = DBQuery.getNumImpressions();
@@ -219,8 +226,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, numberOfImpressions.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
+            metricsChart.getData().clear();
+            metricsChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -229,7 +236,7 @@ public class OverviewController {
 
     private void loadCostPerClick() {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        lineChart.setTitle("Cost per Click / Day");
+        metricsChart.setTitle("Cost per Click / Day");
 
         try {
             Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime();
@@ -239,8 +246,76 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, costPerClick.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
+            metricsChart.getData().clear();
+            metricsChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadHistogram() {
+        BarChart.Series<String, Double> series = new BarChart.Series<>();
+        metricsChart.setTitle("Distribution of Click Cost");
+        ((BarChart<String, Double>) metricsChart).setCategoryGap(0);
+        ((BarChart<String, Double>) metricsChart).setBarGap(0);
+
+        //collect all the data
+        try {
+            Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime(); //date->XXX->cost
+            ArrayList<Double> costs = null;
+            for(String key : costPerClick.keySet()) {
+                costs.addAll(costPerClick.get(key).values());
+            }
+            //Collections.sort(costs); //probably not needed, waste of computation
+
+            double binRange = costs.get(costs.size() -1) / 15;
+            int[] group = new int[15];
+
+            // I cba with frequency density so just sorting the costs into frequency bars
+            for(double cost : costs) {
+                if(cost <= binRange) {
+                    group[0]++;
+                }else if(cost <= binRange * 2) {
+                    group[1]++;
+                }else if(cost <= binRange * 3) {
+                    group[2]++;
+                }else if(cost <= binRange * 4) {
+                    group[3]++;
+                }else if(cost <= binRange * 5) {
+                    group[4]++;
+                }else if(cost <= binRange * 6) {
+                    group[5]++;
+                }else if(cost <= binRange * 7) {
+                    group[6]++;
+                }else if(cost <= binRange * 8) {
+                    group[7]++;
+                }else if(cost <= binRange * 9) {
+                    group[8]++;
+                }else if(cost <= binRange * 10) {
+                    group[9]++;
+                }else if(cost <= binRange * 11) {
+                    group[10]++;
+                }else if(cost <= binRange * 12) {
+                    group[11]++;
+                }else if(cost <= binRange * 13) {
+                    group[12]++;
+                }else if(cost <= binRange * 14) {
+                    group[13]++;
+                }else if(cost <= binRange * 15) {
+                    group[14]++;
+                }
+            }
+
+            //put all the data into the series
+            for(int i=0; i<15; i++) {
+                series.getData().add(new XYChart.Data(
+                        ((binRange * i) + "-" + (binRange * (i+1))), group[i]));
+            }
+
+            metricsChart.getData().clear();
+            metricsChart.getData().addAll(series);
+
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
