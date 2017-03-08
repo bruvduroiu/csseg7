@@ -25,6 +25,9 @@ public class DBQuery {
     private static final String COUNT_METRIC = "dayNum";
     private static final String COST_METRIC = "dayCost";
 
+    private static final String BOUNCE_TIME = "dayBounceTime";
+    private static final String BOUNCE_PAGE = "dayBouncePage";
+
     private static final DBObject ALL_QUERY = new BasicDBObject();
     private static DBObject fieldModifier;
 
@@ -103,12 +106,52 @@ public class DBQuery {
         return ctrMap;
     }
 
-    public static Map<String, Map<String, Double>> getBounceRateByPages() throws MongoAuthException {
-        return null;
+    public static Map<String, Map<String, Double>> getBounceRate(String condition) throws MongoAuthException {
+        DBHandler handler = DBHandler.getDBConnection();
+        fieldModifier = new BasicDBObject();
+        fieldModifier.put(condition, 1);
+
+        Map<String, Map<String, Double>> bounceMap = new HashMap<>();
+
+        JSONObject jsonResult = new JSONObject(
+                handler.sendQuery(
+                        ALL_QUERY,
+                        fieldModifier,
+                        COL_SERVER
+                ).get(0).toString()
+        );
+
+        jsonResult.remove("_id");
+        jsonResult = jsonResult.getJSONObject(condition);
+
+        Iterator<?> keys = jsonResult.keys();
+
+        while (keys.hasNext()) {
+            String key = (String) keys.next();
+            String value = jsonResult.get(key).toString();
+            value = value.substring(1, value.length()-1);           //remove curly brackets
+            String[] keyValuePairs = value.split(",");              //split the string to creat key-value pairs
+            Map<String,Double> map = new HashMap<>();
+
+            for(String pair : keyValuePairs)                        //iterate over the pairs
+            {
+                String[] entry = pair.split(":");                   //split the pairs to get key and value
+                map.put(entry[0].trim().replace("\"",""), Double.parseDouble(entry[1].trim()));          //add them to the hashmap and trim whitespaces
+            }
+            bounceMap.put(key, map);
+        }
+
+        System.out.println(bounceMap);
+
+        return bounceMap;
     }
 
     public static Map<String, Map<String, Double>> getBounceRateByTime() throws MongoAuthException {
-        return null;
+        return getBounceRate(BOUNCE_TIME);
+    }
+
+    public static Map<String, Map<String, Double>> getBounceRateByPage() throws MongoAuthException {
+        return getBounceRate(BOUNCE_PAGE);
     }
 
     public static Double getTotalCTR() throws MongoAuthException {
@@ -137,7 +180,6 @@ public class DBQuery {
     public static Double getTotalCostCampaign() throws MongoAuthException {
         return getTotalCostImpressions() + getTotalCostClicks();
     }
-
 
     private static Map<String, Map<String, Integer>> getCountMetric(String collection) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();

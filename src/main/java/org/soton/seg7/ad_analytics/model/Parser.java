@@ -86,7 +86,7 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            headers = br.readLine().split(CSV_DELIMITER);
 
             if (!headers[0].equals("Entry Date")) return false;
             if (!headers[1].equals("ID")) return false;
@@ -110,7 +110,7 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            headers = br.readLine().split(CSV_DELIMITER);
 
             if (!headers[0].equals("Date")) return false;
             if (!headers[1].equals("ID")) return false;
@@ -164,7 +164,7 @@ public class Parser {
 
 
                 // use comma as separator
-                String[] data = line.split(csvDelimiter);
+                String[] data = line.split(CSV_DELIMITER);
 
                 String day = data[0].split(":")[0].split(" ")[0];
                 String hour = data[0].split(":")[0].split(" ")[1];
@@ -247,7 +247,7 @@ public class Parser {
             final long initTime = System.currentTimeMillis();
 
             while((line = br.readLine()) != null) {
-                String[] data = line.split(csvDelimiter);
+                String[] data = line.split(CSV_DELIMITER);
 
                 String day = data[0].split(":")[0].split(" ")[0];
                 String hour = data[0].split(":")[0].split(" ")[1];
@@ -311,9 +311,18 @@ public class Parser {
         String line;
 
         Map<String, Map<String, Integer>> dayConversions = new HashMap<>();
+        Map<String, Map<String, Double>> dayBouncePage = new HashMap<>();
+        Map<String, Map<String, Double>> dayBounceTime = new HashMap<>();
+        Map<String, Map<String, Integer>> dayPageViews = new HashMap<>();
+        Map<String, Double> numHourBouncePage = new HashMap<>();
+        Map<String, Double> numHourBounceTime = new HashMap<>();
+        Map<String, Integer> numHourPageViews = new HashMap<>();
+
         Map<String, Integer> hourConversions = new HashMap<>();
 
         JSONObject jsonObject;
+
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
@@ -323,15 +332,19 @@ public class Parser {
             final long initTime = System.currentTimeMillis();
 
             while ((line = br.readLine()) != null) {
-                String[] data = line.split(csvDelimiter);
+                String[] data = line.split(CSV_DELIMITER);
 
                 String day = data[0].split(":")[0].split(" ")[0];
                 String hour = data[0].split(":")[0].split(" ")[1];
 
-                if (!dayConversions.containsKey(day))
+                if (!dayConversions.containsKey(day)) {
                     hourConversions = new HashMap<>();
+                    numHourBouncePage = new HashMap<>();
+                    numHourBounceTime = new HashMap<>();
+                    numHourPageViews = new HashMap<>();
+                }
 
-                if (data[data.length-1].equals("Yes"))
+                if (data[4].equals("Yes"))
                     hourConversions.put(
                             hour,
                             hourConversions.containsKey(hour)
@@ -339,13 +352,62 @@ public class Parser {
                                     : 1
                     );
 
+                if (Integer.parseInt(data[3]) <= 1)
+                    numHourBouncePage.put(
+                            hour,
+                            numHourBouncePage.containsKey(hour)
+                                    ? numHourBouncePage.get(hour) + 1
+                                    : 1
+                    );
+
+                if (!(data[2].equals("n/a") || data[0].equals("n/a"))) {
+                    DateTime entryDate = formatter.parseDateTime(data[0]);
+                    DateTime exitDate = formatter.parseDateTime(data[2]);
+
+                    if (Minutes.minutesBetween(entryDate,exitDate).getMinutes() <= 2)
+                        numHourBounceTime.put(
+                                hour,
+                                numHourBounceTime.containsKey(hour)
+                                        ? numHourBounceTime.get(hour) + 1
+                                        : 1
+                        );
+                }
+
+                numHourPageViews.put(
+                        hour,
+                        numHourPageViews.containsKey(hour)
+                                ? numHourPageViews.get(hour) + 1
+                                :  1
+                );
+
+
                 dayConversions.put(day, hourConversions);
+                dayBouncePage.put(day, numHourBouncePage);
+                dayBounceTime.put(day, numHourBounceTime);
+                dayPageViews.put(day, numHourPageViews);
 
             }
 
+            dayPageViews.forEach((day, mapHour) -> {
+                Map<String, Double> pageDiv = new HashMap<>();
+                Map<String, Double> timeDiv = new HashMap<>();
+                mapHour.forEach((hour, value) -> {
+                    pageDiv.put(hour, ((dayBouncePage.get(day).get(hour) == null)
+                            ? 0
+                            : dayBouncePage.get(day).get(hour) /value));
+                    timeDiv.put(hour, ((dayBounceTime.get(day).get(hour) == null)
+                            ? 0
+                            : dayBounceTime.get(day).get(hour)/value));
+                });
+                dayBouncePage.put(day, pageDiv);
+                dayBounceTime.put(day, timeDiv);
+            });
+
             jsonObject = new JSONObject()
                     .put("collection", "server_log")
-                    .put("dayNum", dayConversions);
+                    .put("dayNum", dayConversions)
+                    .put("dayBouncePage", dayBouncePage)
+                    .put("dayBounceTime", dayBounceTime);
 
             insertIntoDB(jsonObject);
 
