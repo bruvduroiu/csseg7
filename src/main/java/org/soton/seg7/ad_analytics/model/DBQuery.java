@@ -2,6 +2,7 @@ package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import com.mongodb.Mongo;
 import org.json.JSONObject;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
@@ -100,6 +101,14 @@ public class DBQuery {
             ctrMap.put(day, hourCtrMap);
         }
         return ctrMap;
+    }
+
+    public static Map<String, Map<String, Double>> getBounceRateByPages() throws MongoAuthException {
+        return null;
+    }
+
+    public static Map<String, Map<String, Double>> getBounceRateByTime() throws MongoAuthException {
+        return null;
     }
 
     public static Double getTotalCTR() throws MongoAuthException {

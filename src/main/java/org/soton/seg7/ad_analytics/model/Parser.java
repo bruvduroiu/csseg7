@@ -1,6 +1,9 @@
 package org.soton.seg7.ad_analytics.model;
 
-import org.json.JSONArray;
+import org.joda.time.DateTime;
+import org.joda.time.Minutes;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.json.JSONObject;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
@@ -45,7 +48,8 @@ public class Parser {
     // No need to have an instance of the Parser
     private Parser() { }
 
-    private static String csvDelimiter = ",";
+    private static final String CSV_DELIMITER = ",";
+    private static final Integer BOUNCE_MINUTES = 2;
 
     public static boolean isValidImpressionLog(File csvFile) {
 
@@ -56,7 +60,7 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            headers = br.readLine().split(CSV_DELIMITER);
 
             if (!headers[0].equals("Date")) return false;
             if (!headers[1].equals("ID")) return false;
