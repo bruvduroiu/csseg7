@@ -8,6 +8,8 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
@@ -15,6 +17,7 @@ import org.soton.seg7.ad_analytics.view.MainView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class OverviewController {
@@ -82,6 +85,9 @@ public class OverviewController {
     @FXML
     private PieChart pieChart;
 
+    @FXML
+    private MenuButton ageRangeDropdown, genderDropdown, incomeRangeDropdown;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -101,6 +107,39 @@ public class OverviewController {
 
         graphList.scrollTo(5);
         graphList.getSelectionModel().select(5);
+
+        List<MenuItem> ageRangeDropdownItems = new ArrayList<>();
+
+        MenuItem ageRange25 = new MenuItem("<25");
+        ageRange25.setOnAction(e -> popupTest());
+        MenuItem ageRange25_34 = new MenuItem("25-34");
+        ageRange25.setOnAction(e -> popupTest());
+        MenuItem ageRange35_54 = new MenuItem("35-54");
+        ageRange25.setOnAction(e -> popupTest());
+        MenuItem ageRange25 = new MenuItem("54>");
+        ageRange25.setOnAction(e -> popupTest());
+
+
+        ageRangeDropdownItems.add(ageRange25);
+
+        ageRangeDropdownItems.add(new MenuItem("25-34").setOnAction(a->));
+        ageRangeDropdownItems.add(new MenuItem("35-54").setOnAction(a->));
+        ageRangeDropdownItems.add(new MenuItem("54>").setOnAction(a->));
+
+        ageRangeDropdown.getItems().addAll(ageRangeDropdownItems);
+
+        List<MenuItem> genderDropdownItems = new ArrayList<>();
+        ageRangeDropdownItems.add(new MenuItem("Male").setOnAction(a->));
+        ageRangeDropdownItems.add(new MenuItem("Female").setOnAction(a->));
+
+        genderDropdown.getItems().addAll(genderDropdownItems);
+
+        List<MenuItem> incomeRangeDropdownItems = new ArrayList<>();
+        ageRangeDropdownItems.add(new MenuItem("High").setOnAction(a->));
+        ageRangeDropdownItems.add(new MenuItem("Medium").setOnAction(a->));
+        ageRangeDropdownItems.add(new MenuItem("Low").setOnAction(a->));
+
+        incomeRangeDropdown.getItems().addAll(incomeRangeDropdownItems);
 
         loadTotalCost();
 
@@ -125,6 +164,9 @@ public class OverviewController {
         // Listen for selection changes and show the person details when changed.
         graphList.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> loadGraph(newValue));
+    }
+
+    private void popupTest() {
 
     }
 

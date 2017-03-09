@@ -103,7 +103,7 @@
                                                 <Label text="Income Range :" GridPane.columnIndex="2" />
                                                 <Label text="Start Date: " GridPane.columnIndex="3" />
                                                 <Label text="End Date :" GridPane.columnIndex="4" />
-                                                <MenuButton contentDisplay="BOTTOM" mnemonicParsing="false" prefHeight="27.0" prefWidth="89.0" text="Please Select" GridPane.rowIndex="1">
+                                                <MenuButton fx:id="ageRangeDropdown" contentDisplay="BOTTOM" mnemonicParsing="false" prefHeight="27.0" prefWidth="89.0" text="Please Select" GridPane.rowIndex="1">
                                                     <items>
                                                         <MenuItem mnemonicParsing="false" text="&lt;25" />
                                                         <MenuItem mnemonicParsing="false" text="25-34" />
@@ -111,13 +111,13 @@
                                           <MenuItem mnemonicParsing="false" text="54&gt;" />
                                                     </items>
                                                 </MenuButton>
-                                                <MenuButton mnemonicParsing="false" prefHeight="27.0" prefWidth="88.0" text="Please Select" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                <MenuButton fx:id="genderDropdown" mnemonicParsing="false" prefHeight="27.0" prefWidth="88.0" text="Please Select" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                     <items>
                                                         <MenuItem mnemonicParsing="false" text="Male" />
                                                         <MenuItem mnemonicParsing="false" text="Female" />
                                                     </items>
                                                 </MenuButton>
-                                                <MenuButton mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Please Select" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                                <MenuButton fx:id="incomeRangeDropdown" mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Please Select" GridPane.columnIndex="2" GridPane.rowIndex="1">
                                                     <items>
                                                         <MenuItem mnemonicParsing="false" text="High" />
                                                         <MenuItem mnemonicParsing="false" text="Medium" />
