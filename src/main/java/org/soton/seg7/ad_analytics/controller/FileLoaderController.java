@@ -64,7 +64,11 @@ public class FileLoaderController {
     @FXML
 	protected void handleStartLoadingButtonAction(ActionEvent event) {
     	if (clickLog == null || serverLog == null ||impressionLog == null) {
-			System.out.println("There are som null files");
+			Alert nullFilesErrorBox = new Alert(Alert.AlertType.ERROR);
+			nullFilesErrorBox.setTitle("Missing File/s Error");
+			nullFilesErrorBox.setHeaderText("Something wen't wrong!");
+			nullFilesErrorBox.setContentText("Please upload an impression log, server log and click log.");
+			nullFilesErrorBox.showAndWait();
 		} else if (Parser.isValidClickLog(clickLog) && Parser.isValidImpressionLog(impressionLog) && Parser.isValidServerLog(serverLog)) {
 			DBHandler handler = null;
 			try {
@@ -93,7 +97,12 @@ public class FileLoaderController {
 			Alert invalidFileErrorBox = new Alert(Alert.AlertType.ERROR);
 			invalidFileErrorBox.setTitle("Invalid File/s Error");
 			invalidFileErrorBox.setHeaderText("Something wen't wrong!");
-			invalidFileErrorBox.setContentText("One of your files is in invalid format.");
+
+			invalidFileErrorBox.setContentText("Some files are in invalid format: ");
+			if (!Parser.isValidClickLog(clickLog)) invalidFileErrorBox.setContentText(invalidFileErrorBox.getContentText() + " Click Log, ");
+			if (!Parser.isValidServerLog(serverLog)) invalidFileErrorBox.setContentText(invalidFileErrorBox.getContentText() + " Server Log, ");
+			if (!Parser.isValidImpressionLog(impressionLog)) invalidFileErrorBox.setContentText(invalidFileErrorBox.getContentText() + " Impressions Log, ");
+
 			invalidFileErrorBox.showAndWait();
     	}
     }
