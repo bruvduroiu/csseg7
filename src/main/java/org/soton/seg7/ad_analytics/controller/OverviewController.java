@@ -56,7 +56,10 @@ public class OverviewController {
 
     private Graph currentGraph;
 
-    private int currentFilter;
+    private int ageFilter;
+    private int incomeFilter;
+    private int genderFilter;
+    private int currentFilter = ageFilter + incomeFilter + genderFilter;
 
     @FXML
     private ListView<String> graphList;
@@ -159,6 +162,7 @@ public class OverviewController {
     }
 
     private void loadTotalCost() {
+        currentGraph = Graph.TOTAL_COST;
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Total Cost / Day");
 
@@ -179,6 +183,7 @@ public class OverviewController {
     }
 
     private void loadNumberOfConversions() {
+        currentGraph = Graph.NUMBER_OF_CONVERSIONS;
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Conversions / Day");
 
@@ -199,6 +204,7 @@ public class OverviewController {
     }
 
     private void loadClickThroughRate() {
+        currentGraph = Graph.CLICK_THROUGH_RATE;
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Click Through Rate / Day");
 
@@ -219,6 +225,7 @@ public class OverviewController {
     }
 
     private void loadNumberOfClicks() {
+        currentGraph = Graph.NUMBER_OF_CLICKS;
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Clicks / Day");
 
@@ -239,6 +246,7 @@ public class OverviewController {
     }
 
     private void loadNumberOfImpressions() {
+        currentGraph = Graph.NUMBER_OF_CONVERSIONS;
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Impressions / Day");
 
@@ -259,6 +267,7 @@ public class OverviewController {
     }
 
     private void loadCostPerClick() {
+        currentGraph = Graph.COST_PER_CLICK;
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Click / Day");
 
