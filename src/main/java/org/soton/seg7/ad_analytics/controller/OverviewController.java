@@ -19,6 +19,45 @@ import java.util.Map;
 
 public class OverviewController {
 
+    private enum Graph {
+        COST_PER_CLICK("Cost per Click"),
+        NUMBER_OF_IMPRESSIONS("Number of Impressions"),
+        NUMBER_OF_CLICKS("Number of Clicks"),
+        CLICK_THROUGH_RATE("Click through Rate"),
+        NUMBER_OF_CONVERSIONS("Number of Conversions"),
+        TOTAL_COST("Total Cost"),
+        COST_HISTOGRAM("Cost histogram");
+
+        String title;
+
+        Graph (String title) {
+            this.title = title;
+        }
+
+        @Override
+        public String toString() {
+            return title;
+        }
+    }
+
+    private static final int NO_FILTER = 0;
+
+    private static final int FILTER_AGE_25 = 1;
+    private static final int FILTER_AGE_25_34 = 2;
+    private static final int FILTER_AGE_35_54 = 3;
+    private static final int FILTER_AGE_54 = 4;
+
+    private static final int FILTER_INCOME_LOW = 10;
+    private static final int FILTER_INCOME_MEDIUM = 20;
+    private static final int FILTER_INCOME_HIGH = 30;
+
+    private static final int FILTER_GENDER_MALE = 100;
+    private static final int FILTER_GENDER_FEMALE = 200;
+
+    private Graph currentGraph;
+
+    private int currentFilter;
+
     @FXML
     private ListView<String> graphList;
 
@@ -90,26 +129,18 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph){
-        switch (graph) {
-            case "Cost per Click":
-                loadCostPerClick();
-                break;
-            case "Number of Impressions":
-                loadNumberOfImpressions();
-                break;
-            case "Number of Clicks":
-                loadNumberOfClicks();
-                break;
-            case "Click through Rate":
-                loadClickThroughRate();
-                break;
-            case "Number of Conversions":
-                loadNumberOfConversions();
-                break;
-            case "Total Cost":
-                loadTotalCost();
-                break;
-        }
+        if (graph.equals("Cost per Click"))
+            loadCostPerClick();
+        else if (graph.equals("Number of Impressions"))
+            loadNumberOfImpressions();
+        else if (graph.equals("Number of Clicks"))
+            loadNumberOfClicks();
+        else if (graph.equals("Click through Rate"))
+            loadClickThroughRate();
+        else if (graph.equals("Number of Conversions"))
+            loadNumberOfConversions();
+        else if (graph.equals("Total Cost"))
+            loadTotalCost();
     }
 
     private void loadPieChart() {
