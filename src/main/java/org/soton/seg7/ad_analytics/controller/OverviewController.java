@@ -108,38 +108,28 @@ public class OverviewController {
         graphList.scrollTo(5);
         graphList.getSelectionModel().select(5);
 
+        // Age Range Dropdown
+
         List<MenuItem> ageRangeDropdownItems = new ArrayList<>();
 
         MenuItem ageRange25 = new MenuItem("<25");
-        ageRange25.setOnAction(e -> popupTest());
+        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
         MenuItem ageRange25_34 = new MenuItem("25-34");
-        ageRange25.setOnAction(e -> popupTest());
+        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
         MenuItem ageRange35_54 = new MenuItem("35-54");
-        ageRange25.setOnAction(e -> popupTest());
-        MenuItem ageRange25 = new MenuItem("54>");
-        ageRange25.setOnAction(e -> popupTest());
-
+        ageRange25.setOnAction(e -> {
+                                        loadGraph(currentGraph.toString());
+                                        
+                                    });
+        MenuItem ageRange54 = new MenuItem("54>");
+        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
 
         ageRangeDropdownItems.add(ageRange25);
-
-        ageRangeDropdownItems.add(new MenuItem("25-34").setOnAction(a->));
-        ageRangeDropdownItems.add(new MenuItem("35-54").setOnAction(a->));
-        ageRangeDropdownItems.add(new MenuItem("54>").setOnAction(a->));
+        ageRangeDropdownItems.add(ageRange25_34);
+        ageRangeDropdownItems.add(ageRange35_54);
+        ageRangeDropdownItems.add(ageRange54);
 
         ageRangeDropdown.getItems().addAll(ageRangeDropdownItems);
-
-        List<MenuItem> genderDropdownItems = new ArrayList<>();
-        ageRangeDropdownItems.add(new MenuItem("Male").setOnAction(a->));
-        ageRangeDropdownItems.add(new MenuItem("Female").setOnAction(a->));
-
-        genderDropdown.getItems().addAll(genderDropdownItems);
-
-        List<MenuItem> incomeRangeDropdownItems = new ArrayList<>();
-        ageRangeDropdownItems.add(new MenuItem("High").setOnAction(a->));
-        ageRangeDropdownItems.add(new MenuItem("Medium").setOnAction(a->));
-        ageRangeDropdownItems.add(new MenuItem("Low").setOnAction(a->));
-
-        incomeRangeDropdown.getItems().addAll(incomeRangeDropdownItems);
 
         loadTotalCost();
 
@@ -166,11 +156,8 @@ public class OverviewController {
                 (observable, oldValue, newValue) -> loadGraph(newValue));
     }
 
-    private void popupTest() {
+    private void loadGraph(String graph) {
 
-    }
-
-    private void loadGraph(String graph){
         if (graph.equals("Cost per Click"))
             loadCostPerClick();
         else if (graph.equals("Number of Impressions"))
