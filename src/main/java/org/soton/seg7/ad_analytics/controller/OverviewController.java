@@ -99,6 +99,10 @@ public class OverviewController {
 
     @FXML
     private void initialize() {
+        ageFilter = 0;
+        incomeFilter = 0;
+        genderFilter = 0;
+
         list = graphList.getItems();
         list.clear();
         list.add("Cost per Click");
@@ -116,16 +120,25 @@ public class OverviewController {
         List<MenuItem> ageRangeDropdownItems = new ArrayList<>();
 
         MenuItem ageRange25 = new MenuItem("<25");
-        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
+        ageRange25.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            ageFilter = FILTER_AGE_25;
+        });
         MenuItem ageRange25_34 = new MenuItem("25-34");
-        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
+        ageRange25.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            ageFilter = FILTER_AGE_25_34;
+        });
         MenuItem ageRange35_54 = new MenuItem("35-54");
         ageRange25.setOnAction(e -> {
-                                        loadGraph(currentGraph.toString());
-                                        
-                                    });
+            loadGraph(currentGraph.toString());
+            ageFilter = FILTER_AGE_35_54;
+        });
         MenuItem ageRange54 = new MenuItem("54>");
-        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
+        ageRange25.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            ageFilter = FILTER_AGE_54;
+        });
 
         ageRangeDropdownItems.add(ageRange25);
         ageRangeDropdownItems.add(ageRange25_34);
