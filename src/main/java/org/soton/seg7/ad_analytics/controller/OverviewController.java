@@ -8,6 +8,8 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
@@ -15,6 +17,7 @@ import org.soton.seg7.ad_analytics.view.MainView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class OverviewController {
@@ -85,6 +88,9 @@ public class OverviewController {
     @FXML
     private PieChart pieChart;
 
+    @FXML
+    private MenuButton ageRangeDropdown, genderDropdown, incomeRangeDropdown;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -104,6 +110,29 @@ public class OverviewController {
 
         graphList.scrollTo(5);
         graphList.getSelectionModel().select(5);
+
+        // Age Range Dropdown
+
+        List<MenuItem> ageRangeDropdownItems = new ArrayList<>();
+
+        MenuItem ageRange25 = new MenuItem("<25");
+        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
+        MenuItem ageRange25_34 = new MenuItem("25-34");
+        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
+        MenuItem ageRange35_54 = new MenuItem("35-54");
+        ageRange25.setOnAction(e -> {
+                                        loadGraph(currentGraph.toString());
+                                        
+                                    });
+        MenuItem ageRange54 = new MenuItem("54>");
+        ageRange25.setOnAction(e -> loadGraph(currentGraph.toString()));
+
+        ageRangeDropdownItems.add(ageRange25);
+        ageRangeDropdownItems.add(ageRange25_34);
+        ageRangeDropdownItems.add(ageRange35_54);
+        ageRangeDropdownItems.add(ageRange54);
+
+        ageRangeDropdown.getItems().addAll(ageRangeDropdownItems);
 
         loadTotalCost();
 
@@ -128,10 +157,10 @@ public class OverviewController {
         // Listen for selection changes and show the person details when changed.
         graphList.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> loadGraph(newValue));
-
     }
 
-    private void loadGraph(String graph){
+    private void loadGraph(String graph) {
+
         if (graph.equals("Cost per Click"))
             loadCostPerClick();
         else if (graph.equals("Number of Impressions"))
