@@ -125,17 +125,17 @@ public class OverviewController {
             ageFilter = FILTER_AGE_25;
         });
         MenuItem ageRange25_34 = new MenuItem("25-34");
-        ageRange25.setOnAction(e -> {
+        ageRange25_34.setOnAction(e -> {
             loadGraph(currentGraph.toString());
             ageFilter = FILTER_AGE_25_34;
         });
         MenuItem ageRange35_54 = new MenuItem("35-54");
-        ageRange25.setOnAction(e -> {
+        ageRange35_54.setOnAction(e -> {
             loadGraph(currentGraph.toString());
             ageFilter = FILTER_AGE_35_54;
         });
         MenuItem ageRange54 = new MenuItem("54>");
-        ageRange25.setOnAction(e -> {
+        ageRange54.setOnAction(e -> {
             loadGraph(currentGraph.toString());
             ageFilter = FILTER_AGE_54;
         });
@@ -146,6 +146,55 @@ public class OverviewController {
         ageRangeDropdownItems.add(ageRange54);
 
         ageRangeDropdown.getItems().addAll(ageRangeDropdownItems);
+
+        // Gender Dropdown
+
+        List<MenuItem> genderDropdownItems = new ArrayList<>();
+
+        MenuItem genderMale = new MenuItem("Male");
+        genderMale.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            genderFilter = FILTER_GENDER_MALE;
+        });
+        MenuItem genderFemale = new MenuItem("Female");
+        genderFemale.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            genderFilter = FILTER_GENDER_FEMALE;
+        });
+
+        genderDropdownItems.add(genderMale);
+        genderDropdownItems.add(genderFemale);
+
+        genderDropdown.getItems().addAll(genderDropdownItems);
+
+        // Income Dropdown
+
+        List<MenuItem> incomeRangeDropdownItems = new ArrayList<>();
+
+        MenuItem incomeLow = new MenuItem("Low");
+        incomeLow.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            incomeFilter = FILTER_INCOME_LOW;
+        });
+        MenuItem incomeMedium = new MenuItem("Medium");
+        incomeMedium.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            incomeFilter = FILTER_INCOME_MEDIUM;
+        });
+        MenuItem incomeHigh = new MenuItem("High");
+        incomeHigh.setOnAction(e -> {
+            loadGraph(currentGraph.toString());
+            incomeFilter = FILTER_INCOME_HIGH;
+        });
+
+        incomeRangeDropdownItems.add(incomeLow);
+        incomeRangeDropdownItems.add(incomeMedium);
+        incomeRangeDropdownItems.add(incomeHigh);
+
+        incomeRangeDropdown.getItems().addAll(incomeRangeDropdownItems);
+
+
+        // Load the total cost stats and pie chart
 
         loadTotalCost();
 
