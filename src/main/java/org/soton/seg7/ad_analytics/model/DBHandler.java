@@ -1,6 +1,10 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.*;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.DBCreateViewOptions;
+import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -82,6 +86,11 @@ public class DBHandler {
             array.put(cursor.next());
 
         return array;
+    }
+
+    public DBCollection getCollection(String collection) {
+        DB db = dbClient.getDB(DB_STRING);
+        return db.getCollection(collection);
     }
 
     public String insertData(JSONObject insertion, String collection) {
