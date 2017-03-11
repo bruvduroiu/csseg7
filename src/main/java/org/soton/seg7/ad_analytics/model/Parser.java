@@ -360,6 +360,7 @@ public class Parser {
                         (numConversions.get(entry.getKey()) == null) ? 0 : numConversions.get(entry.getKey()) / entry.getValue(),
                         (numBouncesPage.get(entry.getKey()) == null) ? 0 : numBouncesPage.get(entry.getKey()) / entry.getValue(),
                         (numBouncesTime.get(entry.getKey()) == null) ? 0 : numBouncesTime.get(entry.getKey()) / entry.getValue(),
+                        (numConversions.get(entry.getKey()) == null) ? 0 : numConversions.get(entry.getKey()).intValue(),
                         entry.getValue()
                 ));
             }
@@ -392,13 +393,4 @@ public class Parser {
         return new JSONObject().put("error", "exception occurred while parsing the csv file");
     }
 
-    private static void insertIntoDB(JSONObject jsonObject) throws MongoAuthException {
-
-        DBHandler handler = DBHandler.getDBConnection();
-
-        final String collection = jsonObject.getString("collection");
-        jsonObject.remove("collection");
-
-        handler.insertData(jsonObject, collection);
-    }
 }

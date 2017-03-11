@@ -2,13 +2,16 @@ package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by bogdanbuduroiu on 25/02/2017.
@@ -18,15 +21,24 @@ public class DBQuery {
     private static final String COL_IMPRESSIONS = "impression_log";
     private static final String COL_CLICKS = "click_log";
     private static final String COL_SERVER = "server_log";
+    private static final String DATA_IMPRESSIONS = "impression_data";
+    private static final String DATA_CLICKS = "click_data";
+    private static final String DATA_SERVER = "server_data";
 
-    private static final String GET_TOTAL_NUM = "totalNum";
-    private static final String GET_TOTAL_COST = "totalCost";
+    private static final String COST_METRIC = "cost";
+    private static final String COUNT_METRIC = "num";
 
-    private static final String COUNT_METRIC = "dayNum";
-    private static final String COST_METRIC = "dayCost";
+    private static final String COST_AGGREGATE = "$cost";
+    private static final String COUNT_AGGREGATE = "$num";
 
-    private static final String BOUNCE_TIME = "dayBounceTime";
-    private static final String BOUNCE_PAGE = "dayBouncePage";
+    private static final String DATE = "date";
+
+    private static final String OP_SUM = "$sum";
+    private static final String OP_COUNT = "$count";
+
+    private static final String BOUNCE_COND_PAGE = "bounceRatePage";
+    private static final String BOUNCE_COND_TIME = "bounceRateTime";
+
 
     private static final DBObject ALL_QUERY = new BasicDBObject();
     private static DBObject fieldModifier;
@@ -52,32 +64,21 @@ public class DBQuery {
     }
 
     public static Map<String, Map<String, Double>> getTotalCostOverTime() throws MongoAuthException {
-        Map<String, Map<String, Double>> costImpressions = getImpressionCostOverTime();
-        Map<String, Map<String, Double>> costClicks = getClickCostOverTime();
+        Map<String, Map<String, Double>> clickCost = getClickCostOverTime();
+        Map<String, Map<String, Double>> impressionCost = getImpressionCostOverTime();
+        Map<String, Map<String, Double>> totalCost = new HashMap<>();
 
-        Map<String, Map<String, Double>> totalMap  = new HashMap<>();
+        for (String date : impressionCost.keySet()) {
+            Map<String, Double> hourClickCost = clickCost.get(date);
+            Map<String, Double> hourImpressionCost = impressionCost.get(date);
 
-        for (String day : costImpressions.keySet()) {
-            Map<String, Double> hourCostMap = new HashMap<>();
-            Map<String, Double> impressionCostHour = costImpressions.get(day);
-            Map<String, Double> clickCostHour = costClicks.get(day);
+            Map<String, Double> hourTotalCost = Stream.concat(hourClickCost.keySet().stream(), hourImpressionCost.keySet().stream())
+                    .distinct()
+                    .collect(Collectors.toMap(k -> k, k -> hourClickCost.getOrDefault(k,0d) + hourImpressionCost.getOrDefault(k,0d)));
 
-            for (String hour : impressionCostHour.keySet()) {
-                hourCostMap.put(
-                        hour,
-                        /**
-                         * ****************************************************************************
-                         * This line below replaces a null value in the map with 0.
-                         */
-                        (clickCostHour.get(hour) == null ? 0d : clickCostHour.get(hour)) +
-                                (impressionCostHour.get(hour) == null ? 0d : impressionCostHour.get(hour))
-                        //****************************************************************************
-                );
-            }
-
-            totalMap.put(day, hourCostMap);
+            totalCost.put(date, hourTotalCost);
         }
-        return totalMap;
+        return totalCost;
     }
 
     public static Map<String, Map<String, Double>> getCTROverTime() throws MongoAuthException {
@@ -87,21 +88,14 @@ public class DBQuery {
         Map<String, Map<String, Double>> ctrMap = new HashMap<>();
 
         for (String day : numImpressions.keySet()) {
-            Map<String, Double> hourCtrMap = new HashMap<>();
             Map<String, Integer> impressionsHour = numImpressions.get(day);
             Map<String, Integer> clicksHour = numClicks.get(day);
 
-            for (String hour : impressionsHour.keySet()) {
-                if (clicksHour.get(hour) == null) {
-                    hourCtrMap.put(hour, 0d);
-                } else if (impressionsHour.get(hour) == null) {
-                    // Skip
-                } else {
-                    hourCtrMap.put(hour, Double.parseDouble(clicksHour.get(hour).toString()) / Double.parseDouble(impressionsHour.get(hour).toString()));
-                }
-            }
+            Map<String, Double> ctrHour = Stream.concat(clicksHour.keySet().stream(), impressionsHour.keySet().stream())
+                    .distinct()
+                    .collect(Collectors.toMap(k -> k, k -> ((double)clicksHour.getOrDefault(k,0)) / ((double) impressionsHour.getOrDefault(k,0))));
 
-            ctrMap.put(day, hourCtrMap);
+            ctrMap.put(day, ctrHour);
         }
         return ctrMap;
     }
@@ -111,47 +105,36 @@ public class DBQuery {
         fieldModifier = new BasicDBObject();
         fieldModifier.put(condition, 1);
 
-        Map<String, Map<String, Double>> bounceMap = new HashMap<>();
+        Map<String, Map<String, Double>> dayMap = new HashMap<>();
+        Map<String, Double> hourMap = new HashMap<>();
 
-        JSONObject jsonResult = new JSONObject(
+        JSONArray jsonArrayResult =
                 handler.sendQuery(
                         ALL_QUERY,
                         fieldModifier,
                         COL_SERVER
-                ).get(0).toString()
-        );
+                );
 
-        jsonResult.remove("_id");
-        jsonResult = jsonResult.getJSONObject(condition);
+        for (Object entry : jsonArrayResult){
+            BasicDBObject bson = (BasicDBObject) entry;
+            DateTime dateKey = new DateTime(new Date(bson.getDate("date").toString()));
 
-        Iterator<?> keys = jsonResult.keys();
+            if (!dayMap.containsKey(dateKey.toLocalDate().toString()))
+                hourMap = new HashMap<>();
 
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            String value = jsonResult.get(key).toString();
-            value = value.substring(1, value.length()-1);           //remove curly brackets
-            String[] keyValuePairs = value.split(",");              //split the string to creat key-value pairs
-            Map<String,Double> map = new HashMap<>();
-
-            for(String pair : keyValuePairs)                        //iterate over the pairs
-            {
-                String[] entry = pair.split(":");                   //split the pairs to get key and value
-                map.put(entry[0].trim().replace("\"",""), Double.parseDouble(entry[1].trim()));          //add them to the hashmap and trim whitespaces
-            }
-            bounceMap.put(key, map);
+            hourMap.put(dateKey.getHourOfDay()+"", bson.getDouble(condition));
+            dayMap.put(dateKey.toLocalDate().toString(), hourMap);
         }
 
-        System.out.println(bounceMap);
-
-        return bounceMap;
+        return dayMap;
     }
 
     public static Map<String, Map<String, Double>> getBounceRateByTime() throws MongoAuthException {
-        return getBounceRate(BOUNCE_TIME);
+        return getBounceRate("");
     }
 
     public static Map<String, Map<String, Double>> getBounceRateByPage() throws MongoAuthException {
-        return getBounceRate(BOUNCE_PAGE);
+        return getBounceRate("");
     }
 
     public static Double getTotalCTR() throws MongoAuthException {
@@ -162,19 +145,19 @@ public class DBQuery {
     }
 
     public static Double getTotalNumClicks() throws MongoAuthException {
-        return getTotalMetric(COL_CLICKS, GET_TOTAL_NUM);
+        return getTotalMetric(OP_COUNT, COUNT_AGGREGATE, COL_CLICKS);
     }
 
     public static Double getTotalNumImpressions() throws MongoAuthException {
-        return getTotalMetric(COL_IMPRESSIONS, GET_TOTAL_NUM);
+        return getTotalMetric(OP_COUNT, COUNT_AGGREGATE, COL_IMPRESSIONS);
     }
 
     public static Double getTotalCostImpressions() throws MongoAuthException {
-        return Double.parseDouble(getTotalMetric(COL_IMPRESSIONS, GET_TOTAL_COST).toString());
+        return getTotalMetric(OP_SUM, COST_AGGREGATE, COL_IMPRESSIONS);
     }
 
     public static Double getTotalCostClicks() throws MongoAuthException {
-        return Double.parseDouble(getTotalMetric(COL_CLICKS, GET_TOTAL_COST).toString());
+        return getTotalMetric(OP_SUM, COST_AGGREGATE, COL_CLICKS);
     }
 
     public static Double getTotalCostCampaign() throws MongoAuthException {
@@ -183,99 +166,81 @@ public class DBQuery {
 
     private static Map<String, Map<String, Integer>> getCountMetric(String collection) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
-        fieldModifier = new BasicDBObject();
-        fieldModifier.put(COUNT_METRIC ,1);
+        fieldModifier = new BasicDBObject()
+                .append(DATE,1)
+                .append(COUNT_METRIC, 1);
 
-        Map<String, Map<String, Integer>> countMap = new HashMap<>();
-
-        JSONObject jsonResult = new JSONObject(
-                handler.sendQuery(
-                        ALL_QUERY,
-                        fieldModifier,
-                        collection
-                ).get(0).toString()
+        JSONArray jsonArrayResult = handler.sendQuery(
+                ALL_QUERY,
+                fieldModifier,
+                collection
         );
 
-        jsonResult.remove("_id");
-        jsonResult = jsonResult.getJSONObject(COUNT_METRIC);
+        Map<String, Map<String,Integer>> mapCount = new HashMap<>();
 
-        Iterator<?> keys = jsonResult.keys();
+        for (Object entry : jsonArrayResult) {
+            BasicDBObject bson = (BasicDBObject) entry;
+            DateTime dateKey = new DateTime(new Date(bson.getDate("date").toString()));
 
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            String value = jsonResult.get(key).toString();
-            value = value.substring(1, value.length()-1);           //remove curly brackets
-            String[] keyValuePairs = value.split(",");              //split the string to creat key-value pairs
-            Map<String,Integer> map = new HashMap<>();
-
-            for(String pair : keyValuePairs)                        //iterate over the pairs
-            {
-                String[] entry = pair.split(":");                   //split the pairs to get key and value
-                map.put(entry[0].trim().replace("\"",""), Integer.parseInt(entry[1].trim()));          //add them to the hashmap and trim whitespaces
+            if (mapCount.containsKey(dateKey.toLocalDate().toString()))
+                mapCount.get(dateKey.toLocalDate().toString()).put(dateKey.getHourOfDay()+"", bson.getInt("num"));
+            else {
+                Map<String, Integer> map = new HashMap<>();
+                map.put(dateKey.getHourOfDay()+"", bson.getInt("num"));
+                mapCount.put(dateKey.toLocalDate().toString(), map);
             }
-            countMap.put(key, map);
         }
 
-        System.out.println(countMap);
-
-        return countMap;
-
+        return mapCount;
     }
 
     private static Map<String, Map<String, Double>> getCostMetric(String collection) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
         fieldModifier = new BasicDBObject();
         fieldModifier.put(COST_METRIC, 1);
+        fieldModifier.put(DATE, 1);
 
-        Map<String, Map<String, Double>> countMap = new HashMap<>();
+        Map<String, Map<String, Double>> mapCost = new HashMap<>();
+        Map<String, Double> hourCost = new HashMap<>();
 
-        JSONObject jsonResult = new JSONObject(
-                handler.sendQuery(
-                        ALL_QUERY,
-                        fieldModifier,
-                        collection
-                ).get(0).toString()
+        JSONArray jsonArrayResult = handler.sendQuery(
+                ALL_QUERY,
+                fieldModifier,
+                collection
         );
 
-        jsonResult.remove("_id");
-        jsonResult = jsonResult.getJSONObject(COST_METRIC);
+        for (Object entry : jsonArrayResult) {
+            BasicDBObject bson = (BasicDBObject) entry;
+            DateTime dateKey = new DateTime(new Date(bson.getDate("date").toString()));
 
-        Iterator<?> keys = jsonResult.keys();
-
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            String value = jsonResult.get(key).toString();
-            value = value.substring(1, value.length()-1);           //remove curly brackets
-            String[] keyValuePairs = value.split(",");              //split the string to creat key-value pairs
-            Map<String,Double> map = new HashMap<>();
-
-            for(String pair : keyValuePairs)                        //iterate over the pairs
-            {
-                String[] entry = pair.split(":");                   //split the pairs to get key and value
-                map.put(entry[0].trim().replace("\"",""), Double.parseDouble(entry[1].trim()));          //add them to the hashmap and trim whitespaces
+            if (mapCost.containsKey(dateKey.toLocalDate().toString()))
+                mapCost.get(dateKey.toLocalDate().toString()).put(dateKey.getHourOfDay()+"", bson.getDouble("cost"));
+            else {
+                Map<String, Double> map = new HashMap<>();
+                map.put(dateKey.getHourOfDay()+"", bson.getDouble("cost"));
+                mapCost.put(dateKey.toLocalDate().toString(), map);
             }
-            countMap.put(key, map);
         }
 
-        System.out.println(countMap);
-
-        return countMap;
+        return mapCost;
     }
 
-    private static Double getTotalMetric(String collection, String metric) throws MongoAuthException {
+    private static Double getTotalMetric(String op, String metric, String collection) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
-        fieldModifier = new BasicDBObject();
-        fieldModifier.put(metric, 1);
+        List<DBObject> pipeline = new ArrayList<>();
+        DBObject group_metric = new BasicDBObject();
+        if (op.equals(OP_SUM))
+            group_metric = new BasicDBObject(
+                    "$group", new BasicDBObject("_id", null).append(
+                    "total", new BasicDBObject(op, metric)
+            ));
+        else if (op.equals(OP_COUNT))
+            group_metric = new BasicDBObject(op, "total");
 
-        JSONObject jsonResult = new JSONObject(
-                handler.sendQuery(
-                        ALL_QUERY,
-                        fieldModifier,
-                        collection
-                ).get(0).toString()
-        );
+        pipeline.add(group_metric);
 
-        jsonResult.remove("_id");
-        return Double.parseDouble(jsonResult.get(metric).toString());
+        JSONObject result = new JSONObject(handler.aggregate(pipeline, new BasicDBObject(), collection).get(0).toString());
+
+        return result.getDouble("total");
     }
 }

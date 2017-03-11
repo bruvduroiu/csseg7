@@ -11,13 +11,15 @@ public class ServerMetrics {
     private Double conversionRate;
     private Double bounceRatePage;
     private Double bounceRateTime;
+    private Integer num;
     private Double views;
 
-    public ServerMetrics(Date date, Double conversionRate, Double bounceRatePage, Double bounceRateTime, Double views) {
+    public ServerMetrics(Date date, Double conversionRate, Double bounceRatePage, Double bounceRateTime, Integer num, Double views) {
         this.date = date;
         this.conversionRate = conversionRate;
         this.bounceRatePage = bounceRatePage;
         this.bounceRateTime = bounceRateTime;
+        this.num = num;
         this.views = views;
     }
 
@@ -51,6 +53,14 @@ public class ServerMetrics {
 
     public void setBounceRateTime(Double bounceRateTime) {
         this.bounceRateTime = bounceRateTime;
+    }
+
+    public Integer getNum() {
+        return num;
+    }
+
+    public void setNum(Integer num) {
+        this.num = num;
     }
 
     public Double getViews() {
