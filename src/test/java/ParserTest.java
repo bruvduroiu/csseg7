@@ -48,6 +48,7 @@ public class ParserTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("impression_log");
+            handler.dropCollection("impression_data");
 
             Parser.parseCSV(impressionsFile);
             Map<String, Map<String, Integer>> resNumImpressions = DBQuery.getNumImpressions();
@@ -187,6 +188,7 @@ public class ParserTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
 
             Parser.parseCSV(clickFile);
 
