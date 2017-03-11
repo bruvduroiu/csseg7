@@ -69,6 +69,9 @@ public class FileLoaderController {
 				handler.dropCollection("impression_log");
 				handler.dropCollection("server_log");
 				handler.dropCollection("click_log");
+				handler.dropCollection("impression_data");
+				handler.dropCollection("server_data");
+				handler.dropCollection("click_data");
 			} catch (MongoAuthException e) {
 				e.printStackTrace();
 			}
