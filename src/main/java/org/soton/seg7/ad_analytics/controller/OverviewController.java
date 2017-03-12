@@ -27,7 +27,10 @@ public class OverviewController {
     private ObservableList<String> list;
 
     @FXML
-    private XYChart<String, Double> metricsChart;
+    private BarChart<String, Double> histogram;
+
+    @FXML
+    private LineChart<String, Double> lineChart;
 
     @FXML
     private Stage stage;
@@ -92,7 +95,6 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph){
-        metricsChart = (LineChart<String, Double>) metricsChart;
         switch (graph) {
             case "Cost per Click":
                 loadCostPerClick();
@@ -113,7 +115,6 @@ public class OverviewController {
                 loadTotalCost();
                 break;
             case "Click Cost Histogram":
-                metricsChart = (BarChart<String, Double>) metricsChart;
                 loadHistogram();
                 break;
         }
@@ -135,8 +136,11 @@ public class OverviewController {
     }
 
     private void loadTotalCost() {
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        metricsChart.setTitle("Total Cost / Day");
+        lineChart.setTitle("Total Cost / Day");
 
         try {
             Map<String, Map<String, Double>> totalCostOverTime = DBQuery.getTotalCostOverTime();
@@ -146,8 +150,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, totalCostOverTime.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            metricsChart.getData().clear();
-            metricsChart.getData().add(series);
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -155,8 +159,11 @@ public class OverviewController {
     }
 
     private void loadNumberOfConversions() {
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        metricsChart.setTitle("Number of Conversions / Day");
+        lineChart.setTitle("Number of Conversions / Day");
 
         try {
             Map<String, Map<String, Integer>> conversionsMap = DBQuery.getNumConversions();
@@ -166,8 +173,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, conversionsMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            metricsChart.getData().clear();
-            metricsChart.getData().add(series);
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -175,8 +182,11 @@ public class OverviewController {
     }
 
     private void loadClickThroughRate() {
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        metricsChart.setTitle("Click Through Rate / Day");
+        lineChart.setTitle("Click Through Rate / Day");
 
         try {
             Map<String, Map<String, Double>> clickThroughRateMap = DBQuery.getCTROverTime();
@@ -186,8 +196,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, clickThroughRateMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            metricsChart.getData().clear();
-            metricsChart.getData().add(series);
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -195,8 +205,11 @@ public class OverviewController {
     }
 
     private void loadNumberOfClicks() {
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        metricsChart.setTitle("Number of Clicks / Day");
+        lineChart.setTitle("Number of Clicks / Day");
 
         try {
             Map<String, Map<String, Integer>> numberOfClicks = DBQuery.getNumClicks();
@@ -206,8 +219,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, numberOfClicks.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            metricsChart.getData().clear();
-            metricsChart.getData().add(series);
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -215,8 +228,11 @@ public class OverviewController {
     }
 
     private void loadNumberOfImpressions() {
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        metricsChart.setTitle("Number of Impressions / Day");
+        lineChart.setTitle("Number of Impressions / Day");
 
         try {
             Map<String, Map<String, Integer>> numberOfImpressions = DBQuery.getNumImpressions();
@@ -226,8 +242,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, numberOfImpressions.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            metricsChart.getData().clear();
-            metricsChart.getData().add(series);
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -235,8 +251,11 @@ public class OverviewController {
     }
 
     private void loadCostPerClick() {
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
-        metricsChart.setTitle("Cost per Click / Day");
+        lineChart.setTitle("Cost per Click / Day");
 
         try {
             Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime();
@@ -246,8 +265,8 @@ public class OverviewController {
             for (String day : days)
                 series.getData().add(new XYChart.Data<>(day, costPerClick.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
 
-            metricsChart.getData().clear();
-            metricsChart.getData().add(series);
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -255,16 +274,22 @@ public class OverviewController {
     }
 
     private void loadHistogram() {
+        histogram.setVisible(true);
+        lineChart.setVisible(false);
+
         BarChart.Series<String, Double> series = new BarChart.Series<>();
-        metricsChart.setTitle("Distribution of Click Cost");
-        ((BarChart<String, Double>) metricsChart).setCategoryGap(0);
-        ((BarChart<String, Double>) metricsChart).setBarGap(0);
+        histogram.setTitle("Distribution of Click Cost");
+        histogram.setCategoryGap(0);
+        histogram.setBarGap(0);
 
         //collect all the data
         try {
-            Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime(); //date->XXX->cost
-            ArrayList<Double> costs = null;
+            Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime(); //date->hour->cost
+            ArrayList<Double> costs = new ArrayList<Double>();
             for(String key : costPerClick.keySet()) {
+                for(Double cost : costPerClick.get(key).values()) {
+                    System.out.println("Cost on " + key + ": " + cost);
+                }
                 costs.addAll(costPerClick.get(key).values());
             }
             //Collections.sort(costs); //probably not needed, waste of computation
@@ -313,8 +338,8 @@ public class OverviewController {
                         ((binRange * i) + "-" + (binRange * (i+1))), group[i]));
             }
 
-            metricsChart.getData().clear();
-            metricsChart.getData().addAll(series);
+            histogram.getData().clear();
+            histogram.getData().addAll(series);
 
         }
         catch (MongoAuthException e) {
@@ -326,12 +351,12 @@ public class OverviewController {
         this.mainView = mainView;
 
     }
-    
+
     //function that handles pressing of Change Campain button
     @FXML
     protected void handleChangeCampainButtonAction(ActionEvent event) {
         this.mainView.showLoadStage();
         initialize();
     }
-    
+
 }
