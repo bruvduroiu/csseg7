@@ -256,7 +256,7 @@ public class DBQuery {
     }
 
     private static DBObject getQueryFilter(Integer filter) {
-        Integer age, income, gender;
+        Integer age, income, gender, context;
         BasicDBObject query = new BasicDBObject();
 
         if (filter == 0)
@@ -267,6 +267,8 @@ public class DBQuery {
         income = (filter % 10) * 10;
         filter /= 10;
         gender = (filter % 10) * 100;
+        filter /= 10;
+        context = (filter % 10) * 1000;
 
         if (age != 0)
             query.append("Age", (age == Filters.AGE_25) ? "<25"
@@ -284,6 +286,11 @@ public class DBQuery {
             query.append("Gender", (gender == Filters.GENDER_MALE) ? 'M'
                     : (gender == Filters.GENDER_FEMALE) ? 'F'
                     : "null");
+        if (context != 0)
+            query.append("Context", (context == Filters.CONTEXT_BLOG) ? "Blog"
+                    : (context == Filters.CONTEXT_NEWS) ? "News"
+                    : (context == Filters.CONTEXT_SHOPPING) ? "Shopping"
+                    : (context == Filters.CONTEXT_SOCIAL_MEDIA) ? "Social Media");
 
         return query;
     }
