@@ -2,17 +2,12 @@ package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
 import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.simple.parser.ParseException;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Filter;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +59,26 @@ public class DBQuery {
                 .results().forEach(results::add);
 
         return buildResultsMap(results, filter, COUNT_METRIC);
+    }
+
+    public static Map<String, Map<String, Double>> getCPAOverTime(Integer filter) throws MongoAuthException {
+        Map<String, Map<String, Double>> costImpressions = getImpressionCostOverTime(filter);
+        Map<String, Map<String, Double>> costClicks = getClickCostOverTime();
+        Map<String, Map<String, Double>> numConversions = getNumConversions();
+        Map<String, Map<String, Double>> cpa = new HashMap<>();
+
+        for (String day : costImpressions.keySet()) {
+            Map<String, Double> hourImpression = costImpressions.get(day);
+            Map<String, Double> hourClicks = costClicks.get(day);
+            Map<String, Double> hourConversions = numConversions.get(day);
+
+            cpa.put(day,
+                    Stream.concat(hourImpression.keySet().stream(), hourClicks.keySet().stream())
+                            .distinct()
+                            .collect(Collectors.toMap(k->k ,(k -> (hourImpression.getOrDefault(k,0d) + hourClicks.getOrDefault(k,0d))/hourConversions.getOrDefault(k,1d) ))));
+        }
+
+        return cpa;
     }
 
     public static Map<String, Map<String, Double>> getNumClicks() throws MongoAuthException {
@@ -290,7 +305,8 @@ public class DBQuery {
             query.append("Context", (context == Filters.CONTEXT_BLOG) ? "Blog"
                     : (context == Filters.CONTEXT_NEWS) ? "News"
                     : (context == Filters.CONTEXT_SHOPPING) ? "Shopping"
-                    : (context == Filters.CONTEXT_SOCIAL_MEDIA) ? "Social Media");
+                    : (context == Filters.CONTEXT_SOCIAL_MEDIA) ? "Social Media"
+                    : "null");
 
         return query;
     }
