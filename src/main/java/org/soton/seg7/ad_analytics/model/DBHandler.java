@@ -71,40 +71,23 @@ public class DBHandler {
         return (handler = new DBHandler());
     }
 
-    public JSONArray sendQuery(DBObject query, DBObject fields, String collection) {
+    public List<DBObject> sendQuery(DBObject query, DBObject fields, String collection) {
 
         JSONArray array = new JSONArray();
+        List<DBObject> results = new ArrayList<>();
 
-        if (dbClient == null)
-            return new JSONArray().put(new JSONObject().put("error", "database not initialized"));
+        if (dbClient == null) {
+            results.add(new BasicDBObject("error", "database not initialized"));
+            return results;
+        }
 
         DB db = dbClient.getDB(DB_STRING);
         DBCollection coll = db.getCollection(collection);
 
         DBCursor cursor = coll.find(query, fields);
+        List<DBObject> it = cursor.toArray();
 
-        while(cursor.hasNext())
-            array.put(cursor.next());
-
-        return array;
-    }
-
-    public JSONArray aggregate(List<DBObject> pipeline, DBObject fields, String collection) {
-        JSONArray array = new JSONArray();
-
-        if (dbClient == null)
-            return new JSONArray().put(new JSONObject().put("error", "database not initialized"));
-
-        DB db = dbClient.getDB(DB_STRING);
-        DBCollection coll = db.getCollection(collection);
-
-        Iterable<DBObject> it = coll.aggregate(pipeline).results();
-
-        it.forEach(obj ->
-            array.put(obj.toString())
-        );
-
-        return array;
+        return cursor.toArray();
     }
 
     public DBCollection getCollection(String collection) {

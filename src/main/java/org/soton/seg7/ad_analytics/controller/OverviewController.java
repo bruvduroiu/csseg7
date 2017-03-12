@@ -12,6 +12,7 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
 import org.soton.seg7.ad_analytics.model.DBQuery;
+import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
@@ -42,21 +43,6 @@ public class OverviewController {
             return title;
         }
     }
-
-    private static final int NO_FILTER = 0;
-
-    private static final int FILTER_AGE_25 = 1;
-    private static final int FILTER_AGE_25_34 = 2;
-    private static final int FILTER_AGE_35_54 = 3;
-    private static final int FILTER_AGE_54 = 4;
-
-    private static final int FILTER_INCOME_LOW = 10;
-    private static final int FILTER_INCOME_MEDIUM = 20;
-    private static final int FILTER_INCOME_HIGH = 30;
-
-    private static final int FILTER_GENDER_MALE = 100;
-    private static final int FILTER_GENDER_FEMALE = 200;
-
     private Graph currentGraph;
 
     private int ageFilter;
@@ -121,28 +107,34 @@ public class OverviewController {
 
         MenuItem ageRange25 = new MenuItem("<25");
         ageRange25.setOnAction(e -> {
+            ageFilter = Filters.AGE_25;
             loadGraph(currentGraph.toString());
-            ageFilter = FILTER_AGE_25;
         });
         MenuItem ageRange25_34 = new MenuItem("25-34");
         ageRange25_34.setOnAction(e -> {
+            ageFilter = Filters.AGE_25_34;
             loadGraph(currentGraph.toString());
-            ageFilter = FILTER_AGE_25_34;
         });
-        MenuItem ageRange35_54 = new MenuItem("35-54");
-        ageRange35_54.setOnAction(e -> {
+        MenuItem ageRange35_44 = new MenuItem("35-44");
+        ageRange35_44.setOnAction(e -> {
+            ageFilter = Filters.AGE_35_44;
             loadGraph(currentGraph.toString());
-            ageFilter = FILTER_AGE_35_54;
+        });
+        MenuItem ageRange45_54 = new MenuItem("45-54");
+        ageRange45_54.setOnAction(e -> {
+            ageFilter = Filters.AGE_45_54;
+            loadGraph(currentGraph.toString());
         });
         MenuItem ageRange54 = new MenuItem("54>");
         ageRange54.setOnAction(e -> {
+            ageFilter = Filters.AGE_54;
             loadGraph(currentGraph.toString());
-            ageFilter = FILTER_AGE_54;
         });
 
         ageRangeDropdownItems.add(ageRange25);
         ageRangeDropdownItems.add(ageRange25_34);
-        ageRangeDropdownItems.add(ageRange35_54);
+        ageRangeDropdownItems.add(ageRange35_44);
+        ageRangeDropdownItems.add(ageRange45_54);
         ageRangeDropdownItems.add(ageRange54);
 
         ageRangeDropdown.getItems().addAll(ageRangeDropdownItems);
@@ -153,13 +145,13 @@ public class OverviewController {
 
         MenuItem genderMale = new MenuItem("Male");
         genderMale.setOnAction(e -> {
+            genderFilter = Filters.GENDER_MALE;
             loadGraph(currentGraph.toString());
-            genderFilter = FILTER_GENDER_MALE;
         });
         MenuItem genderFemale = new MenuItem("Female");
         genderFemale.setOnAction(e -> {
+            genderFilter = Filters.GENDER_FEMALE;
             loadGraph(currentGraph.toString());
-            genderFilter = FILTER_GENDER_FEMALE;
         });
 
         genderDropdownItems.add(genderMale);
@@ -173,18 +165,18 @@ public class OverviewController {
 
         MenuItem incomeLow = new MenuItem("Low");
         incomeLow.setOnAction(e -> {
+            incomeFilter = Filters.INCOME_LOW;
             loadGraph(currentGraph.toString());
-            incomeFilter = FILTER_INCOME_LOW;
         });
         MenuItem incomeMedium = new MenuItem("Medium");
         incomeMedium.setOnAction(e -> {
+            incomeFilter = Filters.INCOME_MEDIUM;
             loadGraph(currentGraph.toString());
-            incomeFilter = FILTER_INCOME_MEDIUM;
         });
         MenuItem incomeHigh = new MenuItem("High");
         incomeHigh.setOnAction(e -> {
+            incomeFilter = Filters.INCOME_HIGH;
             loadGraph(currentGraph.toString());
-            incomeFilter = FILTER_INCOME_HIGH;
         });
 
         incomeRangeDropdownItems.add(incomeLow);
@@ -202,7 +194,7 @@ public class OverviewController {
 
         try {
             // Display total cost of campaign in proper format
-            String totalCampaignCost = String.format("£%.2f", DBQuery.getTotalCostCampaign()/100);
+            String totalCampaignCost = String.format("£%.2f", DBQuery.getTotalCostCampaign(getCurrentFilter())/100);
             totalCampaignCostLabel.setText(totalCampaignCost);
 
             // Display total cost of clicks in proper format
@@ -210,7 +202,7 @@ public class OverviewController {
             totalCostOfClicksLabel.setText(totalCostOfClicks);
 
             // Display total cost of impressions in proper format
-            String totalCostOfImpressions = String.format("£%.2f", DBQuery.getTotalCostImpressions()/100);
+            String totalCostOfImpressions = String.format("£%.2f", DBQuery.getTotalCostImpressions(getCurrentFilter())/100);
             totalCostOfImpressionsLabel.setText(totalCostOfImpressions);
         } catch (MongoAuthException e) {
             e.printStackTrace();
@@ -241,7 +233,7 @@ public class OverviewController {
         try {
             ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList(
                     new PieChart.Data("Total Click Cost", DBQuery.getTotalCostClicks()),
-                    new PieChart.Data("Total Impression Cost", DBQuery.getTotalCostImpressions())
+                    new PieChart.Data("Total Impression Cost", DBQuery.getTotalCostImpressions(getCurrentFilter()))
             );
             pieChart.getData().clear();
             pieChart.setTitle("Campaign Cost Breakdown");
@@ -258,7 +250,7 @@ public class OverviewController {
         lineChart.setTitle("Total Cost / Day");
 
         try {
-            Map<String, Map<String, Double>> totalCostOverTime = DBQuery.getTotalCostOverTime();
+            Map<String, Map<String, Double>> totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter());
             ArrayList<String> days = new ArrayList<String>(totalCostOverTime.keySet());
             Collections.sort(days);
 
@@ -279,8 +271,8 @@ public class OverviewController {
         lineChart.setTitle("Number of Conversions / Day");
 
         try {
-            Map<String, Map<String, Integer>> conversionsMap = DBQuery.getNumConversions();
-            ArrayList<String> days = new ArrayList<String>(conversionsMap.keySet());
+            Map<String, Map<String, Double>> conversionsMap = DBQuery.getNumConversions();
+            ArrayList<String> days = new ArrayList<>(conversionsMap.keySet());
             Collections.sort(days);
 
             for (String day : days)
@@ -300,7 +292,7 @@ public class OverviewController {
         lineChart.setTitle("Click Through Rate / Day");
 
         try {
-            Map<String, Map<String, Double>> clickThroughRateMap = DBQuery.getCTROverTime();
+            Map<String, Map<String, Double>> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
             ArrayList<String> days = new ArrayList<String>(clickThroughRateMap.keySet());
             Collections.sort(days);
 
@@ -321,7 +313,7 @@ public class OverviewController {
         lineChart.setTitle("Number of Clicks / Day");
 
         try {
-            Map<String, Map<String, Integer>> numberOfClicks = DBQuery.getNumClicks();
+            Map<String, Map<String, Double>> numberOfClicks = DBQuery.getNumClicks();
             ArrayList<String> days = new ArrayList<String>(numberOfClicks.keySet());
             Collections.sort(days);
 
@@ -337,12 +329,12 @@ public class OverviewController {
     }
 
     private void loadNumberOfImpressions() {
-        currentGraph = Graph.NUMBER_OF_CONVERSIONS;
+        currentGraph = Graph.NUMBER_OF_IMPRESSIONS;
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Impressions / Day");
 
         try {
-            Map<String, Map<String, Integer>> numberOfImpressions = DBQuery.getNumImpressions();
+            Map<String, Map<String, Double>> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
             ArrayList<String> days = new ArrayList<String>(numberOfImpressions.keySet());
             Collections.sort(days);
 
@@ -388,6 +380,10 @@ public class OverviewController {
     protected void handleChangeCampainButtonAction(ActionEvent event) {
         this.mainView.showLoadStage();
         initialize();
+    }
+
+    private Integer getCurrentFilter() {
+        return ageFilter + incomeFilter + genderFilter;
     }
     
 }
