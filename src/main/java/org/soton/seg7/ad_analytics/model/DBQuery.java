@@ -84,6 +84,8 @@ public class DBQuery {
             costArr.add(Double.parseDouble(jsonResult.get(key).toString()));
         }
 
+        System.out.println(costArr);
+
         return costArr;
     }
 

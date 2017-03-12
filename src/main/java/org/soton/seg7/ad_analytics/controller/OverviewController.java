@@ -14,9 +14,11 @@ import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.math.BigDecimal;
 
 public class OverviewController {
 
@@ -286,6 +288,7 @@ public class OverviewController {
         try {
 
             ArrayList<Double> clickCosts = DBQuery.getAllClickCosts();
+            Collections.sort(clickCosts);
 
             double binRange = clickCosts.get(clickCosts.size() -1) / 15;
             int[] group = new int[15];
@@ -322,13 +325,19 @@ public class OverviewController {
                     group[13]++;
                 }else if(cost <= binRange * 15) {
                     group[14]++;
+                } else {
+                    System.err.println("this shouldn't happen");
                 }
             }
 
             //put all the data into the series
             for(int i=0; i<15; i++) {
                 series.getData().add(new XYChart.Data(
-                        ((binRange * i) + "-" + (binRange * (i+1))), group[i]));
+                        (
+                                (new BigDecimal(binRange * i).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                                + "-"
+                                + (new BigDecimal(binRange * (i+1)).setScale(2, RoundingMode.HALF_UP).doubleValue())),
+                        group[i]));
             }
 
             histogram.getData().clear();
