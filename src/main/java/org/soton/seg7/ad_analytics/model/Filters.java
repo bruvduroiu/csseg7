@@ -18,4 +18,9 @@ public class Filters {
 
     public static final int GENDER_MALE = 100;
     public static final int GENDER_FEMALE = 200;
+
+    public static final int CONTEXT_BLOG = 1000;
+    public static final int CONTEXT_NEWS = 2000;
+    public static final int CONTEXT_SHOPPING = 3000;
+    public static final int CONTEXT_SOCIAL_MEDIA = 4000;
 }
