@@ -284,21 +284,14 @@ public class OverviewController {
 
         //collect all the data
         try {
-            Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime(); //date->hour->cost
-            ArrayList<Double> costs = new ArrayList<Double>();
-            for(String key : costPerClick.keySet()) {
-                for(Double cost : costPerClick.get(key).values()) {
-                    System.out.println("Cost on " + key + ": " + cost);
-                }
-                costs.addAll(costPerClick.get(key).values());
-            }
-            //Collections.sort(costs); //probably not needed, waste of computation
 
-            double binRange = costs.get(costs.size() -1) / 15;
+            ArrayList<Double> clickCosts = DBQuery.getAllClickCosts();
+
+            double binRange = clickCosts.get(clickCosts.size() -1) / 15;
             int[] group = new int[15];
 
             // I cba with frequency density so just sorting the costs into frequency bars
-            for(double cost : costs) {
+            for(double cost : clickCosts) {
                 if(cost <= binRange) {
                     group[0]++;
                 }else if(cost <= binRange * 2) {

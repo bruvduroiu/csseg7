@@ -9,6 +9,7 @@ import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.ArrayList;
 
 /**
  * Created by bogdanbuduroiu on 25/02/2017.
@@ -24,6 +25,8 @@ public class DBQuery {
 
     private static final String COUNT_METRIC = "dayNum";
     private static final String COST_METRIC = "dayCost";
+
+    private static final String SINGLE_CLICK_COST = "individualCost";
 
     private static final String BOUNCE_TIME = "dayBounceTime";
     private static final String BOUNCE_PAGE = "dayBouncePage";
@@ -50,6 +53,41 @@ public class DBQuery {
     public static Map<String, Map<String, Double>> getImpressionCostOverTime() throws MongoAuthException {
         return getCostMetric(COL_IMPRESSIONS);
     }
+
+    public static ArrayList<Double> getAllClickCosts() throws MongoAuthException {
+        return getAllCostsMetric(COL_CLICKS);
+    }
+
+    private static ArrayList<Double> getAllCostsMetric(String collection) throws MongoAuthException {
+        DBHandler handler = DBHandler.getDBConnection();
+        fieldModifier = new BasicDBObject();
+        fieldModifier.put(SINGLE_CLICK_COST, 1);
+
+        ArrayList<Double> costArr = new ArrayList<>();
+
+        JSONObject jsonResult = new JSONObject(
+                handler.sendQuery(
+                        ALL_QUERY,
+                        fieldModifier,
+                        collection
+                ).get(0).toString()
+        );
+
+        jsonResult.remove("_id");
+        jsonResult = jsonResult.getJSONObject(SINGLE_CLICK_COST);
+
+        Iterator<?> keys = jsonResult.keys();
+
+        while (keys.hasNext()) {
+
+            String key = (String) keys.next();
+            costArr.add(Double.parseDouble(jsonResult.get(key).toString()));
+        }
+
+        return costArr;
+    }
+
+
 
     public static Map<String, Map<String, Double>> getTotalCostOverTime() throws MongoAuthException {
         Map<String, Map<String, Double>> costImpressions = getImpressionCostOverTime();

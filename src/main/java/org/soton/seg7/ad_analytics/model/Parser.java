@@ -153,6 +153,11 @@ public class Parser {
         // Total num clicks map of hour -> total
         Map<String, Integer> hourClicks = new HashMap<>();
 
+        // All clicks from the log, clickNo -> cost
+        Map<String, Float> individualCosts = new HashMap<>();
+
+        Integer clickNo = 1;
+
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
@@ -175,6 +180,13 @@ public class Parser {
 
                 if (!dayClicks.containsKey(day))
                     hourClicks = new HashMap<>();
+
+                // Insert individual cost
+                clickNo++;
+                individualCosts.put(
+                        clickNo.toString(),
+                        new Float(data[2])
+                );
 
                 // Get total cost of ads per hour
                 hourTotalCosts.put(
@@ -203,7 +215,8 @@ public class Parser {
                     .put("dayCost", dayTotalCosts)
                     .put("dayNum", dayClicks)
                     .put("totalNum", totalClicks)
-                    .put("totalCost", totalCost);
+                    .put("totalCost", totalCost)
+                    .put("individualCost", individualCosts);
 
             insertIntoDB(jsonObject);
 
