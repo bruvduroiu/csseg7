@@ -180,7 +180,7 @@ public class DBQuery {
 
         for (Object entry : jsonArrayResult) {
             BasicDBObject bson = (BasicDBObject) entry;
-            DateTime dateKey = new DateTime(new Date(bson.getDate("date").toString()));
+            DateTime dateKey = buildDateKey(bson, filter);
 
             if (mapCount.containsKey(dateKey.toLocalDate().toString()))
                 mapCount.get(dateKey.toLocalDate().toString()).put(dateKey.getHourOfDay()+"", bson.getInt("num"));
@@ -211,7 +211,7 @@ public class DBQuery {
 
         for (Object entry : jsonArrayResult) {
             BasicDBObject bson = (BasicDBObject) entry;
-            DateTime dateKey = new DateTime(new Date(bson.getDate("date").toString()));
+            DateTime dateKey = buildDateKey(bson, filter);
 
             if (mapCost.containsKey(dateKey.toLocalDate().toString()))
                 mapCost.get(dateKey.toLocalDate().toString()).put(dateKey.getHourOfDay()+"", bson.getDouble("cost"));
@@ -239,8 +239,61 @@ public class DBQuery {
 
         pipeline.add(group_metric);
 
-        JSONObject result = new JSONObject(handler.aggregate(pipeline, new BasicDBObject(), collection).get(0).toString());
+        Iterable<DBObject> results = handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", getQueryFilter(filter)),
+                group_metric
+        )).results();
+
+        BasicDBObject result = (BasicDBObject) results.iterator().next();
 
         return result.getDouble("total");
+    }
+
+    private static DBObject getQueryFilter(Integer filter) {
+        Integer age, income, gender;
+        BasicDBObject query = new BasicDBObject();
+
+        if (filter == 0)
+            return ALL_QUERY;
+
+        age = filter % 10;
+        filter /= 10;
+        income = (filter % 10) * 10;
+        filter /= 10;
+        gender = (filter % 10) * 100;
+
+        if (age != 0)
+            query.append("Age", (age == Filters.AGE_25) ? "<25"
+                    : (age == Filters.AGE_25_34) ? "25-34"
+                    : (age == Filters.AGE_35_54) ? "35-54"
+                    : (age == Filters.AGE_54) ? ">54"
+                    : "null");
+        if (income != 0)
+            query.append("Income", (income == Filters.INCOME_LOW) ? "Low"
+                    : (income == Filters.INCOME_MEDIUM) ? "Medium"
+                    : (income == Filters.INCOME_HIGH) ? "High"
+                    : "null");
+        if (gender != 0)
+            query.append("Gender", (gender == Filters.GENDER_MALE) ? 'M'
+                    : (gender == Filters.GENDER_FEMALE) ? 'F'
+                    : "null");
+
+        return query;
+    }
+
+    private static DateTime buildDateKey(BasicDBObject bson, Integer filter) {
+        DateTime dateKey;
+        if (filter == 0)
+            dateKey = new DateTime(new Date(bson.getDate("date").toString()));
+        else {
+            BasicDBObject dateObj = (BasicDBObject) bson.get("_id");
+            String dateString = String.format("%s-%s-%s",
+                    dateObj.getString("year"),
+                    dateObj.getString("month"),
+                    dateObj.getString("day"));
+            dateKey = new DateTime(new Date(dateString));
+        }
+
+        return dateKey;
     }
 }
