@@ -76,7 +76,7 @@ public class OverviewController {
     private PieChart pieChart;
 
     @FXML
-    private ComboBox ageRangeDropdown, genderDropdown, incomeRangeDropdown;
+    private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown;
 
     // Reference to the main application.
     private MainView mainView;
@@ -117,8 +117,27 @@ public class OverviewController {
 
         ageRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
-                System.out.println(newVal);
-                  
+            	switch(newVal) {
+            	case "All":
+            		ageFilter = 0;
+            		break;
+            	case "<25":
+            		ageFilter = Filters.AGE_25;
+            		break;
+            	case "25-34":
+            		ageFilter = Filters.AGE_25_34;
+            		break;
+            	case "35-44":
+            		ageFilter = Filters.AGE_35_44;
+            		break;
+            	case "45-54":
+            		ageFilter = Filters.AGE_45_54;
+            		break;
+            	case "54>":
+            		ageFilter = Filters.AGE_54;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
               }    
           });
         
@@ -170,8 +189,18 @@ public class OverviewController {
 
         genderDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
-                System.out.println(newVal);
-                  
+            	switch(newVal) {
+            	case "All":
+            		genderFilter = 0;
+            		break;
+            	case "Male":
+            		genderFilter = Filters.GENDER_MALE;
+            		break;
+            	case "Female":
+            		genderFilter = Filters.GENDER_FEMALE;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
               }    
           });
 
@@ -208,10 +237,26 @@ public class OverviewController {
 
         incomeRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
-                System.out.println(newVal);
-                  
+            	switch(newVal) {
+            	case "All":
+            		incomeFilter = 0;
+            		break;
+            	case "Low":
+            		incomeFilter = Filters.INCOME_LOW;
+            		break;
+            	case "Medium":
+            		incomeFilter = Filters.INCOME_MEDIUM;
+            		break;
+            	case "High":
+            		incomeFilter = Filters.INCOME_HIGH;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
+            	
               }    
           });
+        
+        
 
         /*
         List<MenuItem> incomeRangeDropdownItems = new ArrayList<>();
@@ -282,6 +327,7 @@ public class OverviewController {
         else if (graph.equals("Total Cost"))
             loadTotalCost();
     }
+    
 
     private void loadPieChart() {
         try {
