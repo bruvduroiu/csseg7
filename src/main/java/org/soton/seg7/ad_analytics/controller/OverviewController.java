@@ -1,4 +1,6 @@
 package org.soton.seg7.ad_analytics.controller;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -6,10 +8,9 @@ import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
@@ -75,7 +76,7 @@ public class OverviewController {
     private PieChart pieChart;
 
     @FXML
-    private MenuButton ageRangeDropdown, genderDropdown, incomeRangeDropdown;
+    private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown;
 
     // Reference to the main application.
     private MainView mainView;
@@ -103,8 +104,44 @@ public class OverviewController {
 
         // Age Range Dropdown
 
-        List<MenuItem> ageRangeDropdownItems = new ArrayList<>();
+        ageRangeDropdown.getItems().addAll(
+        		"All",
+        		"<25",
+        		"25-34",
+        		"35-44",
+        		"45-54",
+        		"54>"
+        		);
+        
+        ageRangeDropdown.getSelectionModel().selectFirst();
 
+        ageRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
+            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+            	switch(newVal) {
+            	case "All":
+            		ageFilter = 0;
+            		break;
+            	case "<25":
+            		ageFilter = Filters.AGE_25;
+            		break;
+            	case "25-34":
+            		ageFilter = Filters.AGE_25_34;
+            		break;
+            	case "35-44":
+            		ageFilter = Filters.AGE_35_44;
+            		break;
+            	case "45-54":
+            		ageFilter = Filters.AGE_45_54;
+            		break;
+            	case "54>":
+            		ageFilter = Filters.AGE_54;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
+              }    
+          });
+        
+        /*
         MenuItem ageRange25 = new MenuItem("<25");
         ageRange25.setOnAction(e -> {
             ageFilter = Filters.AGE_25;
@@ -138,9 +175,36 @@ public class OverviewController {
         ageRangeDropdownItems.add(ageRange54);
 
         ageRangeDropdown.getItems().addAll(ageRangeDropdownItems);
-
+		*/
+        
         // Gender Dropdown
+        
+        genderDropdown.getItems().addAll(
+        		"All",
+        		"Male",
+        		"Female"
+        		);
+        
+        genderDropdown.getSelectionModel().selectFirst();
 
+        genderDropdown.valueProperty().addListener(new ChangeListener<String>() {
+            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+            	switch(newVal) {
+            	case "All":
+            		genderFilter = 0;
+            		break;
+            	case "Male":
+            		genderFilter = Filters.GENDER_MALE;
+            		break;
+            	case "Female":
+            		genderFilter = Filters.GENDER_FEMALE;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
+              }    
+          });
+
+        /*
         List<MenuItem> genderDropdownItems = new ArrayList<>();
 
         MenuItem genderMale = new MenuItem("Male");
@@ -158,9 +222,43 @@ public class OverviewController {
         genderDropdownItems.add(genderFemale);
 
         genderDropdown.getItems().addAll(genderDropdownItems);
+        */
 
         // Income Dropdown
+        
+        incomeRangeDropdown.getItems().addAll(
+        		"All",
+        		"Low",
+        		"Medium",
+        		"High"
+        		);
+        
+        incomeRangeDropdown.getSelectionModel().selectFirst();
 
+        incomeRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
+            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+            	switch(newVal) {
+            	case "All":
+            		incomeFilter = 0;
+            		break;
+            	case "Low":
+            		incomeFilter = Filters.INCOME_LOW;
+            		break;
+            	case "Medium":
+            		incomeFilter = Filters.INCOME_MEDIUM;
+            		break;
+            	case "High":
+            		incomeFilter = Filters.INCOME_HIGH;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
+            	
+              }    
+          });
+        
+        
+
+        /*
         List<MenuItem> incomeRangeDropdownItems = new ArrayList<>();
 
         MenuItem incomeLow = new MenuItem("Low");
@@ -184,6 +282,7 @@ public class OverviewController {
         incomeRangeDropdownItems.add(incomeHigh);
 
         incomeRangeDropdown.getItems().addAll(incomeRangeDropdownItems);
+        */
 
 
         // Load the total cost stats and pie chart
@@ -228,6 +327,7 @@ public class OverviewController {
         else if (graph.equals("Total Cost"))
             loadTotalCost();
     }
+    
 
     private void loadPieChart() {
         try {
