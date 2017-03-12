@@ -1,6 +1,10 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.*;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.DBCreateViewOptions;
+import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -11,6 +15,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -82,6 +87,29 @@ public class DBHandler {
             array.put(cursor.next());
 
         return array;
+    }
+
+    public JSONArray aggregate(List<DBObject> pipeline, DBObject fields, String collection) {
+        JSONArray array = new JSONArray();
+
+        if (dbClient == null)
+            return new JSONArray().put(new JSONObject().put("error", "database not initialized"));
+
+        DB db = dbClient.getDB(DB_STRING);
+        DBCollection coll = db.getCollection(collection);
+
+        Iterable<DBObject> it = coll.aggregate(pipeline).results();
+
+        it.forEach(obj ->
+            array.put(obj.toString())
+        );
+
+        return array;
+    }
+
+    public DBCollection getCollection(String collection) {
+        DB db = dbClient.getDB(DB_STRING);
+        return db.getCollection(collection);
     }
 
     public String insertData(JSONObject insertion, String collection) {
