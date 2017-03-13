@@ -550,7 +550,7 @@ public class OverviewController {
                 }else if(cost <= binRange * 15) {
                     group[14]++;
                 } else {
-                    System.err.println("this shouldn't happen");
+                    System.err.println("The histogram has loaded incorrectly, cost (" + cost + ") > upper bracket (" + binRange * 15 + ")");
                 }
             }
 

@@ -59,8 +59,6 @@ public class DBQuery {
             allClickCosts.add(Double.parseDouble(cost));
         }
 
-        System.out.println(allClickCosts);
-
         return allClickCosts;
     }
 

@@ -1,7 +1,7 @@
 package org.soton.seg7.ad_analytics.view;
 
 import javafx.collections.ObservableList;
-import javafx.scene.chart.LineChart;
+import javafx.scene.chart.BarChart;
 
 /**
  * Created by samja_000 on 13/03/2017.
