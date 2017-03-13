@@ -34,7 +34,7 @@ public class OverviewController {
         CLICK_THROUGH_RATE("Click through Rate"),
         NUMBER_OF_CONVERSIONS("Number of Conversions"),
         TOTAL_COST("Total Cost"),
-        COST_HISTOGRAM("Cost histogram");
+        CLICK_COST_HISTOGRAM("Click Cost Histogram");
 
         String title;
 
@@ -333,6 +333,8 @@ public class OverviewController {
             loadNumberOfConversions();
         else if (graph.equals("Total Cost"))
             loadTotalCost();
+        else if (graph.equals("Click Cost Histogram"))
+            loadHistogram();
     }
     
 
@@ -495,7 +497,9 @@ public class OverviewController {
         }
     }
 
+
     private void loadHistogram() {
+        currentGraph = Graph.CLICK_COST_HISTOGRAM;
         histogram.setVisible(true);
         lineChart.setVisible(false);
 
@@ -569,20 +573,24 @@ public class OverviewController {
         }
     }
 
+
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
 
     }
 
+
     //function that handles pressing of Change Campain button
     @FXML
     protected void handleChangeCampainButtonAction(ActionEvent event) {
-        this.mainView.showLoadStage();
-        initialize();
+        //this.mainView.showLoadStage();
+        //initialize();
+        /** do nothing */
     }
+
 
     private Integer getCurrentFilter() {
         return ageFilter + incomeFilter + genderFilter;
     }
-    
+
 }

@@ -1,0 +1,51 @@
+!SESSION 2017-02-28 14:43:45.984 -----------------------------------------------
+eclipse.buildId=4.4.2.M20150204-1700
+java.version=1.8.0_60
+java.vendor=Oracle Corporation
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_GB
+Framework arguments:  -product org.eclipse.epp.package.standard.product
+Command-line arguments:  -data C:\Users\samja_000\Documents\Personal\Work\Year 2\COMP2211 Software Engineering Group Project\csseg7 -os win32 -ws win32 -arch x86_64 -product org.eclipse.epp.package.standard.product
+
+!ENTRY org.eclipse.jgit.pgm 4 0 2017-02-28 14:43:46.960
+!MESSAGE FrameworkEvent ERROR
+!STACK 0
+org.osgi.framework.BundleException: Could not resolve module: org.eclipse.jgit.pgm [349]
+  Bundle was not resolved because of a uses contraint violation.
+  org.osgi.service.resolver.ResolutionException: Uses constraint violation. Unable to resolve resource org.eclipse.jgit.pgm [osgi.identity; osgi.identity="org.eclipse.jgit.pgm"; type="osgi.bundle"; version:Version="4.6.0.201612231935-r"] because it is exposed to package 'javax.servlet.http' from resources javax.servlet [osgi.identity; osgi.identity="javax.servlet"; type="osgi.bundle"; version:Version="3.1.0.v20140303-1611"] and javax.servlet [osgi.identity; osgi.identity="javax.servlet"; type="osgi.bundle"; version:Version="3.0.0.v201112011016"] via two dependency chains.
+
+Chain 1:
+  org.eclipse.jgit.pgm [osgi.identity; osgi.identity="org.eclipse.jgit.pgm"; type="osgi.bundle"; version:Version="4.6.0.201612231935-r"]
+    import: (&(osgi.wiring.package=javax.servlet.http)(&(version>=3.1.0)(!(version>=4.0.0))))
+     |
+    export: osgi.wiring.package: javax.servlet.http
+  javax.servlet [osgi.identity; osgi.identity="javax.servlet"; type="osgi.bundle"; version:Version="3.1.0.v20140303-1611"]
+
+Chain 2:
+  org.eclipse.jgit.pgm [osgi.identity; osgi.identity="org.eclipse.jgit.pgm"; type="osgi.bundle"; version:Version="4.6.0.201612231935-r"]
+    import: (&(osgi.wiring.package=org.eclipse.jetty.security)(&(version>=9.0.0)(!(version>=10.0.0))))
+     |
+    export: osgi.wiring.package=org.eclipse.jetty.security; uses:=org.eclipse.jetty.util.security
+  org.eclipse.jetty.security [osgi.identity; osgi.identity="org.eclipse.jetty.security"; type="osgi.bundle"; version:Version="9.2.2.v20140723"]
+    import: (&(osgi.wiring.package=org.eclipse.jetty.util.security)(&(version>=9.2.0)(!(version>=10.0.0))))
+     |
+    export: osgi.wiring.package=org.eclipse.jetty.util.security; uses:=javax.servlet.http
+  org.eclipse.jetty.util [osgi.identity; osgi.identity="org.eclipse.jetty.util"; type="osgi.bundle"; version:Version="9.2.2.v20140723"]
+    import: (&(osgi.wiring.package=javax.servlet.http)(&(version>=2.6.0)(!(version>=3.2.0))))
+     |
+    export: osgi.wiring.package: javax.servlet.http
+  javax.servlet [osgi.identity; osgi.identity="javax.servlet"; type="osgi.bundle"; version:Version="3.0.0.v201112011016"]
+	at org.eclipse.osgi.container.Module.start(Module.java:434)
+	at org.eclipse.osgi.container.ModuleContainer$ContainerStartLevel.incStartLevel(ModuleContainer.java:1582)
+	at org.eclipse.osgi.container.ModuleContainer$ContainerStartLevel.incStartLevel(ModuleContainer.java:1561)
+	at org.eclipse.osgi.container.ModuleContainer$ContainerStartLevel.doContainerStartLevel(ModuleContainer.java:1533)
+	at org.eclipse.osgi.container.ModuleContainer$ContainerStartLevel.dispatchEvent(ModuleContainer.java:1476)
+	at org.eclipse.osgi.container.ModuleContainer$ContainerStartLevel.dispatchEvent(ModuleContainer.java:1)
+	at org.eclipse.osgi.framework.eventmgr.EventManager.dispatchEvent(EventManager.java:230)
+	at org.eclipse.osgi.framework.eventmgr.EventManager$EventThread.run(EventManager.java:340)
+
+!ENTRY org.eclipse.egit.ui 2 0 2017-02-28 14:43:59.470
+!MESSAGE Warning: The environment variable HOME is not set. The following directory will be used to store the Git
+user global configuration and to define the default location to store repositories: 'C:\Users\samja_000'. If this is
+not correct please set the HOME environment variable and restart Eclipse. Otherwise Git for Windows and
+EGit might behave differently since they see different configuration options.
+This warning can be switched off on the Team > Git > Confirmations and Warnings preference page.
