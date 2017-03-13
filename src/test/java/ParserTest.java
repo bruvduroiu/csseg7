@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.soton.seg7.ad_analytics.model.DBHandler;
 import org.soton.seg7.ad_analytics.model.DBQuery;
+import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.model.Parser;
 
@@ -48,9 +49,10 @@ public class ParserTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("impression_log");
+            handler.dropCollection("impression_data");
 
             Parser.parseCSV(impressionsFile);
-            Map<String, Map<String, Integer>> resNumImpressions = DBQuery.getNumImpressions();
+            Map<String, Map<String, Double>> resNumImpressions = DBQuery.getNumImpressions(Filters.NO_FILTER);
 
             assertEquals("Correct Num Impressions in file", expectedJsonMap, resNumImpressions);
         } catch (MongoAuthException e) {
@@ -69,7 +71,7 @@ public class ParserTest {
             handler.dropCollection("click_log");
 
             Parser.parseCSV(clickFile);
-            Map<String, Map<String, Integer>> resNumClicks = DBQuery.getNumClicks();
+            Map<String, Map<String, Double>> resNumClicks = DBQuery.getNumClicks();
 
             assertEquals("Correct Num Clicks file:", expectedJsonMap, resNumClicks);
         } catch (MongoAuthException e) {
@@ -88,7 +90,7 @@ public class ParserTest {
             handler.dropCollection("server_log");
 
             Parser.parseCSV(serverFile);
-            Map<String, Map<String, Integer>> resNumConversions = DBQuery.getNumConversions();
+            Map<String, Map<String, Double>> resNumConversions = DBQuery.getNumConversions();
 
             assertEquals("Correct num of Conversions", expectedJsonMap, resNumConversions);
         } catch (MongoAuthException e) {
@@ -110,7 +112,7 @@ public class ParserTest {
             Parser.parseCSV(clickFile);
             Parser.parseCSV(impressionsFile);
 
-            Double result = DBQuery.getTotalCTR();
+            Double result = DBQuery.getTotalCTR(Filters.NO_FILTER);
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
         } catch (MongoAuthException e) {
@@ -150,7 +152,7 @@ public class ParserTest {
 
             Parser.parseCSV(impressionsFile);
 
-            Double result = DBQuery.getTotalNumImpressions();
+            Double result = DBQuery.getTotalNumImpressions(Filters.NO_FILTER);
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
         } catch (MongoAuthException e) {
@@ -170,7 +172,7 @@ public class ParserTest {
 
             Parser.parseCSV(clickFile);
 
-            Float result = new Float(DBQuery.getTotalCostImpressions());
+            Float result = new Float(DBQuery.getTotalCostImpressions(Filters.NO_FILTER));
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
         } catch (MongoAuthException e) {
@@ -187,6 +189,7 @@ public class ParserTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
 
             Parser.parseCSV(clickFile);
 
@@ -210,7 +213,7 @@ public class ParserTest {
 
             Parser.parseCSV(clickFile);
 
-            Double result = DBQuery.getTotalCostCampaign();
+            Double result = DBQuery.getTotalCostCampaign(Filters.NO_FILTER);
 
             assertEquals("Correct Num Clicks file:", expectedResult, result);
         } catch (MongoAuthException e) {
@@ -271,7 +274,7 @@ public class ParserTest {
             Parser.parseCSV(clickFile);
             Parser.parseCSV(impressionsFile);
 
-            Map<String, Map<String, Double>> result = DBQuery.getCTROverTime();
+            Map<String, Map<String, Double>> result = DBQuery.getCTROverTime(Filters.NO_FILTER);
 
             assertEquals("Correct Hashmap", expectedCtrMap, result);
         } catch (MongoAuthException e) {
