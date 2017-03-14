@@ -5,6 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.chart.BarChart;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
@@ -17,10 +18,12 @@ import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 public class OverviewController {
 
@@ -31,7 +34,7 @@ public class OverviewController {
         CLICK_THROUGH_RATE("Click through Rate"),
         NUMBER_OF_CONVERSIONS("Number of Conversions"),
         TOTAL_COST("Total Cost"),
-        COST_HISTOGRAM("Cost histogram");
+        CLICK_COST_HISTOGRAM("Click Cost Histogram");
 
         String title;
 
@@ -56,6 +59,9 @@ public class OverviewController {
 
     @FXML
     private ObservableList<String> list;
+
+    @FXML
+    private BarChart<String, Double> histogram;
 
     @FXML
     private LineChart<String, Double> lineChart;
@@ -98,6 +104,7 @@ public class OverviewController {
         list.add("Click through Rate");
         list.add("Number of Conversions");
         list.add("Total Cost");
+        list.add("Click Cost Histogram");
 
         graphList.scrollTo(5);
         graphList.getSelectionModel().select(5);
@@ -326,6 +333,8 @@ public class OverviewController {
             loadNumberOfConversions();
         else if (graph.equals("Total Cost"))
             loadTotalCost();
+        else if (graph.equals("Click Cost Histogram"))
+            loadHistogram();
     }
     
 
@@ -346,6 +355,9 @@ public class OverviewController {
 
     private void loadTotalCost() {
         currentGraph = Graph.TOTAL_COST;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Total Cost / Day");
 
@@ -367,6 +379,9 @@ public class OverviewController {
 
     private void loadNumberOfConversions() {
         currentGraph = Graph.NUMBER_OF_CONVERSIONS;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Conversions / Day");
 
@@ -388,6 +403,9 @@ public class OverviewController {
 
     private void loadClickThroughRate() {
         currentGraph = Graph.CLICK_THROUGH_RATE;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Click Through Rate / Day");
 
@@ -409,6 +427,9 @@ public class OverviewController {
 
     private void loadNumberOfClicks() {
         currentGraph = Graph.NUMBER_OF_CLICKS;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Clicks / Day");
 
@@ -430,6 +451,9 @@ public class OverviewController {
 
     private void loadNumberOfImpressions() {
         currentGraph = Graph.NUMBER_OF_IMPRESSIONS;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Impressions / Day");
 
@@ -451,6 +475,9 @@ public class OverviewController {
 
     private void loadCostPerClick() {
         currentGraph = Graph.COST_PER_CLICK;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Click / Day");
 
@@ -470,20 +497,100 @@ public class OverviewController {
         }
     }
 
+
+    private void loadHistogram() {
+        currentGraph = Graph.CLICK_COST_HISTOGRAM;
+        histogram.setVisible(true);
+        lineChart.setVisible(false);
+
+        BarChart.Series<String, Double> series = new BarChart.Series<>();
+        histogram.setTitle("Distribution of Click Cost");
+        histogram.setCategoryGap(0);
+        histogram.setBarGap(0);
+
+        //collect all the data
+        try {
+
+            ArrayList<Double> clickCosts = DBQuery.getAllClickCosts();
+            Collections.sort(clickCosts);
+
+            double binRange = clickCosts.get(clickCosts.size() -1) / 15;
+            int[] group = new int[15];
+
+            // I cba with frequency density so just sorting the costs into frequency bars
+            for(double cost : clickCosts) {
+                if(cost <= binRange) {
+                    group[0]++;
+                }else if(cost <= binRange * 2) {
+                    group[1]++;
+                }else if(cost <= binRange * 3) {
+                    group[2]++;
+                }else if(cost <= binRange * 4) {
+                    group[3]++;
+                }else if(cost <= binRange * 5) {
+                    group[4]++;
+                }else if(cost <= binRange * 6) {
+                    group[5]++;
+                }else if(cost <= binRange * 7) {
+                    group[6]++;
+                }else if(cost <= binRange * 8) {
+                    group[7]++;
+                }else if(cost <= binRange * 9) {
+                    group[8]++;
+                }else if(cost <= binRange * 10) {
+                    group[9]++;
+                }else if(cost <= binRange * 11) {
+                    group[10]++;
+                }else if(cost <= binRange * 12) {
+                    group[11]++;
+                }else if(cost <= binRange * 13) {
+                    group[12]++;
+                }else if(cost <= binRange * 14) {
+                    group[13]++;
+                }else if(cost <= binRange * 15) {
+                    group[14]++;
+                } else {
+                    System.err.println("The histogram has loaded incorrectly, cost (" + cost + ") > upper bracket (" + binRange * 15 + ")");
+                }
+            }
+
+            //put all the data into the series
+            for(int i=0; i<15; i++) {
+                series.getData().add(new XYChart.Data(
+                        (
+                                (new BigDecimal(binRange * i).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                                + "-"
+                                + (new BigDecimal(binRange * (i+1)).setScale(2, RoundingMode.HALF_UP).doubleValue())),
+                        group[i]));
+            }
+
+            histogram.getData().clear();
+            histogram.getData().addAll(series);
+
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
 
     }
-    
+
+
     //function that handles pressing of Change Campain button
     @FXML
     protected void handleChangeCampainButtonAction(ActionEvent event) {
-        this.mainView.showLoadStage();
-        initialize();
+        //this.mainView.showLoadStage();
+        //initialize();
+        /** do nothing */
     }
+
 
     private Integer getCurrentFilter() {
         return ageFilter + incomeFilter + genderFilter;
     }
-    
+
 }

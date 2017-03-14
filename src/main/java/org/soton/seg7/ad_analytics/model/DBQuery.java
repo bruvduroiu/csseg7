@@ -41,6 +41,27 @@ public class DBQuery {
     private static final DBObject ALL_QUERY = new BasicDBObject();
     private static DBObject fieldModifier;
 
+    public static ArrayList<Double> getAllClickCosts() throws MongoAuthException {
+        ArrayList<Double> allClickCosts = new ArrayList<Double>();
+
+        DBHandler handler = DBHandler.getDBConnection();
+        fieldModifier = new BasicDBObject()
+                .append("Click Cost", 1);
+
+        List<DBObject> results = handler.sendQuery(
+                ALL_QUERY,
+                fieldModifier,
+                DATA_CLICKS
+        );
+
+        for(DBObject val : results) {
+            String cost = val.toString().split(",")[1].split(" ")[4].split("}")[0];
+            allClickCosts.add(Double.parseDouble(cost));
+        }
+
+        return allClickCosts;
+    }
+
     public static Map<String, Map<String, Double>> getNumImpressions(Integer filter) throws MongoAuthException {
         if (filter == Filters.NO_FILTER)
             return getCountMetric(COL_IMPRESSIONS);

@@ -47,6 +47,8 @@ public class DBHandler {
 
             final JSONObject config = new JSONObject(object);
 
+            System.out.println(object);
+
             HOST = config.get("host").toString();
             PORT = Integer.parseInt(config.get("port").toString());
             USER = config.get("user").toString();
