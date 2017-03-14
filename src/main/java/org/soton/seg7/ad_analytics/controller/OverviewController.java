@@ -144,7 +144,12 @@ public class OverviewController {
             		ageFilter = Filters.AGE_54;
             		break;
             	}
-            	if(!(currentGraph.equals(Graph.CLICK_COST_HISTOGRAM))) loadGraph(currentGraph.toString());
+                // no unnecessary filtering for graphs we don't have filter data for
+            	if(!(
+            	        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
+                        || currentGraph.equals(Graph.COST_PER_CLICK)
+                        || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
+                )) loadGraph(currentGraph.toString());
               }    
           });
         
@@ -207,7 +212,12 @@ public class OverviewController {
             		genderFilter = Filters.GENDER_FEMALE;
             		break;
             	}
-                if(!(currentGraph.equals(Graph.CLICK_COST_HISTOGRAM))) loadGraph(currentGraph.toString());
+                // no unnecessary filtering for graphs we don't have filter data for
+                if(!(
+                        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
+                                || currentGraph.equals(Graph.COST_PER_CLICK)
+                                || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
+                )) loadGraph(currentGraph.toString());
               }    
           });
 
@@ -258,7 +268,12 @@ public class OverviewController {
             		incomeFilter = Filters.INCOME_HIGH;
             		break;
             	}
-                if(!(currentGraph.equals(Graph.CLICK_COST_HISTOGRAM))) loadGraph(currentGraph.toString());
+            	// no unnecessary filtering for graphs we don't have filter data for
+                if(!(
+                        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
+                                || currentGraph.equals(Graph.COST_PER_CLICK)
+                                || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
+                )) loadGraph(currentGraph.toString());
             	
               }    
           });
