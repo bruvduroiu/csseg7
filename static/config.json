@@ -1,7 +1,7 @@
 {
-  "host": "127.0.0.1",
+  "host": "vm9.blacknell.co.uk",
   "port": 27017,
-  "user": "root",
-  "pass": "root",
-  "db": "analytics_data"
+  "user": "seg7",
+  "pass": "mydbsecret",
+  "db": "AdCampaign"
 }
