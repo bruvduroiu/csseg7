@@ -7,18 +7,18 @@ import java.util.Date;
  */
 public class ClickMetrics {
 
-    private Date date;
+    private Date Date;
     private Double cost;
     private Integer num;
 
     public ClickMetrics(Date date, Double cost, Integer num) {
-        this.date = date;
+        this.Date = date;
         this.cost = cost;
         this.num = num;
     }
 
     public Date getDate() {
-        return date;
+        return Date;
     }
 
     public Double getCost() {

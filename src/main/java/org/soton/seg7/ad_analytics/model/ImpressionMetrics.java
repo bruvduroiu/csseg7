@@ -7,22 +7,22 @@ import java.util.Date;
  */
 public class ImpressionMetrics {
 
-    private Date date;
+    private Date Date;
     private Double cost;
     private Integer num;
 
     public ImpressionMetrics(Date date, Double cost, Integer num) {
-        this.date = date;
+        this.Date = date;
         this.cost = cost;
         this.num = num;
     }
 
     public Date getDate() {
-        return date;
+        return Date;
     }
 
     public void setDate(Date date) {
-        this.date = date;
+        this.Date = date;
     }
 
     public Double getCost() {
