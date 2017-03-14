@@ -144,7 +144,7 @@ public class OverviewController {
             		ageFilter = Filters.AGE_54;
             		break;
             	}
-            	loadGraph(currentGraph.toString());
+            	if(!(currentGraph.equals(Graph.CLICK_COST_HISTOGRAM))) loadGraph(currentGraph.toString());
               }    
           });
         
@@ -207,7 +207,7 @@ public class OverviewController {
             		genderFilter = Filters.GENDER_FEMALE;
             		break;
             	}
-            	loadGraph(currentGraph.toString());
+                if(!(currentGraph.equals(Graph.CLICK_COST_HISTOGRAM))) loadGraph(currentGraph.toString());
               }    
           });
 
@@ -258,7 +258,7 @@ public class OverviewController {
             		incomeFilter = Filters.INCOME_HIGH;
             		break;
             	}
-            	loadGraph(currentGraph.toString());
+                if(!(currentGraph.equals(Graph.CLICK_COST_HISTOGRAM))) loadGraph(currentGraph.toString());
             	
               }    
           });
