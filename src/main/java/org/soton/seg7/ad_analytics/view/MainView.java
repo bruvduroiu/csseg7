@@ -15,6 +15,7 @@ import javafx.scene.chart.BarChart;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import org.joda.time.DateTime;
 import org.soton.seg7.ad_analytics.controller.OverviewController;
 import org.soton.seg7.ad_analytics.model.DBHandler;
 import org.soton.seg7.ad_analytics.model.DBQuery;
@@ -117,15 +118,13 @@ public class MainView extends Application {
             Parser.parseCSV(clickFile);
             
             //getting data from database
-            Map<String, Map<String, Double>> clickCount = DBQuery.getNumClicks();
+            Map<DateTime, Double> clickCount = DBQuery.getNumClicks();
             
             //printing data
-            for (Map.Entry<String, Map<String, Double>> entryMap : clickCount.entrySet()){
-            	String name = entryMap.getKey();
-            	Map<String, Double> data = entryMap.getValue();
-            	for(Map.Entry<String, Double> entry : data.entrySet()){
-            		System.out.println("Entry with name: "+name+" has key: "+entry.getKey()+ "  and value: " + entry.getValue());
-            	}
+            for (Map.Entry<DateTime, Double> entryMap : clickCount.entrySet()){
+            	DateTime name = entryMap.getKey();
+            	Double data = entryMap.getValue();
+                System.out.println("Entry with name: "+name+" has key: "+name+ "  and value: " + data);
             }
 
         } catch (MongoAuthException e) {

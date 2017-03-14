@@ -7,7 +7,7 @@ import java.util.Date;
  */
 public class ServerMetrics {
 
-    private Date date;
+    private Date Date;
     private Double conversionRate;
     private Double bounceRatePage;
     private Double bounceRateTime;
@@ -15,7 +15,7 @@ public class ServerMetrics {
     private Double views;
 
     public ServerMetrics(Date date, Double conversionRate, Double bounceRatePage, Double bounceRateTime, Integer num, Double views) {
-        this.date = date;
+        this.Date = date;
         this.conversionRate = conversionRate;
         this.bounceRatePage = bounceRatePage;
         this.bounceRateTime = bounceRateTime;
@@ -24,11 +24,11 @@ public class ServerMetrics {
     }
 
     public Date getDate() {
-        return date;
+        return Date;
     }
 
     public void setDate(Date date) {
-        this.date = date;
+        this.Date = date;
     }
 
     public Double getConversionRate() {

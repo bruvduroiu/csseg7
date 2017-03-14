@@ -13,6 +13,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
+import org.joda.time.DateTime;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
@@ -377,12 +378,13 @@ public class OverviewController {
         lineChart.setTitle("Total Cost / Day");
 
         try {
-            Map<String, Map<String, Double>> totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter());
-            ArrayList<String> days = new ArrayList<String>(totalCostOverTime.keySet());
-            Collections.sort(days);
+            Map<DateTime, Double> totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter());
+            ArrayList<DateTime> dates = new ArrayList<>(totalCostOverTime.keySet());
+            Collections.sort(dates);
 
-            for (String day : days)
-                series.getData().add(new XYChart.Data<>(day, totalCostOverTime.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+            for (DateTime day : dates)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day)));
+
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
@@ -401,12 +403,12 @@ public class OverviewController {
         lineChart.setTitle("Number of Conversions / Day");
 
         try {
-            Map<String, Map<String, Double>> conversionsMap = DBQuery.getNumConversions();
-            ArrayList<String> days = new ArrayList<>(conversionsMap.keySet());
+            Map<DateTime, Double> conversionsMap = DBQuery.getNumConversions();
+            ArrayList<DateTime> days = new ArrayList<>(conversionsMap.keySet());
             Collections.sort(days);
 
-            for (String day : days)
-                series.getData().add(new XYChart.Data<>(day, conversionsMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+            for (DateTime day : days)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), conversionsMap.get(day)));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
@@ -425,12 +427,12 @@ public class OverviewController {
         lineChart.setTitle("Click Through Rate / Day");
 
         try {
-            Map<String, Map<String, Double>> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
-            ArrayList<String> days = new ArrayList<String>(clickThroughRateMap.keySet());
+            Map<DateTime, Double> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
+            ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
             Collections.sort(days);
 
-            for (String day : days)
-                series.getData().add(new XYChart.Data<>(day, clickThroughRateMap.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+            for (DateTime day : days)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
@@ -449,12 +451,12 @@ public class OverviewController {
         lineChart.setTitle("Number of Clicks / Day");
 
         try {
-            Map<String, Map<String, Double>> numberOfClicks = DBQuery.getNumClicks();
-            ArrayList<String> days = new ArrayList<String>(numberOfClicks.keySet());
+            Map<DateTime, Double> numberOfClicks = DBQuery.getNumClicks();
+            ArrayList<DateTime> days = new ArrayList<>(numberOfClicks.keySet());
             Collections.sort(days);
 
-            for (String day : days)
-                series.getData().add(new XYChart.Data<>(day, numberOfClicks.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+            for (DateTime day : days)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfClicks.get(day)));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
@@ -473,12 +475,12 @@ public class OverviewController {
         lineChart.setTitle("Number of Impressions / Day");
 
         try {
-            Map<String, Map<String, Double>> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
-            ArrayList<String> days = new ArrayList<String>(numberOfImpressions.keySet());
+            Map<DateTime, Double> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
+            ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
             Collections.sort(days);
 
-            for (String day : days)
-                series.getData().add(new XYChart.Data<>(day, numberOfImpressions.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+            for (DateTime day : days)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
@@ -497,12 +499,12 @@ public class OverviewController {
         lineChart.setTitle("Cost per Click / Day");
 
         try {
-            Map<String, Map<String, Double>> costPerClick = DBQuery.getClickCostOverTime();
-            ArrayList<String> days = new ArrayList<String>(costPerClick.keySet());
+            Map<DateTime, Double> costPerClick = DBQuery.getClickCostOverTime();
+            ArrayList<DateTime> days = new ArrayList<>(costPerClick.keySet());
             Collections.sort(days);
 
-            for (String day : days)
-                series.getData().add(new XYChart.Data<>(day, costPerClick.get(day).values().stream().mapToDouble(Number::doubleValue).sum()));
+            for (DateTime day : days)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
