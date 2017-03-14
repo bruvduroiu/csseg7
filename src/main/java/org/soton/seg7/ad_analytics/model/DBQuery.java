@@ -149,6 +149,17 @@ public class DBQuery {
                 .collect(Collectors.toMap(k->k, k->clickCost.getOrDefault(k,0d) + impressionCost.getOrDefault(k,0d)));
 
     }
+    
+    public static Map<DateTime, Double> getCostPerThousandImpressionsOverTime(Integer filter) throws MongoAuthException {
+        Map<DateTime, Double> totalCost = getClickCostOverTime();
+        Map<DateTime, Double> numImpressions = getNumImpressions(filter);
+
+        return Stream.concat(totalCost.keySet().stream(), numImpressions.keySet().stream())
+                .distinct()
+                .collect(Collectors.toMap(k->k, k->(totalCost.getOrDefault(k,0d) / numImpressions.getOrDefault(k,0d) * 1000)));
+
+    }
+    
 
     public static Map<DateTime, Double> getCTROverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> numImpressions = getNumImpressions(filter);
@@ -158,6 +169,7 @@ public class DBQuery {
                 .distinct()
                 .collect(Collectors.toMap(k -> k, k -> numClicks.getOrDefault(k, 0d) / numImpressions.getOrDefault(k,1d)));
     }
+    
 
     public static Map<DateTime, Double> getBounceRate(String condition) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();

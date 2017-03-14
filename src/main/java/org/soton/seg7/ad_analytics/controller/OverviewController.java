@@ -35,7 +35,8 @@ public class OverviewController {
         CLICK_THROUGH_RATE("Click through Rate"),
         NUMBER_OF_CONVERSIONS("Number of Conversions"),
         TOTAL_COST("Total Cost"),
-        CLICK_COST_HISTOGRAM("Click Cost Histogram");
+        CLICK_COST_HISTOGRAM("Click Cost Histogram"),
+        COST_PER_THOUSAND_IMPRESSIONS("Cost per Thousand Impressions");
 
         String title;
 
@@ -106,6 +107,7 @@ public class OverviewController {
         list.add("Number of Conversions");
         list.add("Total Cost");
         list.add("Click Cost Histogram");
+        list.add("Cost per Thousand Impressions");
 
         graphList.scrollTo(5);
         graphList.getSelectionModel().select(5);
@@ -336,6 +338,8 @@ public class OverviewController {
             loadTotalCost();
         else if (graph.equals("Click Cost Histogram"))
             loadHistogram();
+        else if (graph.equals("Cost per Thousand Impressions"))
+            loadCostPerThousandImpressions();
     }
     
 
@@ -350,6 +354,31 @@ public class OverviewController {
             pieChart.getData().addAll(pieChartData);
 
         } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void loadCostPerThousandImpressions() {
+        currentGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
+        XYChart.Series<String, Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Cost per Thousand Impressions / Day");
+
+        try {
+            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter());
+            ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
+            Collections.sort(dates);
+
+            for (DateTime day : dates)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
+
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
             e.printStackTrace();
         }
     }
