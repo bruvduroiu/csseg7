@@ -215,11 +215,11 @@ public class DBQuery {
     }
 
     public static Double getTotalNumClicks() throws MongoAuthException {
-        return getTotalMetric(OP_COUNT, COUNT_AGGREGATE, COL_CLICKS, Filters.NO_FILTER);
+        return getTotalMetric(OP_SUM, COUNT_AGGREGATE, COL_CLICKS, Filters.NO_FILTER);
     }
 
     public static Double getTotalNumImpressions(Integer filter) throws MongoAuthException {
-        return getTotalMetric(OP_COUNT, COUNT_AGGREGATE, COL_IMPRESSIONS, filter);
+        return getTotalMetric(OP_SUM, COUNT_AGGREGATE, COL_IMPRESSIONS, filter);
     }
 
     public static Double getTotalCostImpressions(Integer filter) throws MongoAuthException {
