@@ -13,7 +13,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -61,6 +63,15 @@ public class OverviewController {
     private int incomeFilter;
     private int genderFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter;
+    
+    @FXML
+    private ToggleGroup bounceSettingsGroup = new ToggleGroup();
+    
+    @FXML
+    private RadioButton bounceByPage;
+    
+    @FXML
+    private RadioButton bounceByTime;
     
     @FXML
     private Slider granularitySlider;
@@ -112,6 +123,10 @@ public class OverviewController {
         ageFilter = 0;
         incomeFilter = 0;
         genderFilter = 0;
+        
+        bounceByTime.setToggleGroup(bounceSettingsGroup);
+        bounceByTime.setSelected(true);
+        bounceByPage.setToggleGroup(bounceSettingsGroup);
 
         list = graphList.getItems();
         list.clear();
@@ -301,7 +316,8 @@ public class OverviewController {
     		DBQuery.setGranularity(2);
     	else if(granularity.intValue() == 2)
     		DBQuery.setGranularity(1);
-    	loadGraph(currentGraph.toString());
+    	loadGraph(currentGraph.toString());   		
+    		
     }
 
     private void loadGraph(String graph) {
