@@ -156,7 +156,7 @@ public class DBHandler {
                 )
         );
 
-        MongoClient client = new MongoClient(addresses, credentials);
+        MongoClient client = new MongoClient("localhost",27017);
 
         return client;
     }
