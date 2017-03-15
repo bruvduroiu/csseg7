@@ -58,6 +58,12 @@ public class ParserTest {
             Parser.parseCSV(impressionsFile);
             Map<DateTime, Double> resNumImpressions = DBQuery.getNumImpressions(Filters.NO_FILTER);
 
+			System.out.println("Test impression day num");
+            for (Map.Entry<DateTime, Double> entry : resNumImpressions.entrySet())
+			{
+			    System.out.println("inside loop");
+    			System.out.println(entry.getKey() + " : " + entry.getValue());
+			}
             assertEquals("Correct Num Impressions in file", expectedJsonMap, resNumImpressions);
         } catch (MongoAuthException e) {
             e.printStackTrace();
@@ -77,6 +83,12 @@ public class ParserTest {
             Parser.parseCSV(clickFile);
             Map<DateTime, Double> resNumClicks = DBQuery.getNumClicks();
 
+			System.out.println("Test click day num");
+            for (Map.Entry<DateTime, Double> entry : resNumClicks.entrySet())
+			{
+    			System.out.println(entry.getKey() + " : " + entry.getValue());
+			}
+			
             assertEquals("Correct Num Clicks file:", expectedJsonMap, resNumClicks);
         } catch (MongoAuthException e) {
             e.printStackTrace();
@@ -95,6 +107,12 @@ public class ParserTest {
 
             Parser.parseCSV(serverFile);
             Map<DateTime, Double> resNumConversions = DBQuery.getNumConversions();
+            
+            System.out.println("Test server conversions");
+            for (Map.Entry<DateTime, Double> entry : resNumConversions.entrySet())
+			{
+    			System.out.println(entry.getKey() + " : " + entry.getValue());
+			}
 
             assertEquals("Correct num of Conversions", expectedJsonMap, resNumConversions);
         } catch (MongoAuthException e) {
@@ -186,7 +204,7 @@ public class ParserTest {
     
     @Test
     public void testTotalCostClick() {
-    	final Double expectedResult = 117610.86572500074;
+    	final Double expectedResult = 117610.865725;
 
         DBHandler handler;
 
@@ -207,7 +225,7 @@ public class ParserTest {
     
     @Test
     public void testTotalCostCampaign() {
-    	final Double expectedResult = 118097.92122300074;
+    	final Double expectedResult = 118097.921223;
 
         DBHandler handler;
 
@@ -299,6 +317,12 @@ public class ParserTest {
             Parser.parseCSV(serverFile);
 
             Map<DateTime, Double> result = DBQuery.getBounceRateByPage();
+            
+            System.out.println("Test bounce page");
+            for (Map.Entry<DateTime, Double> entry : result.entrySet())
+			{
+    			System.out.println(entry.getKey() + " : " + entry.getValue());
+			}
 
             assertEquals("Correct Hashmap", expectedMap, result);
         } catch (MongoAuthException e) {
