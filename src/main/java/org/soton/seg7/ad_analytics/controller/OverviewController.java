@@ -10,9 +10,13 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Slider;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
+
 import org.joda.time.DateTime;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
@@ -22,6 +26,7 @@ import org.soton.seg7.ad_analytics.view.MainView;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 import java.math.BigDecimal;
 
@@ -56,6 +61,9 @@ public class OverviewController {
     private int incomeFilter;
     private int genderFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter;
+    
+    @FXML
+    private Slider granularitySlider;
 
     @FXML
     private ListView<String> graphList;
@@ -87,6 +95,12 @@ public class OverviewController {
     @FXML
     private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown;
 
+    @FXML
+    private DatePicker startDate;
+
+    @FXML
+    private DatePicker endDate;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -114,6 +128,31 @@ public class OverviewController {
 
         graphList.scrollTo(0);
         graphList.getSelectionModel().select(0);
+        granularitySlider.setSnapToTicks(true);
+        granularitySlider.setLabelFormatter(new StringConverter<Double>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "Hours";
+                if (n < 1.5) return "Days";
+                return "Months";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                switch (s) {
+                    case "Hours":
+                        return 0d;
+                    case "Days":
+                        return 1d;
+                    case "Months":
+                        return 2d;
+                    default:
+                        return 1d;
+                }
+            }
+        });
+        
+        
 
         // Age Range Dropdown
 
@@ -125,7 +164,17 @@ public class OverviewController {
         		"45-54",
         		"54>"
         		);
-        
+
+        startDate.valueProperty().addListener((ov,oldVal,newVal) -> {
+            DBQuery.setDateRange(DateTime.parse(newVal.toString()), (endDate.getValue() == null) ? null : DateTime.parse(endDate.getValue().toString()));
+            loadGraph(currentGraph.toString());
+        });
+
+        endDate.valueProperty().addListener((ov, oldVal, newVal) -> {
+            DBQuery.setDateRange(DateTime.parse((startDate.getValue() == null) ? null : startDate.getValue().toString()), DateTime.parse(newVal.toString()));
+            loadGraph(currentGraph.toString());
+        });
+
         ageRangeDropdown.getSelectionModel().selectFirst();
 
         ageRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
@@ -254,6 +303,20 @@ public class OverviewController {
         // Listen for selection changes and show the person details when changed.
         graphList.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> loadGraph(newValue));
+        
+        // Listen for time granularity change
+        granularitySlider.valueProperty().addListener(
+        		(observable, oldValue, newValue) -> changeGranularity(newValue));
+    }
+    
+    private void changeGranularity(Number granularity){
+    	if(granularity.intValue() == 0)
+    		DBQuery.setGranularity(3);
+    	else if(granularity.intValue() == 1)
+    		DBQuery.setGranularity(2);
+    	else if(granularity.intValue() == 2)
+    		DBQuery.setGranularity(1);
+    	loadGraph(currentGraph.toString());
     }
 
     private void loadGraph(String graph) {

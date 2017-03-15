@@ -7,11 +7,10 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
-import javax.persistence.Basic;
-import javax.swing.text.DateFormatter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,18 +46,26 @@ public class DBQuery {
     public static final int GRANULARITY_MONTH = 1;
     private static int granularity = GRANULARITY_DAY;
 
+    private static DateTime startDate;
+    private static DateTime endDate;
+
+    public static void setDateRange(DateTime startDate, DateTime endDate) {
+        DBQuery.startDate = startDate;
+        DBQuery.endDate = endDate;
+    }
+
     public static int getGranularity() {
         return granularity;
     }
-
+    
     public static void setGranularity(int granularity) {
-        if (granularity > GRANULARITY_HOUR || granularity < GRANULARITY_MONTH)
-            return;
-        DBQuery.granularity = granularity;
-    }
+	    if (granularity > GRANULARITY_HOUR || granularity < GRANULARITY_MONTH)
+	        return;
+	    DBQuery.granularity = granularity;
+	}
 
-    private static final DBObject ALL_QUERY = new BasicDBObject();
-    private static DBObject fieldModifier;
+    private static final BasicDBObject ALL_QUERY = new BasicDBObject();
+    private static BasicDBObject fieldModifier;
 
     public static ArrayList<Double> getAllClickCosts() throws MongoAuthException {
         ArrayList<Double> allClickCosts = new ArrayList<Double>();
@@ -88,10 +95,13 @@ public class DBQuery {
         List<DBObject> results =  new ArrayList<>();
 
         DBHandler handler = DBHandler.getDBConnection();
-        DBObject query = getQueryFilter(filter);
+
+        List<BasicDBObject> query = new ArrayList<>();
+        query.add(getQueryFilter(filter));
+        getDateFilterQuery().forEach(query::add);
 
         handler.getCollection(DATA_IMPRESSIONS).aggregate(Arrays.asList(
-                new BasicDBObject("$match", query),
+                new BasicDBObject("$match", new BasicDBObject("$and", query)),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
                                 .append("num", new BasicDBObject("$sum", 1)))))
@@ -127,11 +137,14 @@ public class DBQuery {
             return getCostMetric(COL_IMPRESSIONS);
 
         DBHandler handler = DBHandler.getDBConnection();
-        DBObject query = getQueryFilter(filter);
+        List<BasicDBObject> query = new ArrayList<>();
+        query.add(getQueryFilter(filter));
+        getDateFilterQuery().forEach(query::add);
+
         List<DBObject> results =  new ArrayList<>();
 
         handler.getCollection(DATA_IMPRESSIONS).aggregate(Arrays.asList(
-                new BasicDBObject("$match", query),
+                new BasicDBObject("$match", new BasicDBObject("$and", query)),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
                                 .append("cost", new BasicDBObject("$sum", "$Impression Cost")))))
@@ -177,6 +190,7 @@ public class DBQuery {
         List<DBObject> results =  new ArrayList<>();
 
         handler.getCollection(COL_SERVER).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
                                 .append(condition, new BasicDBObject("$avg", "$"+condition)))))
@@ -225,6 +239,7 @@ public class DBQuery {
         List<DBObject> results =  new ArrayList<>();
 
         handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
                                 .append("num", new BasicDBObject("$sum", "$num")))))
@@ -238,6 +253,7 @@ public class DBQuery {
         List<DBObject> results =  new ArrayList<>();
 
         handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
                                 .append("cost", new BasicDBObject("$sum", "$cost")))))
@@ -270,7 +286,7 @@ public class DBQuery {
         return result.getDouble("total");
     }
 
-    private static DBObject getQueryFilter(Integer filter) {
+    private static BasicDBObject getQueryFilter(Integer filter) {
         Integer age, income, gender, context;
         BasicDBObject query = new BasicDBObject();
 
@@ -320,15 +336,8 @@ public class DBQuery {
         String dateString = null;
         DateFormat df = null;
         if (granularity == GRANULARITY_HOUR) {
-            df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            dateString = String.format("%s-%s-%s %s:00:00",
-                    dateObj.getString("year"),
-                    ((month = dateObj.getString("month")).length() == 1)
-                            ? "0" + month
-                            : month,
-                    ((day = dateObj.getString("day")).length() == 1)
-                            ? "0" + day
-                            : day,
+            df = new SimpleDateFormat("HH:mm");
+            dateString = String.format("%s:00:00",
                     ((hour = dateObj.getString("hour")).length() == 1)
                             ? "0" + hour
                             : hour);
@@ -390,6 +399,24 @@ public class DBQuery {
         else if (granularity == GRANULARITY_DAY)
             return DateTimeFormat.forPattern("yyyy-MM-dd");
         else
-            return DateTimeFormat.forPattern("yyyy-MM-dd HH");
+            return DateTimeFormat.forPattern("HH:mm");
+    }
+
+    private static List<BasicDBObject> getDateFilterQuery() {
+        List<BasicDBObject> dateQuery = new ArrayList<>();
+
+        if (startDate != null)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gte", startDate.toDate())));
+        else
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gte", Date.from(Instant.EPOCH))));
+
+        if (granularity == GRANULARITY_HOUR)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", startDate.plusHours(23).plusMinutes(59).plusSeconds(59).toDate())));
+        else if (endDate != null)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", endDate.toDate())));
+        else
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", new Date())));
+
+        return dateQuery;
     }
 }
