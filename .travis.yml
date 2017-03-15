@@ -20,4 +20,4 @@ services: mongodb
 
 before-script:
   - sleep 15
-  - mongo analytics_data --eval 'db.createUser({ user: "root", pwd: "root", roles: [{ role: "readWrite", db: "analytics_data" }]});'
+  - mongo analytics_data --eval 'db.addUser("root", "root");'
