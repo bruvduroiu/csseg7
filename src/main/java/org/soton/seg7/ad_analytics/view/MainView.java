@@ -31,6 +31,7 @@ public class MainView extends Application {
 
     public MainView() {
         
+    	/*
     	graphData.add(new LineGraph("Click-through-rate"));
     	graphData.add(new LineGraph("Cost-per-click"));
     	graphData.add(new LineGraph("Number of Clicks"));
@@ -38,6 +39,7 @@ public class MainView extends Application {
         graphData.add(new LineGraph("Number of Impressions"));
         graphData.add(new LineGraph("Total Cost"));
         graphData.add(new BarGraph("Click Cost Histogram"));
+        */
     }
 
     public ObservableList<Graph> getGraphData() {

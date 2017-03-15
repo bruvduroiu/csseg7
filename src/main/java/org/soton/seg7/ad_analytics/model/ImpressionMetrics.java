@@ -1,5 +1,7 @@
 package org.soton.seg7.ad_analytics.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Date;
 
 /**
@@ -7,22 +9,23 @@ import java.util.Date;
  */
 public class ImpressionMetrics {
 
-    private Date Date;
+    private Date date;
     private Double cost;
     private Integer num;
 
     public ImpressionMetrics(Date date, Double cost, Integer num) {
-        this.Date = date;
+        this.date = date;
         this.cost = cost;
         this.num = num;
     }
 
+    @JsonProperty("Date")
     public Date getDate() {
-        return Date;
+        return date;
     }
 
     public void setDate(Date date) {
-        this.Date = date;
+        this.date = date;
     }
 
     public Double getCost() {

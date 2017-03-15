@@ -22,7 +22,6 @@ import org.soton.seg7.ad_analytics.view.MainView;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.math.BigDecimal;
 
@@ -35,7 +34,10 @@ public class OverviewController {
         CLICK_THROUGH_RATE("Click through Rate"),
         NUMBER_OF_CONVERSIONS("Number of Conversions"),
         TOTAL_COST("Total Cost"),
-        CLICK_COST_HISTOGRAM("Click Cost Histogram");
+        CLICK_COST_HISTOGRAM("Click Cost Histogram"),
+        COST_PER_THOUSAND_IMPRESSIONS("Cost per Thousand Impressions"),
+        COST_PER_ACQUISITION("Cost per Acquisition"),
+        BOUNCE_RATE("Bounce Rate");
 
         String title;
 
@@ -99,16 +101,19 @@ public class OverviewController {
 
         list = graphList.getItems();
         list.clear();
-        list.add("Cost per Click");
-        list.add("Number of Impressions");
-        list.add("Number of Clicks");
-        list.add("Click through Rate");
-        list.add("Number of Conversions");
-        list.add("Total Cost");
-        list.add("Click Cost Histogram");
+        list.add(Graph.TOTAL_COST.toString());
+        list.add(Graph.COST_PER_CLICK.toString());
+        list.add(Graph.NUMBER_OF_IMPRESSIONS.toString());
+        list.add(Graph.NUMBER_OF_CLICKS.toString());
+        list.add(Graph.CLICK_THROUGH_RATE.toString());
+        list.add(Graph.COST_PER_ACQUISITION.toString());
+        list.add(Graph.NUMBER_OF_CONVERSIONS.toString());
+        list.add(Graph.BOUNCE_RATE.toString());
+        list.add(Graph.CLICK_COST_HISTOGRAM.toString());
+        list.add(Graph.COST_PER_THOUSAND_IMPRESSIONS.toString());
 
-        graphList.scrollTo(5);
-        graphList.getSelectionModel().select(5);
+        graphList.scrollTo(0);
+        graphList.getSelectionModel().select(0);
 
         // Age Range Dropdown
 
@@ -154,42 +159,6 @@ public class OverviewController {
               }    
           });
         
-        /*
-        MenuItem ageRange25 = new MenuItem("<25");
-        ageRange25.setOnAction(e -> {
-            ageFilter = Filters.AGE_25;
-            loadGraph(currentGraph.toString());
-        });
-        MenuItem ageRange25_34 = new MenuItem("25-34");
-        ageRange25_34.setOnAction(e -> {
-            ageFilter = Filters.AGE_25_34;
-            loadGraph(currentGraph.toString());
-        });
-        MenuItem ageRange35_44 = new MenuItem("35-44");
-        ageRange35_44.setOnAction(e -> {
-            ageFilter = Filters.AGE_35_44;
-            loadGraph(currentGraph.toString());
-        });
-        MenuItem ageRange45_54 = new MenuItem("45-54");
-        ageRange45_54.setOnAction(e -> {
-            ageFilter = Filters.AGE_45_54;
-            loadGraph(currentGraph.toString());
-        });
-        MenuItem ageRange54 = new MenuItem("54>");
-        ageRange54.setOnAction(e -> {
-            ageFilter = Filters.AGE_54;
-            loadGraph(currentGraph.toString());
-        });
-
-        ageRangeDropdownItems.add(ageRange25);
-        ageRangeDropdownItems.add(ageRange25_34);
-        ageRangeDropdownItems.add(ageRange35_44);
-        ageRangeDropdownItems.add(ageRange45_54);
-        ageRangeDropdownItems.add(ageRange54);
-
-        ageRangeDropdown.getItems().addAll(ageRangeDropdownItems);
-		*/
-        
         // Gender Dropdown
         
         genderDropdown.getItems().addAll(
@@ -221,26 +190,6 @@ public class OverviewController {
                 )) loadGraph(currentGraph.toString());
               }    
           });
-
-        /*
-        List<MenuItem> genderDropdownItems = new ArrayList<>();
-
-        MenuItem genderMale = new MenuItem("Male");
-        genderMale.setOnAction(e -> {
-            genderFilter = Filters.GENDER_MALE;
-            loadGraph(currentGraph.toString());
-        });
-        MenuItem genderFemale = new MenuItem("Female");
-        genderFemale.setOnAction(e -> {
-            genderFilter = Filters.GENDER_FEMALE;
-            loadGraph(currentGraph.toString());
-        });
-
-        genderDropdownItems.add(genderMale);
-        genderDropdownItems.add(genderFemale);
-
-        genderDropdown.getItems().addAll(genderDropdownItems);
-        */
 
         // Income Dropdown
         
@@ -279,34 +228,6 @@ public class OverviewController {
               }    
           });
         
-        
-
-        /*
-        List<MenuItem> incomeRangeDropdownItems = new ArrayList<>();
-
-        MenuItem incomeLow = new MenuItem("Low");
-        incomeLow.setOnAction(e -> {
-            incomeFilter = Filters.INCOME_LOW;
-            loadGraph(currentGraph.toString());
-        });
-        MenuItem incomeMedium = new MenuItem("Medium");
-        incomeMedium.setOnAction(e -> {
-            incomeFilter = Filters.INCOME_MEDIUM;
-            loadGraph(currentGraph.toString());
-        });
-        MenuItem incomeHigh = new MenuItem("High");
-        incomeHigh.setOnAction(e -> {
-            incomeFilter = Filters.INCOME_HIGH;
-            loadGraph(currentGraph.toString());
-        });
-
-        incomeRangeDropdownItems.add(incomeLow);
-        incomeRangeDropdownItems.add(incomeMedium);
-        incomeRangeDropdownItems.add(incomeHigh);
-
-        incomeRangeDropdown.getItems().addAll(incomeRangeDropdownItems);
-        */
-
 
         // Load the total cost stats and pie chart
 
@@ -337,20 +258,26 @@ public class OverviewController {
 
     private void loadGraph(String graph) {
 
-        if (graph.equals("Cost per Click"))
+        if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
-        else if (graph.equals("Number of Impressions"))
+        else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString()))
             loadNumberOfImpressions();
-        else if (graph.equals("Number of Clicks"))
+        else if (graph.equals(Graph.NUMBER_OF_CLICKS.toString()))
             loadNumberOfClicks();
-        else if (graph.equals("Click through Rate"))
+        else if (graph.equals(Graph.CLICK_THROUGH_RATE.toString()))
             loadClickThroughRate();
-        else if (graph.equals("Number of Conversions"))
+        else if (graph.equals(Graph.NUMBER_OF_CONVERSIONS.toString()))
             loadNumberOfConversions();
-        else if (graph.equals("Total Cost"))
+        else if (graph.equals(Graph.TOTAL_COST.toString()))
             loadTotalCost();
-        else if (graph.equals("Click Cost Histogram"))
+        else if (graph.equals(Graph.CLICK_COST_HISTOGRAM.toString()))
             loadHistogram();
+        else if (graph.equals(Graph.COST_PER_THOUSAND_IMPRESSIONS.toString()))
+            loadCostPerThousandImpressions();
+        else if (graph.equals(Graph.COST_PER_ACQUISITION.toString()))
+            loadCostPerAcquisition();
+        else if (graph.equals(Graph.BOUNCE_RATE.toString()))
+            loadBounceRate();
     }
     
 
@@ -365,6 +292,81 @@ public class OverviewController {
             pieChart.getData().addAll(pieChartData);
 
         } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadCostPerAcquisition() {
+        currentGraph = Graph.COST_PER_ACQUISITION;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
+        XYChart.Series<String,Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Cost per Acquisition / " + getGranularityString());
+
+        try {
+            Map<DateTime, Double> costPerAcquisition = DBQuery.getCPAOverTime(getCurrentFilter());
+            ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
+            Collections.sort(dates);
+
+            for (DateTime day : dates)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day)));
+
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadBounceRate() {
+        currentGraph = Graph.BOUNCE_RATE;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
+        XYChart.Series<String,Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Bounce Rate / " + getGranularityString());
+
+        try {
+            Map<DateTime, Double> bounceRate = DBQuery.getBounceRateByTime();
+            ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
+            Collections.sort(dates);
+
+            for (DateTime day : dates)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), bounceRate.get(day)));
+
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadCostPerThousandImpressions() {
+        currentGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
+        XYChart.Series<String, Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Cost per Thousand Impressions / Day");
+
+        try {
+            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter());
+            ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
+            Collections.sort(dates);
+
+            for (DateTime day : dates)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
+
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
             e.printStackTrace();
         }
     }
@@ -608,6 +610,15 @@ public class OverviewController {
 
     private Integer getCurrentFilter() {
         return ageFilter + incomeFilter + genderFilter;
+    }
+
+    private String getGranularityString() {
+        Integer granularity = DBQuery.getGranularity();
+        return (granularity == DBQuery.GRANULARITY_MONTH)
+                ? "Month"
+                : (granularity == DBQuery.GRANULARITY_DAY)
+                ? "Day"
+                : "Hour";
     }
 
 }
