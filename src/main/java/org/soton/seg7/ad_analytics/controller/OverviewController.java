@@ -307,6 +307,13 @@ public class OverviewController {
         // Listen for time granularity change
         granularitySlider.valueProperty().addListener(
         		(observable, oldValue, newValue) -> changeGranularity(newValue));
+        
+        bounceSettingsGroup.selectedToggleProperty().addListener(
+        		(observable, oldValue, newValue) -> {
+        			if(currentGraph.equals(Graph.BOUNCE_RATE))
+        				loadGraph(currentGraph.toString());
+        				
+        		});
     }
     
     private void changeGranularity(Number granularity){
@@ -394,7 +401,11 @@ public class OverviewController {
         lineChart.setTitle("Bounce Rate / " + getGranularityString());
 
         try {
-            Map<DateTime, Double> bounceRate = DBQuery.getBounceRateByTime();
+            Map<DateTime, Double> bounceRate;
+            if(bounceByTime.isSelected())
+            	bounceRate = DBQuery.getBounceRateByTime();
+            else
+            	bounceRate = DBQuery.getBounceRateByPage();
             ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
             Collections.sort(dates);
 
