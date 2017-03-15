@@ -1,6 +1,8 @@
 import org.json.JSONObject;
 import org.junit.Test;
 import org.soton.seg7.ad_analytics.model.DBHandler;
+import org.soton.seg7.ad_analytics.model.DBQuery;
+import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.model.Parser;
 import java.io.File;
@@ -42,10 +44,10 @@ public class ParserTest {
             handler.dropCollection("click_log");
 
             JSONObject parse = Parser.parseCSV(clickFile);
-            String parseAnalytics = parse.toString();
-            String resAnalytics = handler.retrieveAllDocuments("click_log").toString();
+            Double numComputed = DBQuery.getTotalNumClicks();
+            Double numInserted = parse.getDouble("numdoc");
 
-            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+            assertEquals("Correct num clicks", numComputed, numInserted);
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
@@ -61,10 +63,11 @@ public class ParserTest {
             handler.dropCollection("impression_log");
 
             JSONObject parse = Parser.parseCSV(impressionsFile);
-            String parseAnalytics = parse.toString();
-            String resAnalytics = handler.retrieveAllDocuments("impression_log").toString();
+            Double numComputed = DBQuery.getTotalNumImpressions(Filters.NO_FILTER);
+            Double numInserted = parse.getDouble("numdoc");
 
-            assertEquals("Correct JSON file", resAnalytics, parseAnalytics);
+            assertEquals("Correct JSON file", numComputed, numInserted);
+
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
