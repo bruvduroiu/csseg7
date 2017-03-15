@@ -13,7 +13,10 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Slider;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
+
 import org.joda.time.DateTime;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
@@ -58,6 +61,9 @@ public class OverviewController {
     private int incomeFilter;
     private int genderFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter;
+    
+    @FXML
+    private Slider granularitySlider;
 
     @FXML
     private ListView<String> graphList;
@@ -122,6 +128,31 @@ public class OverviewController {
 
         graphList.scrollTo(0);
         graphList.getSelectionModel().select(0);
+        granularitySlider.setSnapToTicks(true);
+        granularitySlider.setLabelFormatter(new StringConverter<Double>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "Hours";
+                if (n < 1.5) return "Days";
+                return "Months";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                switch (s) {
+                    case "Hours":
+                        return 0d;
+                    case "Days":
+                        return 1d;
+                    case "Months":
+                        return 2d;
+                    default:
+                        return 1d;
+                }
+            }
+        });
+        
+        
 
         // Age Range Dropdown
 
@@ -257,6 +288,20 @@ public class OverviewController {
         // Listen for selection changes and show the person details when changed.
         graphList.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> loadGraph(newValue));
+        
+        // Listen for time granularity change
+        granularitySlider.valueProperty().addListener(
+        		(observable, oldValue, newValue) -> changeGranularity(newValue));
+    }
+    
+    private void changeGranularity(Number granularity){
+    	if(granularity.intValue() == 0)
+    		DBQuery.setGranularity(3);
+    	else if(granularity.intValue() == 1)
+    		DBQuery.setGranularity(2);
+    	else if(granularity.intValue() == 2)
+    		DBQuery.setGranularity(1);
+    	loadGraph(currentGraph.toString());
     }
 
     private void loadGraph(String graph) {
