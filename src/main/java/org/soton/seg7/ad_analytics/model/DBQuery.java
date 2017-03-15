@@ -94,7 +94,7 @@ public class DBQuery {
                 new BasicDBObject("$match", query),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
-                                .append("num", new BasicDBObject("$sum", 1)))))
+                                .append("num", new BasicDBObject("$sum", "$num")))))
                 .results().forEach(results::add);
 
         return buildResultsMap(results, COUNT_METRIC);
@@ -215,7 +215,7 @@ public class DBQuery {
         handler.getCollection(collection).aggregate(Arrays.asList(
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
-                                .append("num", new BasicDBObject("$sum", 1)))))
+                                .append("num", new BasicDBObject("$sum", "$num")))))
                 .results().forEach(results::add);
 
         return buildResultsMap(results, COUNT_METRIC);
