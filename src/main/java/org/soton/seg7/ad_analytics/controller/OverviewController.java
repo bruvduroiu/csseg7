@@ -10,6 +10,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
@@ -22,6 +23,7 @@ import org.soton.seg7.ad_analytics.view.MainView;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 import java.math.BigDecimal;
 
@@ -87,6 +89,12 @@ public class OverviewController {
     @FXML
     private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown;
 
+    @FXML
+    private DatePicker startDate;
+
+    @FXML
+    private DatePicker endDate;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -125,7 +133,17 @@ public class OverviewController {
         		"45-54",
         		"54>"
         		);
-        
+
+        startDate.valueProperty().addListener((ov,oldVal,newVal) -> {
+            DBQuery.setDateRange(DateTime.parse(newVal.toString()), (endDate.getValue() == null) ? null : DateTime.parse(endDate.getValue().toString()));
+            loadGraph(currentGraph.toString());
+        });
+
+        endDate.valueProperty().addListener((ov, oldVal, newVal) -> {
+            DBQuery.setDateRange(DateTime.parse((startDate.getValue() == null) ? null : startDate.getValue().toString()), DateTime.parse(newVal.toString()));
+            loadGraph(currentGraph.toString());
+        });
+
         ageRangeDropdown.getSelectionModel().selectFirst();
 
         ageRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
