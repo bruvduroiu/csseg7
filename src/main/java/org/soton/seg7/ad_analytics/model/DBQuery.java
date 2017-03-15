@@ -94,7 +94,7 @@ public class DBQuery {
                 new BasicDBObject("$match", query),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
-                                .append("num", new BasicDBObject("$sum", "$num")))))
+                                .append("num", new BasicDBObject("$sum", 1)))))
                 .results().forEach(results::add);
 
         return buildResultsMap(results, COUNT_METRIC);
@@ -149,6 +149,17 @@ public class DBQuery {
                 .collect(Collectors.toMap(k->k, k->clickCost.getOrDefault(k,0d) + impressionCost.getOrDefault(k,0d)));
 
     }
+    
+    public static Map<DateTime, Double> getCostPerThousandImpressionsOverTime(Integer filter) throws MongoAuthException {
+        Map<DateTime, Double> totalCost = getClickCostOverTime();
+        Map<DateTime, Double> numImpressions = getNumImpressions(filter);
+
+        return Stream.concat(totalCost.keySet().stream(), numImpressions.keySet().stream())
+                .distinct()
+                .collect(Collectors.toMap(k->k, k->(totalCost.getOrDefault(k,0d) / numImpressions.getOrDefault(k,0d) * 1000)));
+
+    }
+    
 
     public static Map<DateTime, Double> getCTROverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> numImpressions = getNumImpressions(filter);
@@ -158,6 +169,7 @@ public class DBQuery {
                 .distinct()
                 .collect(Collectors.toMap(k -> k, k -> numClicks.getOrDefault(k, 0d) / numImpressions.getOrDefault(k,1d)));
     }
+    
 
     public static Map<DateTime, Double> getBounceRate(String condition) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
@@ -360,14 +372,14 @@ public class DBQuery {
     }
 
     private static BasicDBObject getGranularityAggregate() {
-        BasicDBObject timeGranularity = new BasicDBObject("year", new BasicDBObject("$year", "$date"));
+        BasicDBObject timeGranularity = new BasicDBObject("year", new BasicDBObject("$year", "$Date"));
 
         if (granularity >= GRANULARITY_MONTH)
-            timeGranularity.append("month", new BasicDBObject("$month", "$date"));
+            timeGranularity.append("month", new BasicDBObject("$month", "$Date"));
         if (granularity >= GRANULARITY_DAY)
-            timeGranularity.append("day", new BasicDBObject("$dayOfMonth", "$date"));
+            timeGranularity.append("day", new BasicDBObject("$dayOfMonth", "$Date"));
         if (granularity >= GRANULARITY_HOUR)
-            timeGranularity.append("hour", new BasicDBObject("$hour", "$date"));
+            timeGranularity.append("hour", new BasicDBObject("$hour", "$Date"));
 
         return timeGranularity;
     }

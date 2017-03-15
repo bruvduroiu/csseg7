@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.scene.chart.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
-<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
@@ -24,7 +19,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="background" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Overview.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
+<AnchorPane fx:id="background" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Overview.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
     <children>
         <SplitPane dividerPositions="0.29797979797979796" layoutX="265.0" layoutY="134.0" prefHeight="600.0" prefWidth="1000.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <items>
@@ -68,7 +63,7 @@
                                                             </children></AnchorPane>
                                                     </content>
                                                 </Tab>
-                                                <Tab text="Other">
+                                                <Tab text="Cost Breakdown">
                                                     <content>
                                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                              <children>
@@ -108,9 +103,9 @@
                                                 <Label text="Income Range :" GridPane.columnIndex="2" />
                                                 <Label text="Start Date: " GridPane.columnIndex="3" />
                                                 <Label text="End Date :" GridPane.columnIndex="4" />
-                                                <ComboBox fx:id="ageRangeDropdown" GridPane.rowIndex="1" prefHeight="27.0" prefWidth="89.0" />
-                                                <ComboBox fx:id="genderDropdown" GridPane.columnIndex="1" GridPane.rowIndex="1" prefHeight="27.0" prefWidth="89.0" />
-                                                <ComboBox fx:id="incomeRangeDropdown" GridPane.columnIndex="2" GridPane.rowIndex="1" prefHeight="27.0" prefWidth="89.0" />
+                                                <ComboBox fx:id="ageRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.rowIndex="1" />
+                                                <ComboBox fx:id="genderDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                <ComboBox fx:id="incomeRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                                                 <GridPane maxWidth="143.0" prefHeight="33.0" prefWidth="143.0" GridPane.columnIndex="3" GridPane.rowIndex="1">
                                                     <columnConstraints>
                                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="30.0" minWidth="30.0" prefWidth="30.0" />
