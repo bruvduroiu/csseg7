@@ -109,7 +109,20 @@ public class DataFormatTest {
     @Test
     public void testBouncePage() {
 			final Map<DateTime, Double> expectedMap = new HashMap<DateTime, Double>(){{
-				put(formatter.parseDateTime("2015-01-12 00"), 0.3543064978101073);put(formatter.parseDateTime("2015-01-07 00"), 0.3650475735845285);put(formatter.parseDateTime("2015-01-02 00"), 0.3716156140250623);put(formatter.parseDateTime("2015-01-01 00"), 0.35663507111452036);put(formatter.parseDateTime("2015-01-11 00"), 0.3697624036079537);put(formatter.parseDateTime("2015-01-06 00"), 0.3892625082889752);put(formatter.parseDateTime("2015-01-10 00"), 0.35233610961639156);put(formatter.parseDateTime("2015-01-05 00"), 0.37488096095899914);put(formatter.parseDateTime("2015-01-04 00"), 0.37390582312259907);put(formatter.parseDateTime("2015-01-14 00"), 0.32359057708051275);put(formatter.parseDateTime("2015-01-09 00"), 0.34104517478558716);put(formatter.parseDateTime("2015-01-13 00"), 0.4009792521545559);put(formatter.parseDateTime("2015-01-08 00"), 0.36002325087311465);put(formatter.parseDateTime("2015-01-03 00"), 0.33557926095288054);}};        	
+				put(formatter.parseDateTime("2015-01-12 00"), 0.3543064978101073);
+				put(formatter.parseDateTime("2015-01-07 00"), 0.36504757358452844);
+				put(formatter.parseDateTime("2015-01-02 00"), 0.3716156140250624);
+				put(formatter.parseDateTime("2015-01-01 00"), 0.3566350711145205);
+				put(formatter.parseDateTime("2015-01-11 00"), 0.3697624036079537);
+				put(formatter.parseDateTime("2015-01-06 00"), 0.3892625082889752);
+				put(formatter.parseDateTime("2015-01-10 00"), 0.35233610961639156);
+				put(formatter.parseDateTime("2015-01-05 00"), 0.3748809609589992);
+				put(formatter.parseDateTime("2015-01-04 00"), 0.37390582312259896);
+				put(formatter.parseDateTime("2015-01-14 00"), 0.32359057708051275);
+				put(formatter.parseDateTime("2015-01-09 00"), 0.34104517478558716);
+				put(formatter.parseDateTime("2015-01-13 00"), 0.4009792521545558);
+				put(formatter.parseDateTime("2015-01-08 00"), 0.36002325087311465);
+				put(formatter.parseDateTime("2015-01-03 00"), 0.33557926095288054);}};
         
 			DBHandler handler;
 
@@ -130,7 +143,20 @@ public class DataFormatTest {
     @Test
     public void testBounceTime() {
         Map<DateTime, Double> expectedMap = new HashMap<DateTime, Double>(){{
-        	put(formatter.parseDateTime("2015-01-12 00"), 0.46918027959485337);put(formatter.parseDateTime("2015-01-07 00"), 0.49163540023824454);put(formatter.parseDateTime("2015-01-02 00"), 0.5231196964658601);put(formatter.parseDateTime("2015-01-01 00"), 0.5313349973128622);put(formatter.parseDateTime("2015-01-11 00"), 0.49388121776152266);put(formatter.parseDateTime("2015-01-06 00"), 0.5276460969356462);put(formatter.parseDateTime("2015-01-10 00"), 0.49401092705330424);put(formatter.parseDateTime("2015-01-05 00"), 0.4948748282123761);put(formatter.parseDateTime("2015-01-04 00"), 0.4880127944874278);put(formatter.parseDateTime("2015-01-14 00"), 0.5980022838739938);put(formatter.parseDateTime("2015-01-09 00"), 0.49819335524947733);put(formatter.parseDateTime("2015-01-13 00"), 0.5256880823330287);put(formatter.parseDateTime("2015-01-08 00"), 0.5146174894034906);put(formatter.parseDateTime("2015-01-03 00"), 0.484213489272829);}}; 
+        	put(formatter.parseDateTime("2015-01-12 00"), 0.46918027959485337);
+        	put(formatter.parseDateTime("2015-01-07 00"), 0.4916354002382444);
+        	put(formatter.parseDateTime("2015-01-02 00"), 0.5231196964658601);
+        	put(formatter.parseDateTime("2015-01-01 00"), 0.5313349973128622);
+        	put(formatter.parseDateTime("2015-01-11 00"), 0.49388121776152266);
+        	put(formatter.parseDateTime("2015-01-06 00"), 0.5276460969356462);
+        	put(formatter.parseDateTime("2015-01-10 00"), 0.49401092705330424);
+        	put(formatter.parseDateTime("2015-01-05 00"), 0.4948748282123761);
+        	put(formatter.parseDateTime("2015-01-04 00"), 0.4880127944874278);
+        	put(formatter.parseDateTime("2015-01-14 00"), 0.5980022838739937);
+        	put(formatter.parseDateTime("2015-01-09 00"), 0.49819335524947744);
+        	put(formatter.parseDateTime("2015-01-13 00"), 0.5256880823330287);
+        	put(formatter.parseDateTime("2015-01-08 00"), 0.5146174894034907);
+        	put(formatter.parseDateTime("2015-01-03 00"), 0.4842134892728291);}};
 
         DBHandler handler;
 
