@@ -336,15 +336,8 @@ public class DBQuery {
         String dateString = null;
         DateFormat df = null;
         if (granularity == GRANULARITY_HOUR) {
-            df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            dateString = String.format("%s-%s-%s %s:00:00",
-                    dateObj.getString("year"),
-                    ((month = dateObj.getString("month")).length() == 1)
-                            ? "0" + month
-                            : month,
-                    ((day = dateObj.getString("day")).length() == 1)
-                            ? "0" + day
-                            : day,
+            df = new SimpleDateFormat("HH:mm");
+            dateString = String.format("%s:00:00",
                     ((hour = dateObj.getString("hour")).length() == 1)
                             ? "0" + hour
                             : hour);
@@ -406,21 +399,23 @@ public class DBQuery {
         else if (granularity == GRANULARITY_DAY)
             return DateTimeFormat.forPattern("yyyy-MM-dd");
         else
-            return DateTimeFormat.forPattern("yyyy-MM-dd HH");
+            return DateTimeFormat.forPattern("HH:mm");
     }
 
     private static List<BasicDBObject> getDateFilterQuery() {
         List<BasicDBObject> dateQuery = new ArrayList<>();
 
         if (startDate != null)
-            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gt", startDate.toDate())));
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gte", startDate.toDate())));
         else
-            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gt", Date.from(Instant.EPOCH))));
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gte", Date.from(Instant.EPOCH))));
 
-        if (endDate != null)
-            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lt", endDate.toDate())));
+        if (granularity == GRANULARITY_HOUR)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", startDate.plusHours(23).plusMinutes(59).plusSeconds(59).toDate())));
+        else if (endDate != null)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", endDate.toDate())));
         else
-            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lt", new Date())));
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", new Date())));
 
         return dateQuery;
     }
