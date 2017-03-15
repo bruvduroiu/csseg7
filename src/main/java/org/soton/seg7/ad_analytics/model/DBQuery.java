@@ -182,7 +182,7 @@ public class DBQuery {
                                 .append(condition, new BasicDBObject("$avg", "$"+condition)))))
                 .results().forEach(results::add);
 
-        return buildResultsMap(results, COUNT_METRIC);
+        return buildResultsMap(results, condition);
     }
 
     public static Map<DateTime, Double> getBounceRateByTime() throws MongoAuthException {
