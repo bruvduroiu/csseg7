@@ -50,12 +50,12 @@ public class DBQuery {
     public static int getGranularity() {
         return granularity;
     }
-
+    
     public static void setGranularity(int granularity) {
-        if (granularity > GRANULARITY_HOUR || granularity < GRANULARITY_MONTH)
-            return;
-        DBQuery.granularity = granularity;
-    }
+	    if (granularity > GRANULARITY_HOUR || granularity < GRANULARITY_MONTH)
+	        return;
+	    DBQuery.granularity = granularity;
+	}
 
     private static final DBObject ALL_QUERY = new BasicDBObject();
     private static DBObject fieldModifier;
