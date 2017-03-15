@@ -1,5 +1,7 @@
 package org.soton.seg7.ad_analytics.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Date;
 
 /**
@@ -7,7 +9,7 @@ import java.util.Date;
  */
 public class ServerMetrics {
 
-    private Date Date;
+    private Date date;
     private Double conversionRate;
     private Double bounceRatePage;
     private Double bounceRateTime;
@@ -15,7 +17,7 @@ public class ServerMetrics {
     private Double views;
 
     public ServerMetrics(Date date, Double conversionRate, Double bounceRatePage, Double bounceRateTime, Integer num, Double views) {
-        this.Date = date;
+        this.date = date;
         this.conversionRate = conversionRate;
         this.bounceRatePage = bounceRatePage;
         this.bounceRateTime = bounceRateTime;
@@ -23,12 +25,13 @@ public class ServerMetrics {
         this.views = views;
     }
 
+    @JsonProperty("Date")
     public Date getDate() {
-        return Date;
+        return date;
     }
 
     public void setDate(Date date) {
-        this.Date = date;
+        this.date = date;
     }
 
     public Double getConversionRate() {
