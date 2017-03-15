@@ -144,7 +144,7 @@
                                                 </GridPane>
                                     <Label text="Time Granularity :" GridPane.columnIndex="5" />
                                     <Slider fx:id="granularitySlider" majorTickUnit="1.0" max="2.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" value="1.0" GridPane.columnIndex="5" GridPane.rowIndex="1" />
-                                    <Label text="Bounce registered by :" GridPane.columnIndex="6">
+                                    <Label fx:id="bounceSettingsLabel" text="Bounce registered by :" GridPane.columnIndex="6">
                                        <GridPane.margin>
                                           <Insets left="20.0" />
                                        </GridPane.margin>

@@ -68,6 +68,9 @@ public class OverviewController {
     private ToggleGroup bounceSettingsGroup = new ToggleGroup();
     
     @FXML
+    private Label bounceSettingsLabel;
+    
+    @FXML
     private RadioButton bounceByPage;
     
     @FXML
@@ -127,6 +130,9 @@ public class OverviewController {
         bounceByTime.setToggleGroup(bounceSettingsGroup);
         bounceByTime.setSelected(true);
         bounceByPage.setToggleGroup(bounceSettingsGroup);
+        bounceByTime.setVisible(false);
+    	bounceByPage.setVisible(false);
+        bounceSettingsLabel.setVisible(false);
 
         list = graphList.getItems();
         list.clear();
@@ -328,6 +334,10 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph) {
+    	
+    	bounceByTime.setVisible(false);
+    	bounceByPage.setVisible(false);
+        bounceSettingsLabel.setVisible(false);
 
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
@@ -347,8 +357,12 @@ public class OverviewController {
             loadCostPerThousandImpressions();
         else if (graph.equals(Graph.COST_PER_ACQUISITION.toString()))
             loadCostPerAcquisition();
-        else if (graph.equals(Graph.BOUNCE_RATE.toString()))
+        else if (graph.equals(Graph.BOUNCE_RATE.toString())){
+        	bounceSettingsLabel.setVisible(true);
+        	bounceByTime.setVisible(true);
+        	bounceByPage.setVisible(true);
             loadBounceRate();
+        }
     }
     
 
