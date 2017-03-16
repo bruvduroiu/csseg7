@@ -194,12 +194,18 @@ public class OverviewController {
         		);
 
         startDate.valueProperty().addListener((ov,oldVal,newVal) -> {
-            DBQuery.setDateRange(DateTime.parse(newVal.toString()), (endDate.getValue() == null) ? null : DateTime.parse(endDate.getValue().toString()));
+            if (endDate.getValue() != null && endDate.getValue().compareTo(newVal)>0)
+                DBQuery.setDateRange(DateTime.parse(newVal.toString()), DateTime.parse(endDate.getValue().toString()));
+            else
+                DBQuery.setDateRange(DateTime.parse(newVal.toString()), null);
             loadGraph(currentGraph.toString());
         });
 
         endDate.valueProperty().addListener((ov, oldVal, newVal) -> {
-            DBQuery.setDateRange(DateTime.parse((startDate.getValue() == null) ? null : startDate.getValue().toString()), DateTime.parse(newVal.toString()));
+            if (startDate.getValue() != null && newVal.compareTo(startDate.getValue())>0)
+                DBQuery.setDateRange(DateTime.parse(startDate.getValue().toString()), DateTime.parse(newVal.toString()));
+            else
+                DBQuery.setDateRange(null, DateTime.parse(newVal.toString()));
             loadGraph(currentGraph.toString());
         });
 
