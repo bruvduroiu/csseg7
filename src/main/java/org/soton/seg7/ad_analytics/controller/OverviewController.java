@@ -13,7 +13,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -61,6 +63,18 @@ public class OverviewController {
     private int incomeFilter;
     private int genderFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter;
+    
+    @FXML
+    private ToggleGroup bounceSettingsGroup = new ToggleGroup();
+    
+    @FXML
+    private Label bounceSettingsLabel;
+    
+    @FXML
+    private RadioButton bounceByPage;
+    
+    @FXML
+    private RadioButton bounceByTime;
     
     @FXML
     private Slider granularitySlider;
@@ -112,6 +126,13 @@ public class OverviewController {
         ageFilter = 0;
         incomeFilter = 0;
         genderFilter = 0;
+        
+        bounceByTime.setToggleGroup(bounceSettingsGroup);
+        bounceByTime.setSelected(true);
+        bounceByPage.setToggleGroup(bounceSettingsGroup);
+        bounceByTime.setVisible(false);
+    	bounceByPage.setVisible(false);
+        bounceSettingsLabel.setVisible(false);
 
         list = graphList.getItems();
         list.clear();
@@ -292,6 +313,13 @@ public class OverviewController {
         // Listen for time granularity change
         granularitySlider.valueProperty().addListener(
         		(observable, oldValue, newValue) -> changeGranularity(newValue));
+        
+        bounceSettingsGroup.selectedToggleProperty().addListener(
+        		(observable, oldValue, newValue) -> {
+        			if(currentGraph.equals(Graph.BOUNCE_RATE))
+        				loadGraph(currentGraph.toString());
+        				
+        		});
     }
     
     private void changeGranularity(Number granularity){
@@ -301,10 +329,15 @@ public class OverviewController {
     		DBQuery.setGranularity(2);
     	else if(granularity.intValue() == 2)
     		DBQuery.setGranularity(1);
-    	loadGraph(currentGraph.toString());
+    	loadGraph(currentGraph.toString());   		
+    		
     }
 
     private void loadGraph(String graph) {
+    	
+    	bounceByTime.setVisible(false);
+    	bounceByPage.setVisible(false);
+        bounceSettingsLabel.setVisible(false);
 
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
@@ -324,8 +357,12 @@ public class OverviewController {
             loadCostPerThousandImpressions();
         else if (graph.equals(Graph.COST_PER_ACQUISITION.toString()))
             loadCostPerAcquisition();
-        else if (graph.equals(Graph.BOUNCE_RATE.toString()))
+        else if (graph.equals(Graph.BOUNCE_RATE.toString())){
+        	bounceSettingsLabel.setVisible(true);
+        	bounceByTime.setVisible(true);
+        	bounceByPage.setVisible(true);
             loadBounceRate();
+        }
     }
     
 
@@ -378,7 +415,11 @@ public class OverviewController {
         lineChart.setTitle("Bounce Rate / " + getGranularityString());
 
         try {
-            Map<DateTime, Double> bounceRate = DBQuery.getBounceRateByTime();
+            Map<DateTime, Double> bounceRate;
+            if(bounceByTime.isSelected())
+            	bounceRate = DBQuery.getBounceRateByTime();
+            else
+            	bounceRate = DBQuery.getBounceRateByPage();
             ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
             Collections.sort(dates);
 
