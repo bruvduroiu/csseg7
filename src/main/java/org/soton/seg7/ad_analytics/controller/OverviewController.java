@@ -5,15 +5,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.PieChart;
-import javafx.scene.chart.XYChart;
+import javafx.scene.chart.*;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -24,6 +23,7 @@ import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -60,8 +60,12 @@ public class OverviewController {
     private int ageFilter;
     private int incomeFilter;
     private int genderFilter;
-    private int currentFilter = ageFilter + incomeFilter + genderFilter;
-    
+    private int contextFilter;
+    private int currentFilter = ageFilter + incomeFilter + genderFilter + contextFilter;
+
+    @FXML
+    private Label bounceSettingsLabel;
+
     @FXML
     private Slider granularitySlider;
 
@@ -93,13 +97,19 @@ public class OverviewController {
     private PieChart pieChart;
 
     @FXML
-    private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown;
+    private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown, contextDropdown;
 
     @FXML
     private DatePicker startDate;
 
     @FXML
     private DatePicker endDate;
+
+    @FXML
+    private RadioButton radioBounceTime;
+
+    @FXML
+    private RadioButton radioBouncePage;
 
     // Reference to the main application.
     private MainView mainView;
@@ -112,6 +122,30 @@ public class OverviewController {
         ageFilter = 0;
         incomeFilter = 0;
         genderFilter = 0;
+
+        final ToggleGroup toggleGroup = new ToggleGroup();
+
+        radioBounceTime.setToggleGroup(toggleGroup);
+        radioBounceTime.setSelected(true);
+        radioBouncePage.setToggleGroup(toggleGroup);
+        radioBounceTime.setVisible(false);
+    	radioBouncePage.setVisible(false);
+        bounceSettingsLabel.setVisible(false);
+
+        ValueAxis<Double> yAxis = (ValueAxis<Double>) lineChart.getYAxis();
+
+        yAxis.setTickLabelFormatter(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                DecimalFormat df = new DecimalFormat("#.00");
+                return (currentGraph.toString().contains("Cost") ? "£" : "") + df.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                return null;
+            }
+        });
 
         list = graphList.getItems();
         list.clear();
@@ -277,6 +311,42 @@ public class OverviewController {
               }    
           });
         
+        // Context Dropdown
+        
+        contextDropdown.getItems().addAll(
+        		"All",
+        		"Blog",
+        		"News",
+        		"Shopping",
+        		"Social Media"
+        		);
+        
+        contextDropdown.getSelectionModel().selectFirst();
+        
+        contextDropdown.valueProperty().addListener(new ChangeListener<String>() {
+            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+            	switch(newVal) {
+            	case "All":
+            		contextFilter = 0;
+            		break;
+            	case "Blog":
+            		contextFilter = Filters.CONTEXT_BLOG;
+            		break;
+            	case "News":
+            		contextFilter = Filters.CONTEXT_NEWS;
+            		break;
+            	case "Shopping":
+            		contextFilter = Filters.CONTEXT_SHOPPING;
+            		break;
+            	case "Social Media":
+            		contextFilter = Filters.CONTEXT_SOCIAL_MEDIA;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
+            	
+              }    
+          });
+        
 
         // Load the total cost stats and pie chart
 
@@ -307,6 +377,13 @@ public class OverviewController {
         // Listen for time granularity change
         granularitySlider.valueProperty().addListener(
         		(observable, oldValue, newValue) -> changeGranularity(newValue));
+        
+        toggleGroup.selectedToggleProperty().addListener(
+        		(observable, oldValue, newValue) -> {
+        			if(currentGraph.equals(Graph.BOUNCE_RATE))
+        				loadGraph(currentGraph.toString());
+        				
+        		});
     }
     
     private void changeGranularity(Number granularity){
@@ -316,10 +393,15 @@ public class OverviewController {
     		DBQuery.setGranularity(2);
     	else if(granularity.intValue() == 2)
     		DBQuery.setGranularity(1);
-    	loadGraph(currentGraph.toString());
+    	loadGraph(currentGraph.toString());   		
+    		
     }
 
     private void loadGraph(String graph) {
+    	
+    	radioBounceTime.setVisible(false);
+    	radioBouncePage.setVisible(false);
+        bounceSettingsLabel.setVisible(false);
 
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
@@ -339,8 +421,12 @@ public class OverviewController {
             loadCostPerThousandImpressions();
         else if (graph.equals(Graph.COST_PER_ACQUISITION.toString()))
             loadCostPerAcquisition();
-        else if (graph.equals(Graph.BOUNCE_RATE.toString()))
+        else if (graph.equals(Graph.BOUNCE_RATE.toString())){
+        	bounceSettingsLabel.setVisible(true);
+        	radioBounceTime.setVisible(true);
+        	radioBouncePage.setVisible(true);
             loadBounceRate();
+        }
     }
     
 
@@ -373,7 +459,7 @@ public class OverviewController {
             Collections.sort(dates);
 
             for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day)));
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
 
 
             lineChart.getData().clear();
@@ -393,7 +479,11 @@ public class OverviewController {
         lineChart.setTitle("Bounce Rate / " + getGranularityString());
 
         try {
-            Map<DateTime, Double> bounceRate = DBQuery.getBounceRateByTime();
+            Map<DateTime, Double> bounceRate;
+            if(radioBounceTime.isSelected())
+            	bounceRate = DBQuery.getBounceRateByTime();
+            else
+            	bounceRate = DBQuery.getBounceRateByPage();
             ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
             Collections.sort(dates);
 
@@ -418,7 +508,7 @@ public class OverviewController {
         lineChart.setTitle("Cost per Thousand Impressions / Day");
 
         try {
-            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter());
+            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter()/100);
             ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
             Collections.sort(dates);
 
@@ -448,7 +538,7 @@ public class OverviewController {
             Collections.sort(dates);
 
             for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day)));
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day)/100));
 
 
             lineChart.getData().clear();
@@ -569,7 +659,7 @@ public class OverviewController {
             Collections.sort(days);
 
             for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)));
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)/100));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
@@ -672,7 +762,7 @@ public class OverviewController {
 
 
     private Integer getCurrentFilter() {
-        return ageFilter + incomeFilter + genderFilter;
+        return ageFilter + incomeFilter + genderFilter + contextFilter;
     }
 
     private String getGranularityString() {

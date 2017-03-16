@@ -236,6 +236,8 @@ public class Parser {
         List<Impression> impressions = new ArrayList<>();
         List<ImpressionMetrics> metrics = new ArrayList<>();
 
+        long numParsed = 0;
+
         try {
 
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -261,6 +263,8 @@ public class Parser {
                 dayCost.merge(dateKey, impression.getImpressionCost(), (oldVal, cost) -> oldVal + cost);
 
                 numImpressions.merge(dateKey, 1, (oldVal, one) -> oldVal + one);
+
+                numParsed++;
 
                 impressions.add(impression);
                 if (impressions.size() == 300000) {
@@ -293,7 +297,7 @@ public class Parser {
 
             return new JSONObject()
                     .put("insert", "ok")
-                    .put("numdoc", impressions.size());
+                    .put("numdoc", numParsed);
 
         } catch (IOException e) {
             e.printStackTrace();

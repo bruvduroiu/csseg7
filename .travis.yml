@@ -17,3 +17,7 @@ notifications:
   slack: csseg7:SbU27bN9RRyw3zL3kWOncXnz
 
 services: mongodb
+
+before-script:
+  - sleep 15
+  - mongo analytics_data --eval 'db.addUser("root", "root");'
