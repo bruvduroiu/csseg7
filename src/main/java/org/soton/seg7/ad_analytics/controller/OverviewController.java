@@ -752,9 +752,8 @@ public class OverviewController {
     //function that handles pressing of Change Campain button
     @FXML
     protected void handleChangeCampainButtonAction(ActionEvent event) {
-        //this.mainView.showLoadStage();
-        //initialize();
-        /** do nothing */
+        MainView.showLoadStage();
+        initialize();
     }
 
 
