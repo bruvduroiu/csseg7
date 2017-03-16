@@ -12,6 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
+import java.util.logging.Filter;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -219,11 +220,15 @@ public class DBQuery {
     }
 
     public static Double getTotalNumImpressions(Integer filter) throws MongoAuthException {
-        return getTotalMetric(OP_SUM, COUNT_AGGREGATE, COL_IMPRESSIONS, filter);
+        return (filter == Filters.NO_FILTER)
+                ? getTotalMetric(OP_SUM, COUNT_METRIC, COL_IMPRESSIONS, filter)
+                : getTotalCountMetric(DATA_IMPRESSIONS, filter);
     }
 
     public static Double getTotalCostImpressions(Integer filter) throws MongoAuthException {
-        return getTotalMetric(OP_SUM, COST_AGGREGATE, COL_IMPRESSIONS, filter);
+        String aggregate = (filter == Filters.NO_FILTER) ? COST_AGGREGATE : "$Impression Cost";
+        String collection = (filter == Filters.NO_FILTER) ? COL_IMPRESSIONS : DATA_IMPRESSIONS;
+        return getTotalMetric(OP_SUM, aggregate, collection, filter);
     }
 
     public static Double getTotalCostClicks() throws MongoAuthException {
@@ -284,6 +289,18 @@ public class DBQuery {
         BasicDBObject result = (BasicDBObject) results.iterator().next();
 
         return result.getDouble("total");
+    }
+
+    private static Double getTotalCountMetric(String collection, Integer filter) throws MongoAuthException {
+        DBHandler handler = DBHandler.getDBConnection();
+        Iterable<DBObject> results = handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", getQueryFilter(filter)),
+                new BasicDBObject("$count", "num")
+        )).results();
+
+        BasicDBObject result = (BasicDBObject) results.iterator().next();
+
+        return result.getDouble("num");
     }
 
     private static BasicDBObject getQueryFilter(Integer filter) {
