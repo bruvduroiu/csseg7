@@ -10,29 +10,41 @@ investigate analytics and metrics collected from Ad Auction Campaigns.
 The Ad Analytics Dashboard tool provides a graphical view of various metrics, using Line Charts
 and Pie Charts.
 
-## Installation
+## Installation & Running
 
-Download the ZIP file provided in the repository under Release folder.
-Inside you will find a JAR file named csseg7.jar
+Prerequisites:
+    - MongoDB instance on local machine
+    (please refer to online documentation for installing MongoDB,
+    or refer to the report that can be found in the documentation folder)
+
+Inside the main csseg folder you will find a JAR file named increment1.jar
 
 To run the application, use
 ```bash
-java -cp /out/artifacts/analyticscsseg7.jar org.soton.seg7.ad_analytics.view.MainView
+java -cp increment1.jar org.soton.seg7.ad_analytics.view.MainView
 ```
-
 ## Features
 
-Currently (v1.0.0), the application includes support for:
-* Loading Analytics Data from CSV files using a FileLoader
-* Computing Metrics and Graphs using the data collected above:
-    * Cost per Click over time
-    * Number of Impressions over time
-    * Number of clicks over time
-    * Click through Rate over time
-    * Number of conversions over time
-    * Total cost over time
+    Currently (v1.1.0), the application includes support for:
+    * Loading Analytics Data from CSV files using a FileLoader
+    * Computing Metrics and Graphs using the data collected above:
+        * Cost per Click over time
+        * Number of Impressions over time
+        * Number of clicks over time
+        * Bounce Rate over time
+        * Click cost Distribution using Histogram
+        * Cost per Thousand Impressions
+        * Cost per Acquisition
+        * Click through Rate over time
+        * Number of conversions over time
+        * Total cost over time
+    * Filtering the metrics using audience segmentation
+        * Age filters
+        * Income filters
+        * Gender filters
+        * Context filters
+    * Filtering analytics by date
+
 
 ## Future Work
-
-- [ ] Using Thread Pools to handle the parsing of large CSV files, for faster parsing
-- [ ] Adding filtering capabilities
+    - [ ] Using Thread Pools to handle the parsing of large CSV files, for faster parsing

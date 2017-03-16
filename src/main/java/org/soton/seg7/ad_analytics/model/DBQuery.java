@@ -2,12 +2,19 @@ package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.json.JSONObject;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
+import java.util.logging.Filter;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by bogdanbuduroiu on 25/02/2017.
@@ -17,214 +24,416 @@ public class DBQuery {
     private static final String COL_IMPRESSIONS = "impression_log";
     private static final String COL_CLICKS = "click_log";
     private static final String COL_SERVER = "server_log";
+    private static final String DATA_IMPRESSIONS = "impression_data";
+    private static final String DATA_CLICKS = "click_data";
+    private static final String DATA_SERVER = "server_data";
 
-    private static final String GET_TOTAL_NUM = "totalNum";
-    private static final String GET_TOTAL_COST = "totalCost";
+    private static final String COST_METRIC = "cost";
+    private static final String COUNT_METRIC = "num";
 
-    private static final String COUNT_METRIC = "dayNum";
-    private static final String COST_METRIC = "dayCost";
+    private static final String COST_AGGREGATE = "$cost";
+    private static final String COUNT_AGGREGATE = "$num";
 
-    private static final DBObject ALL_QUERY = new BasicDBObject();
-    private static DBObject fieldModifier;
+    private static final String DATE = "date";
 
-    public static Map<String, Map<String, Integer>> getNumImpressions() throws MongoAuthException {
-        return getCountMetric(COL_IMPRESSIONS);
+    private static final String OP_SUM = "$sum";
+    private static final String OP_COUNT = "$count";
+
+    private static final String BOUNCE_COND_PAGE = "bounceRatePage";
+    private static final String BOUNCE_COND_TIME = "bounceRateTime";
+
+    public static final int GRANULARITY_HOUR = 3;
+    public static final int GRANULARITY_DAY = 2;
+    public static final int GRANULARITY_MONTH = 1;
+    private static int granularity = GRANULARITY_DAY;
+
+    private static DateTime startDate;
+    private static DateTime endDate;
+
+    public static void setDateRange(DateTime startDate, DateTime endDate) {
+        DBQuery.startDate = startDate;
+        DBQuery.endDate = endDate;
     }
 
-    public static Map<String, Map<String, Integer>> getNumClicks() throws MongoAuthException {
+    public static int getGranularity() {
+        return granularity;
+    }
+    
+    public static void setGranularity(int granularity) {
+	    if (granularity > GRANULARITY_HOUR || granularity < GRANULARITY_MONTH)
+	        return;
+	    DBQuery.granularity = granularity;
+	}
+
+    private static final BasicDBObject ALL_QUERY = new BasicDBObject();
+    private static BasicDBObject fieldModifier;
+
+    public static ArrayList<Double> getAllClickCosts() throws MongoAuthException {
+        ArrayList<Double> allClickCosts = new ArrayList<Double>();
+
+        DBHandler handler = DBHandler.getDBConnection();
+        fieldModifier = new BasicDBObject()
+                .append("Click Cost", 1);
+
+        List<DBObject> results = handler.sendQuery(
+                ALL_QUERY,
+                fieldModifier,
+                DATA_CLICKS
+        );
+
+        for(DBObject val : results) {
+            BasicDBObject bson = (BasicDBObject) val;
+            allClickCosts.add(bson.getDouble("Click Cost"));
+        }
+
+        return allClickCosts;
+    }
+
+    public static Map<DateTime, Double> getNumImpressions(Integer filter) throws MongoAuthException {
+        if (filter == Filters.NO_FILTER)
+            return getCountMetric(COL_IMPRESSIONS);
+
+        List<DBObject> results =  new ArrayList<>();
+
+        DBHandler handler = DBHandler.getDBConnection();
+
+        List<BasicDBObject> query = new ArrayList<>();
+        query.add(getQueryFilter(filter));
+        getDateFilterQuery().forEach(query::add);
+
+        handler.getCollection(DATA_IMPRESSIONS).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", query)),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", getGranularityAggregate())
+                                .append("num", new BasicDBObject("$sum", 1)))))
+                .results().forEach(results::add);
+
+        return buildResultsMap(results, COUNT_METRIC);
+    }
+
+    public static Map<DateTime, Double> getCPAOverTime(Integer filter) throws MongoAuthException {
+        Map<DateTime, Double> costImpressions = getImpressionCostOverTime(filter);
+        Map<DateTime, Double> costClicks = getClickCostOverTime();
+        Map<DateTime, Double> numConversions = getNumConversions();
+
+        return Stream.concat(costImpressions.keySet().stream(), costClicks.keySet().stream())
+                .distinct()
+                .collect(Collectors.toMap(k->k, k->((numConversions.get(k)==0) ? 0 :(costImpressions.getOrDefault(k,0d) + costClicks.getOrDefault(k,0d))/numConversions.getOrDefault(k,1d))));
+    }
+
+    public static Map<DateTime, Double> getNumClicks() throws MongoAuthException {
         return getCountMetric(COL_CLICKS);
     }
 
-    public static Map<String, Map<String, Integer>> getNumConversions() throws MongoAuthException {
+    public static Map<DateTime, Double> getNumConversions() throws MongoAuthException {
         return getCountMetric(COL_SERVER);
     }
 
-    public static Map<String, Map<String, Double>> getClickCostOverTime() throws MongoAuthException {
+    public static Map<DateTime, Double> getClickCostOverTime() throws MongoAuthException {
         return getCostMetric(COL_CLICKS);
     }
 
-    public static Map<String, Map<String, Double>> getImpressionCostOverTime() throws MongoAuthException {
-        return getCostMetric(COL_IMPRESSIONS);
+    public static Map<DateTime, Double> getImpressionCostOverTime(Integer filter) throws MongoAuthException {
+        if (filter == Filters.NO_FILTER)
+            return getCostMetric(COL_IMPRESSIONS);
+
+        DBHandler handler = DBHandler.getDBConnection();
+        List<BasicDBObject> query = new ArrayList<>();
+        query.add(getQueryFilter(filter));
+        getDateFilterQuery().forEach(query::add);
+
+        List<DBObject> results =  new ArrayList<>();
+
+        handler.getCollection(DATA_IMPRESSIONS).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", query)),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", getGranularityAggregate())
+                                .append("cost", new BasicDBObject("$sum", "$Impression Cost")))))
+                .results().forEach(results::add);
+
+        return buildResultsMap(results, COST_METRIC);
     }
 
-    public static Map<String, Map<String, Double>> getTotalCostOverTime() throws MongoAuthException {
-        Map<String, Map<String, Double>> costImpressions = getImpressionCostOverTime();
-        Map<String, Map<String, Double>> costClicks = getClickCostOverTime();
+    public static Map<DateTime, Double> getTotalCostOverTime(Integer filter) throws MongoAuthException {
+        Map<DateTime, Double> clickCost = getClickCostOverTime();
+        Map<DateTime, Double> impressionCost = getImpressionCostOverTime(filter);
 
-        Map<String, Map<String, Double>> totalMap  = new HashMap<>();
+        return Stream.concat(clickCost.keySet().stream(), impressionCost.keySet().stream())
+                .distinct()
+                .collect(Collectors.toMap(k->k, k->clickCost.getOrDefault(k,0d) + impressionCost.getOrDefault(k,0d)));
 
-        for (String day : costImpressions.keySet()) {
-            Map<String, Double> hourCostMap = new HashMap<>();
-            Map<String, Double> impressionCostHour = costImpressions.get(day);
-            Map<String, Double> clickCostHour = costClicks.get(day);
+    }
+    
+    public static Map<DateTime, Double> getCostPerThousandImpressionsOverTime(Integer filter) throws MongoAuthException {
+        Map<DateTime, Double> totalCost = getClickCostOverTime();
+        Map<DateTime, Double> numImpressions = getNumImpressions(filter);
 
-            for (String hour : impressionCostHour.keySet()) {
-                hourCostMap.put(
-                        hour,
-                        /**
-                         * ****************************************************************************
-                         * This line below replaces a null value in the map with 0.
-                         */
-                        (clickCostHour.get(hour) == null ? 0d : clickCostHour.get(hour)) +
-                                (impressionCostHour.get(hour) == null ? 0d : impressionCostHour.get(hour))
-                        //****************************************************************************
-                );
-            }
+        return Stream.concat(totalCost.keySet().stream(), numImpressions.keySet().stream())
+                .distinct()
+                .collect(Collectors.toMap(k->k, k->(totalCost.getOrDefault(k,0d) / numImpressions.getOrDefault(k,0d) * 1000)));
 
-            totalMap.put(day, hourCostMap);
-        }
-        return totalMap;
+    }
+    
+
+    public static Map<DateTime, Double> getCTROverTime(Integer filter) throws MongoAuthException {
+        Map<DateTime, Double> numImpressions = getNumImpressions(filter);
+        Map<DateTime, Double> numClicks = getNumClicks();
+
+        return Stream.concat(numImpressions.keySet().stream(), numClicks.keySet().stream())
+                .distinct()
+                .collect(Collectors.toMap(k -> k, k -> numClicks.getOrDefault(k, 0d) / numImpressions.getOrDefault(k,1d)));
+    }
+    
+
+    public static Map<DateTime, Double> getBounceRate(String condition) throws MongoAuthException {
+        DBHandler handler = DBHandler.getDBConnection();
+
+        List<DBObject> results =  new ArrayList<>();
+
+        handler.getCollection(COL_SERVER).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", getGranularityAggregate())
+                                .append(condition, new BasicDBObject("$avg", "$"+condition)))))
+                .results().forEach(results::add);
+
+        return buildResultsMap(results, condition);
     }
 
-    public static Map<String, Map<String, Double>> getCTROverTime() throws MongoAuthException {
-        Map<String, Map<String, Integer>> numImpressions = getNumImpressions();
-        Map<String, Map<String, Integer>> numClicks = getNumClicks();
-
-        Map<String, Map<String, Double>> ctrMap = new HashMap<>();
-
-        for (String day : numImpressions.keySet()) {
-            Map<String, Double> hourCtrMap = new HashMap<>();
-            Map<String, Integer> impressionsHour = numImpressions.get(day);
-            Map<String, Integer> clicksHour = numClicks.get(day);
-
-            for (String hour : impressionsHour.keySet()) {
-                if (clicksHour.get(hour) == null) {
-                    hourCtrMap.put(hour, 0d);
-                } else if (impressionsHour.get(hour) == null) {
-                    // Skip
-                } else {
-                    hourCtrMap.put(hour, Double.parseDouble(clicksHour.get(hour).toString()) / Double.parseDouble(impressionsHour.get(hour).toString()));
-                }
-            }
-
-            ctrMap.put(day, hourCtrMap);
-        }
-        return ctrMap;
+    public static Map<DateTime, Double> getBounceRateByTime() throws MongoAuthException {
+        return getBounceRate(BOUNCE_COND_TIME);
     }
 
-    public static Double getTotalCTR() throws MongoAuthException {
+    public static Map<DateTime, Double> getBounceRateByPage() throws MongoAuthException {
+        return getBounceRate(BOUNCE_COND_PAGE);
+    }
+
+    public static Double getTotalCTR(Integer filter) throws MongoAuthException {
         double clicks = getTotalNumClicks();
-        double impressions = getTotalNumImpressions();
+        double impressions = getTotalNumImpressions(filter);
 
         return clicks/impressions;
     }
 
     public static Double getTotalNumClicks() throws MongoAuthException {
-        return getTotalMetric(COL_CLICKS, GET_TOTAL_NUM);
+        return getTotalMetric(OP_SUM, COUNT_AGGREGATE, COL_CLICKS, Filters.NO_FILTER);
     }
 
-    public static Double getTotalNumImpressions() throws MongoAuthException {
-        return getTotalMetric(COL_IMPRESSIONS, GET_TOTAL_NUM);
+    public static Double getTotalNumImpressions(Integer filter) throws MongoAuthException {
+        return (filter == Filters.NO_FILTER)
+                ? getTotalMetric(OP_SUM, COUNT_METRIC, COL_IMPRESSIONS, filter)
+                : getTotalCountMetric(DATA_IMPRESSIONS, filter);
     }
 
-    public static Double getTotalCostImpressions() throws MongoAuthException {
-        return Double.parseDouble(getTotalMetric(COL_IMPRESSIONS, GET_TOTAL_COST).toString());
+    public static Double getTotalCostImpressions(Integer filter) throws MongoAuthException {
+        String aggregate = (filter == Filters.NO_FILTER) ? COST_AGGREGATE : "$Impression Cost";
+        String collection = (filter == Filters.NO_FILTER) ? COL_IMPRESSIONS : DATA_IMPRESSIONS;
+        return getTotalMetric(OP_SUM, aggregate, collection, filter);
     }
 
     public static Double getTotalCostClicks() throws MongoAuthException {
-        return Double.parseDouble(getTotalMetric(COL_CLICKS, GET_TOTAL_COST).toString());
+        return getTotalMetric(OP_SUM, COST_AGGREGATE, COL_CLICKS, Filters.NO_FILTER);
     }
 
-    public static Double getTotalCostCampaign() throws MongoAuthException {
-        return getTotalCostImpressions() + getTotalCostClicks();
+    public static Double getTotalCostCampaign(Integer filter) throws MongoAuthException {
+        return getTotalCostImpressions(filter) + getTotalCostClicks();
     }
 
-
-    private static Map<String, Map<String, Integer>> getCountMetric(String collection) throws MongoAuthException {
+    private static Map<DateTime, Double> getCountMetric(String collection) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
-        fieldModifier = new BasicDBObject();
-        fieldModifier.put(COUNT_METRIC ,1);
+        List<DBObject> results =  new ArrayList<>();
 
-        Map<String, Map<String, Integer>> countMap = new HashMap<>();
+        handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", getGranularityAggregate())
+                                .append("num", new BasicDBObject("$sum", "$num")))))
+                .results().forEach(results::add);
 
-        JSONObject jsonResult = new JSONObject(
-                handler.sendQuery(
-                        ALL_QUERY,
-                        fieldModifier,
-                        collection
-                ).get(0).toString()
-        );
+        return buildResultsMap(results, COUNT_METRIC);
+    }
 
-        jsonResult.remove("_id");
-        jsonResult = jsonResult.getJSONObject(COUNT_METRIC);
+    private static Map<DateTime, Double> getCostMetric(String collection) throws MongoAuthException {
+        DBHandler handler = DBHandler.getDBConnection();
+        List<DBObject> results =  new ArrayList<>();
 
-        Iterator<?> keys = jsonResult.keys();
+        handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", getGranularityAggregate())
+                                .append("cost", new BasicDBObject("$sum", "$cost")))))
+                .results().forEach(results::add);
 
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            String value = jsonResult.get(key).toString();
-            value = value.substring(1, value.length()-1);           //remove curly brackets
-            String[] keyValuePairs = value.split(",");              //split the string to creat key-value pairs
-            Map<String,Integer> map = new HashMap<>();
+        return buildResultsMap(results, COST_METRIC);
+    }
 
-            for(String pair : keyValuePairs)                        //iterate over the pairs
-            {
-                String[] entry = pair.split(":");                   //split the pairs to get key and value
-                map.put(entry[0].trim().replace("\"",""), Integer.parseInt(entry[1].trim()));          //add them to the hashmap and trim whitespaces
-            }
-            countMap.put(key, map);
+    private static Double getTotalMetric(String op, String metric, String collection, Integer filter) throws MongoAuthException {
+        DBHandler handler = DBHandler.getDBConnection();
+        List<DBObject> pipeline = new ArrayList<>();
+        DBObject group_metric = new BasicDBObject();
+        if (op.equals(OP_SUM))
+            group_metric = new BasicDBObject(
+                    "$group", new BasicDBObject("_id", null).append(
+                    "total", new BasicDBObject(op, metric)
+            ));
+        else if (op.equals(OP_COUNT))
+            group_metric = new BasicDBObject(op, "total");
+
+        pipeline.add(group_metric);
+
+        Iterable<DBObject> results = handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", getQueryFilter(filter)),
+                group_metric
+        )).results();
+
+        BasicDBObject result = (BasicDBObject) results.iterator().next();
+
+        return result.getDouble("total");
+    }
+
+    private static Double getTotalCountMetric(String collection, Integer filter) throws MongoAuthException {
+        DBHandler handler = DBHandler.getDBConnection();
+        Iterable<DBObject> results = handler.getCollection(collection).aggregate(Arrays.asList(
+                new BasicDBObject("$match", getQueryFilter(filter)),
+                new BasicDBObject("$count", "num")
+        )).results();
+
+        BasicDBObject result = (BasicDBObject) results.iterator().next();
+
+        return result.getDouble("num");
+    }
+
+    private static BasicDBObject getQueryFilter(Integer filter) {
+        Integer age, income, gender, context;
+        BasicDBObject query = new BasicDBObject();
+
+        if (filter == 0)
+            return ALL_QUERY;
+
+        age = filter % 10;
+        filter /= 10;
+        income = (filter % 10) * 10;
+        filter /= 10;
+        gender = (filter % 10) * 100;
+        filter /= 10;
+        context = (filter % 10) * 1000;
+
+        if (age != 0)
+            query.append("Age", (age == Filters.AGE_25) ? "<25"
+                    : (age == Filters.AGE_25_34) ? "25-34"
+                    : (age == Filters.AGE_35_44) ? "35-44"
+                    : (age == Filters.AGE_45_54) ? "45-54"
+                    : (age == Filters.AGE_54) ? ">54"
+                    : "null");
+        if (income != 0)
+            query.append("Income", (income == Filters.INCOME_LOW) ? "Low"
+                    : (income == Filters.INCOME_MEDIUM) ? "Medium"
+                    : (income == Filters.INCOME_HIGH) ? "High"
+                    : "null");
+        if (gender != 0)
+            query.append("Gender", (gender == Filters.GENDER_MALE) ? 'M'
+                    : (gender == Filters.GENDER_FEMALE) ? 'F'
+                    : "null");
+        if (context != 0)
+            query.append("Context", (context == Filters.CONTEXT_BLOG) ? "Blog"
+                    : (context == Filters.CONTEXT_NEWS) ? "News"
+                    : (context == Filters.CONTEXT_SHOPPING) ? "Shopping"
+                    : (context == Filters.CONTEXT_SOCIAL_MEDIA) ? "Social Media"
+                    : "null");
+
+        return query;
+    }
+
+    private static DateTime buildDateKey(BasicDBObject bson) throws java.text.ParseException {
+        DateTime dateKey;
+        String month;
+        String day;
+        String hour;
+        BasicDBObject dateObj = (BasicDBObject) bson.get("_id");
+        String dateString = null;
+        DateFormat df = null;
+        if (granularity == GRANULARITY_HOUR) {
+            df = new SimpleDateFormat("HH:mm");
+            dateString = String.format("%s:00:00",
+                    ((hour = dateObj.getString("hour")).length() == 1)
+                            ? "0" + hour
+                            : hour);
+        } else if (granularity == GRANULARITY_DAY) {
+            df = new SimpleDateFormat("yyyy-MM-dd");
+            dateString = String.format("%s-%s-%s",
+                    dateObj.getString("year"),
+                    ((month = dateObj.getString("month")).length() == 1)
+                            ? "0" + month
+                            : month,
+                    ((day = dateObj.getString("day")).length() == 1)
+                            ? "0" + day
+                            : day);
+        } else {
+            df = new SimpleDateFormat("yyyy-MM");
+            dateString = String.format("%s-%s",
+                    dateObj.getString("year"),
+                    ((month = dateObj.getString("month")).length() == 1)
+                            ? "0" + month
+                            : month);
         }
+        Date date = df.parse(dateString);
+        dateKey = new DateTime(date);
 
-        System.out.println(countMap);
-
-        return countMap;
-
+        return dateKey;
     }
 
-    private static Map<String, Map<String, Double>> getCostMetric(String collection) throws MongoAuthException {
-        DBHandler handler = DBHandler.getDBConnection();
-        fieldModifier = new BasicDBObject();
-        fieldModifier.put(COST_METRIC, 1);
-
-        Map<String, Map<String, Double>> countMap = new HashMap<>();
-
-        JSONObject jsonResult = new JSONObject(
-                handler.sendQuery(
-                        ALL_QUERY,
-                        fieldModifier,
-                        collection
-                ).get(0).toString()
-        );
-
-        jsonResult.remove("_id");
-        jsonResult = jsonResult.getJSONObject(COST_METRIC);
-
-        Iterator<?> keys = jsonResult.keys();
-
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            String value = jsonResult.get(key).toString();
-            value = value.substring(1, value.length()-1);           //remove curly brackets
-            String[] keyValuePairs = value.split(",");              //split the string to creat key-value pairs
-            Map<String,Double> map = new HashMap<>();
-
-            for(String pair : keyValuePairs)                        //iterate over the pairs
-            {
-                String[] entry = pair.split(":");                   //split the pairs to get key and value
-                map.put(entry[0].trim().replace("\"",""), Double.parseDouble(entry[1].trim()));          //add them to the hashmap and trim whitespaces
+    private static Map<DateTime, Double> buildResultsMap(List<DBObject> results, String metric) {
+        Map<DateTime, Double> mapCost = new HashMap<>();
+        for (DBObject entry : results) {
+            BasicDBObject bson = (BasicDBObject) entry;
+            DateTime dateKey = null;
+            try {
+                dateKey = buildDateKey(bson);
+                mapCost.put(dateKey, bson.getDouble(metric));
+            } catch (ParseException e) {
+                e.printStackTrace();
             }
-            countMap.put(key, map);
         }
-
-        System.out.println(countMap);
-
-        return countMap;
+        return mapCost;
     }
 
-    private static Double getTotalMetric(String collection, String metric) throws MongoAuthException {
-        DBHandler handler = DBHandler.getDBConnection();
-        fieldModifier = new BasicDBObject();
-        fieldModifier.put(metric, 1);
+    private static BasicDBObject getGranularityAggregate() {
+        BasicDBObject timeGranularity = new BasicDBObject("year", new BasicDBObject("$year", "$Date"));
 
-        JSONObject jsonResult = new JSONObject(
-                handler.sendQuery(
-                        ALL_QUERY,
-                        fieldModifier,
-                        collection
-                ).get(0).toString()
-        );
+        if (granularity >= GRANULARITY_MONTH)
+            timeGranularity.append("month", new BasicDBObject("$month", "$Date"));
+        if (granularity >= GRANULARITY_DAY)
+            timeGranularity.append("day", new BasicDBObject("$dayOfMonth", "$Date"));
+        if (granularity >= GRANULARITY_HOUR)
+            timeGranularity.append("hour", new BasicDBObject("$hour", "$Date"));
 
-        jsonResult.remove("_id");
-        return Double.parseDouble(jsonResult.get(metric).toString());
+        return timeGranularity;
+    }
+
+    public static DateTimeFormatter getDateFormat() {
+        if (granularity == GRANULARITY_MONTH)
+            return DateTimeFormat.forPattern("yyyy-MM");
+        else if (granularity == GRANULARITY_DAY)
+            return DateTimeFormat.forPattern("yyyy-MM-dd");
+        else
+            return DateTimeFormat.forPattern("HH:mm");
+    }
+
+    private static List<BasicDBObject> getDateFilterQuery() {
+        List<BasicDBObject> dateQuery = new ArrayList<>();
+
+        if (startDate != null)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gte", startDate.toDate())));
+        else
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$gte", Date.from(Instant.EPOCH))));
+
+        if (granularity == GRANULARITY_HOUR)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", startDate.plusHours(23).plusMinutes(59).plusSeconds(59).toDate())));
+        else if (endDate != null)
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", endDate.toDate())));
+        else
+            dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", new Date())));
+
+        return dateQuery;
     }
 }

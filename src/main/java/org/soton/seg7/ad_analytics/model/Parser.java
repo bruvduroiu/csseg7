@@ -1,11 +1,30 @@
 package org.soton.seg7.ad_analytics.model;
 
-import org.json.JSONArray;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.MongoClient;
+import com.mongodb.connection.Server;
+import org.joda.time.DateTime;
+import org.joda.time.Minutes;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.json.JSONObject;
+import org.mongojack.JacksonDBCollection;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Executors;
 
 /**
  * Created by bogdanbuduroiu on 22/02/2017.
@@ -45,7 +64,9 @@ public class Parser {
     // No need to have an instance of the Parser
     private Parser() { }
 
-    private static String csvDelimiter = ",";
+    private static final String CSV_DELIMITER = ",";
+    private static final Integer BOUNCE_MINUTES = 2;
+    private static final Integer BOUNCE_PAGES = 1;
 
     public static boolean isValidImpressionLog(File csvFile) {
 
@@ -56,7 +77,7 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            headers = br.readLine().split(CSV_DELIMITER);
 
             if (!headers[0].equals("Date")) return false;
             if (!headers[1].equals("ID")) return false;
@@ -66,9 +87,11 @@ public class Parser {
             if (!headers[5].equals("Context")) return false;
             if (!headers[6].equals("Impression Cost")) return false;
 
+            Runtime.getRuntime().exec("sed -i.bak '1d' " +csvFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
         }
+
 
         return true;
     }
@@ -82,7 +105,7 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            headers = br.readLine().split(CSV_DELIMITER);
 
             if (!headers[0].equals("Entry Date")) return false;
             if (!headers[1].equals("ID")) return false;
@@ -90,6 +113,7 @@ public class Parser {
             if (!headers[3].equals("Pages Viewed")) return false;
             if (!headers[4].equals("Conversion")) return false;
 
+            Runtime.getRuntime().exec("sed -i.bak '1d' " +csvFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -106,12 +130,13 @@ public class Parser {
         try {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            headers = br.readLine().split(csvDelimiter);
+            headers = br.readLine().split(CSV_DELIMITER);
 
             if (!headers[0].equals("Date")) return false;
             if (!headers[1].equals("ID")) return false;
             if (!headers[2].equals("Click Cost")) return false;
 
+            Runtime.getRuntime().exec("sed -i.bak '1d' " +csvFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -132,83 +157,67 @@ public class Parser {
 
     private static JSONObject parseClicks(File csvFile) {
 
-        String line;
-        int totalClicks = 0;
-        double totalCost = 0;
-        JSONObject jsonObject;
+        Map<DateTime, Double> clickCost = new HashMap<>();
+        Map<DateTime, Integer> numClicks = new HashMap<>();
 
-        // Total click-cost map of day -> hour -> total
-        Map<String, Map<String, Float>> dayTotalCosts = new HashMap<>();
-
-        // Total num clicks map of day -> hour -> total
-        Map<String, Map<String, Integer>> dayClicks = new HashMap<>();
-
-        // Total click-cost map of hour -> total
-        Map<String, Float> hourTotalCosts = new HashMap<>();
-
-        // Total num clicks map of hour -> total
-        Map<String, Integer> hourClicks = new HashMap<>();
+        List<Click> clicks = new ArrayList<>();
+        List<ClickMetrics> metrics = new ArrayList<>();
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader(csvFile));
 
-            br.readLine();
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            CsvMapper mapper = new CsvMapper();
+            mapper.setDateFormat(df);
+
+            CsvSchema schema = CsvSchema.emptySchema()
+                    .withHeader();
+
+            ObjectReader reader = mapper
+                    .readerFor(Click.class)
+                    .with(schema);
+
+            MappingIterator<Click> it = reader.readValues(csvFile);
 
             final long initTime = System.currentTimeMillis();
 
-            while ((line = br.readLine()) != null) {
+            while (it.hasNext()) {
+                Click click = it.next();
 
+                DateTime dateKey = new DateTime(click.getDate())
+                        .withMinuteOfHour(0)
+                        .withSecondOfMinute(0);
 
-                // use comma as separator
-                String[] data = line.split(csvDelimiter);
+                clickCost.merge(dateKey, click.getClickCost(), (oldVal, cost) -> oldVal + cost);
 
-                String day = data[0].split(":")[0].split(" ")[0];
-                String hour = data[0].split(":")[0].split(" ")[1];
+                numClicks.merge(dateKey, 1, (oldVal, one) -> oldVal + one);
 
-                // Whenever the parser finds a new date, reset the sums in the hashmap
-                if (!dayTotalCosts.containsKey(day))
-                    hourTotalCosts = new HashMap<>();
-
-                if (!dayClicks.containsKey(day))
-                    hourClicks = new HashMap<>();
-
-                // Get total cost of ads per hour
-                hourTotalCosts.put(
-                        hour,
-                        hourTotalCosts.containsKey(hour)
-                                ? hourTotalCosts.get(hour) + new Float(data[2])
-                                : new Float(data[2])
-                );
-
-                hourClicks.put(
-                        hour,
-                        hourClicks.containsKey(hour)
-                                ? hourClicks.get(hour) + 1
-                                : 1
-                );
-
-                dayTotalCosts.put(day, hourTotalCosts);
-                dayClicks.put(day, hourClicks);
-
-                totalClicks++;
-                totalCost += Double.parseDouble(data[2]);
+                clicks.add(click);
             }
 
-            jsonObject = new JSONObject()
-                    .put("collection", "click_log")
-                    .put("dayCost", dayTotalCosts)
-                    .put("dayNum", dayClicks)
-                    .put("totalNum", totalClicks)
-                    .put("totalCost", totalCost);
+            for (DateTime key : numClicks.keySet())
+                metrics.add(new ClickMetrics(
+                        key.toDate(),
+                        clickCost.get(key),
+                        numClicks.get(key)
+                ));
 
-            insertIntoDB(jsonObject);
+            DBCollection click_data = DBHandler.getDBConnection().getCollection("click_data");
+            DBCollection click_log = DBHandler.getDBConnection().getCollection("click_log");
+
+            JacksonDBCollection<Click, String> dataColl = JacksonDBCollection.wrap(click_data, Click.class, String.class);
+            JacksonDBCollection<ClickMetrics, String> logColl = JacksonDBCollection.wrap(click_log, ClickMetrics.class, String.class);
+
+            dataColl.insert(clicks);
+            logColl.insert(metrics);
 
             final long finalTime = System.currentTimeMillis();
 
             System.out.printf("[DEBUG][PARSER] Parsed %s in %d sec.", csvFile.getName(), (finalTime-initTime)/1000);
             System.out.println();
 
-            return jsonObject;
+            return new JSONObject()
+                    .put("insert", "ok")
+                    .put("numdoc", clicks.size());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -221,80 +230,76 @@ public class Parser {
 
     private static JSONObject parseImpressions(File csvFile) {
 
-        String line;
-        JSONObject jsonObject;
-        int totalImpressions = 0;
-        double totalCost = 0;
+        Map<DateTime, Integer> numImpressions = new HashMap<>();
+        Map<DateTime, Double> dayCost = new HashMap<>();
 
-        Map<String, Map<String, Float>> dayTotalCost = new HashMap<>();
+        List<Impression> impressions = new ArrayList<>();
+        List<ImpressionMetrics> metrics = new ArrayList<>();
 
-        Map<String, Map<String, Integer>> dayTotalImpressions = new HashMap<>();
-
-        Map<String, Float> hourTotalCost = new HashMap<>();
-
-        Map<String, Integer> hourTotalImpressions = new HashMap<>();
+        long numParsed = 0;
 
         try {
 
-            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-            br.readLine();
+            CsvMapper mapper = new CsvMapper();
+            mapper.setDateFormat(df);
+
+            CsvSchema schema = CsvSchema.emptySchema()
+                    .withHeader();
+
+            ObjectReader reader = mapper.readerFor(Impression.class).with(schema);
+            MappingIterator<Impression> it = reader.readValues(csvFile);
 
             final long initTime = System.currentTimeMillis();
 
-            while((line = br.readLine()) != null) {
-                String[] data = line.split(csvDelimiter);
+            while (it.hasNext()) {
+                Impression impression = it.next();
 
-                String day = data[0].split(":")[0].split(" ")[0];
-                String hour = data[0].split(":")[0].split(" ")[1];
+                DateTime dateKey = new DateTime(impression.getDate())
+                        .withMinuteOfHour(0)
+                        .withSecondOfMinute(0);
 
-                // Reset the hour HashMaps for every new date
-                if (!dayTotalCost.containsKey(day))
-                    hourTotalCost = new HashMap<>();
+                dayCost.merge(dateKey, impression.getImpressionCost(), (oldVal, cost) -> oldVal + cost);
 
-                // Reset the hour HashMaps for every new day
-                if (!dayTotalImpressions.containsKey(day))
-                    hourTotalImpressions = new HashMap<>();
+                numImpressions.merge(dateKey, 1, (oldVal, one) -> oldVal + one);
 
-                // Get total cost of displaying ads per hour
-                hourTotalCost.put(
-                        hour,
-                        hourTotalCost.containsKey(hour)
-                                ? hourTotalCost.get(hour) + new Float(data[data.length - 1])
-                                : new Float(data[data.length - 1])
-                );
+                numParsed++;
 
-                // Get total number of impressions per hour
-                hourTotalImpressions.put(
-                        hour,
-                        hourTotalImpressions.containsKey(hour)
-                                ? hourTotalImpressions.get(hour) + 1
-                                : 1
-                );
+                impressions.add(impression);
+                if (impressions.size() == 300000) {
+                    DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
+                    JacksonDBCollection<Impression, String> dataColl = JacksonDBCollection.wrap(impression_data, Impression.class, String.class);
+                    dataColl.insert(impressions);
 
-                dayTotalCost.put(day, hourTotalCost);
-                dayTotalImpressions.put(day, hourTotalImpressions);
-
-                totalImpressions++;
-                totalCost += Double.parseDouble(data[data.length - 1]);
+                    impressions = new ArrayList<>();
+                }
             }
 
-            jsonObject = new JSONObject()
-                    .put("collection", "impression_log")
-                    .put("dayCost", dayTotalCost)
-                    .put("dayNum", dayTotalImpressions)
-                    .put("totalNum", totalImpressions)
-                    .put("totalCost", totalCost);
 
-            insertIntoDB(jsonObject);
+            for (DateTime key : numImpressions.keySet())
+                metrics.add(new ImpressionMetrics(
+                        key.toDate(),
+                        dayCost.get(key),
+                        numImpressions.get(key)
+                ));
+
+            DBCollection impression_log = DBHandler.getDBConnection().getCollection("impression_log");
+            DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
+            JacksonDBCollection<ImpressionMetrics, String> logColl = JacksonDBCollection.wrap(impression_log, ImpressionMetrics.class, String.class);
+            JacksonDBCollection<Impression, String> dataColl = JacksonDBCollection.wrap(impression_data, Impression.class, String.class);
+            dataColl.insert(impressions);
+            logColl.insert(metrics);
 
             final long finalTime = System.currentTimeMillis();
-
             System.out.printf("[DEBUG][PARSER] Parsed %s in %d sec.", csvFile.getName(), (finalTime-initTime)/1000);
             System.out.println();
-            return jsonObject;
-        }
-        catch (IOException e) {
+
+            return new JSONObject()
+                    .put("insert", "ok")
+                    .put("numdoc", numParsed);
+
+        } catch (IOException e) {
             e.printStackTrace();
         } catch (MongoAuthException e) {
             e.printStackTrace();
@@ -304,53 +309,82 @@ public class Parser {
     }
 
     private static JSONObject parseServer(File csvFile) {
-        String line;
 
-        Map<String, Map<String, Integer>> dayConversions = new HashMap<>();
-        Map<String, Integer> hourConversions = new HashMap<>();
+        Map<DateTime, Double> numConversions = new HashMap<>();
+        Map<DateTime, Double> numPageViews = new HashMap<>();
+        Map<DateTime, Double> numBouncesTime = new HashMap<>();
+        Map<DateTime, Double> numBouncesPage = new HashMap<>();
 
-        JSONObject jsonObject;
+        List<ServerEntry> entries = new ArrayList<>();
+        List<ServerMetrics> metrics = new ArrayList<>();
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-            br.readLine();
+            CsvMapper mapper = new CsvMapper();
+            mapper.setDateFormat(df);
+
+            CsvSchema schema = CsvSchema.emptySchema()
+                    .withHeader()
+                    .withNullValue("n/a");
+
+            ObjectReader reader = mapper.readerFor(ServerEntry.class).with(schema);
+            MappingIterator<ServerEntry> it = reader.readValues(csvFile);
 
             final long initTime = System.currentTimeMillis();
 
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(csvDelimiter);
+            while (it.hasNext()) {
+                ServerEntry entry = it.next();
 
-                String day = data[0].split(":")[0].split(" ")[0];
-                String hour = data[0].split(":")[0].split(" ")[1];
+                DateTime entry_date = new DateTime(entry.getEntryDate());
+                DateTime exit_date = entry.getExitDate() != null
+                        ? new DateTime(entry.getExitDate())
+                        : new DateTime(new Date());
+                DateTime dateKey = entry_date
+                        .withMinuteOfHour(0)
+                        .withSecondOfMinute(0);
 
-                if (!dayConversions.containsKey(day))
-                    hourConversions = new HashMap<>();
+                if (Minutes.minutesBetween(entry_date,exit_date).getMinutes() < BOUNCE_MINUTES)
+                    numBouncesTime.merge(dateKey, 1d, (oldVal, one) -> oldVal + one);
 
-                if (data[data.length-1].equals("Yes"))
-                    hourConversions.put(
-                            hour,
-                            hourConversions.containsKey(hour)
-                                    ? hourConversions.get(hour) + 1
-                                    : 1
-                    );
+                if (entry.getPagesViewed() <= BOUNCE_PAGES)
+                    numBouncesPage.merge(dateKey, 1d, (oldVal, one) -> oldVal + one);
 
-                dayConversions.put(day, hourConversions);
+                if (entry.isConversion())
+                    numConversions.merge(dateKey, 1d, (oldVal, one) -> oldVal + one);
 
+                numPageViews.merge(dateKey, 1d, (oldVal, one) -> oldVal + one);
+
+                entries.add(entry);
             }
 
-            jsonObject = new JSONObject()
-                    .put("collection", "server_log")
-                    .put("dayNum", dayConversions);
+            for (Map.Entry<DateTime, Double> entry : numPageViews.entrySet()) {
+                metrics.add(new ServerMetrics(
+                        entry.getKey().toDate(),
+                        (numConversions.get(entry.getKey()) == null) ? 0 : numConversions.get(entry.getKey()) / entry.getValue(),
+                        (numBouncesPage.get(entry.getKey()) == null) ? 0 : numBouncesPage.get(entry.getKey()) / entry.getValue(),
+                        (numBouncesTime.get(entry.getKey()) == null) ? 0 : numBouncesTime.get(entry.getKey()) / entry.getValue(),
+                        (numConversions.get(entry.getKey()) == null) ? 0 : numConversions.get(entry.getKey()).intValue(),
+                        entry.getValue()
+                ));
+            }
 
-            insertIntoDB(jsonObject);
+            DBCollection server_data = DBHandler.getDBConnection().getCollection("server_data");
+            DBCollection server_log = DBHandler.getDBConnection().getCollection("server_log");
+            JacksonDBCollection<ServerEntry, String> coll = JacksonDBCollection.wrap(server_data, ServerEntry.class, String.class);
+            JacksonDBCollection<ServerMetrics, String> collMetrics = JacksonDBCollection.wrap(server_log, ServerMetrics.class, String.class);
+            coll.insert(entries);
+            collMetrics.insert(metrics);
+
 
             final long finalTime = System.currentTimeMillis();
 
             System.out.printf("[DEBUG][PARSER] Parsed %s in %d sec.", csvFile.getName(), (finalTime-initTime)/1000);
             System.out.println();
 
-            return jsonObject;
+            return new JSONObject()
+                    .put("insert", "ok")
+                    .put("numdocs", entries.size());
 
 
         } catch (FileNotFoundException e) {
@@ -363,13 +397,4 @@ public class Parser {
         return new JSONObject().put("error", "exception occurred while parsing the csv file");
     }
 
-    private static void insertIntoDB(JSONObject jsonObject) throws MongoAuthException {
-
-        DBHandler handler = DBHandler.getDBConnection();
-
-        final String collection = jsonObject.getString("collection");
-        jsonObject.remove("collection");
-
-        handler.insertData(jsonObject, collection);
-    }
 }

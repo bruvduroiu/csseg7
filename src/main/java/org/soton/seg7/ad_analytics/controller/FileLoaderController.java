@@ -1,9 +1,6 @@
 package org.soton.seg7.ad_analytics.controller;
 
 import java.io.File;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -64,7 +61,11 @@ public class FileLoaderController {
     @FXML
 	protected void handleStartLoadingButtonAction(ActionEvent event) {
     	if (clickLog == null || serverLog == null ||impressionLog == null) {
-			System.out.println("There are som null files");
+			Alert nullFilesErrorBox = new Alert(Alert.AlertType.ERROR);
+			nullFilesErrorBox.setTitle("Missing File/s Error");
+			nullFilesErrorBox.setHeaderText("Something wen't wrong!");
+			nullFilesErrorBox.setContentText("Please upload an impression log, server log and click log.");
+			nullFilesErrorBox.showAndWait();
 		} else if (Parser.isValidClickLog(clickLog) && Parser.isValidImpressionLog(impressionLog) && Parser.isValidServerLog(serverLog)) {
 			DBHandler handler = null;
 			try {
@@ -72,19 +73,15 @@ public class FileLoaderController {
 				handler.dropCollection("impression_log");
 				handler.dropCollection("server_log");
 				handler.dropCollection("click_log");
+				handler.dropCollection("impression_data");
+				handler.dropCollection("server_data");
+				handler.dropCollection("click_data");
 			} catch (MongoAuthException e) {
 				e.printStackTrace();
 			}
-			ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-			executors.submit(() -> Parser.parseCSV(clickLog));
-			executors.submit(() -> Parser.parseCSV(impressionLog));
-			executors.submit(() -> Parser.parseCSV(serverLog));
-			executors.shutdown();
-			try {
-				executors.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			Parser.parseCSV(clickLog);
+			Parser.parseCSV(serverLog);
+			Parser.parseCSV(impressionLog);
 			// close the dialog.
 			Node  source = (Node)  event.getSource();
 			Stage stage  = (Stage) source.getScene().getWindow();
@@ -93,7 +90,12 @@ public class FileLoaderController {
 			Alert invalidFileErrorBox = new Alert(Alert.AlertType.ERROR);
 			invalidFileErrorBox.setTitle("Invalid File/s Error");
 			invalidFileErrorBox.setHeaderText("Something wen't wrong!");
-			invalidFileErrorBox.setContentText("One of your files is in invalid format.");
+
+			invalidFileErrorBox.setContentText("Some files are in invalid format: ");
+			if (!Parser.isValidClickLog(clickLog)) invalidFileErrorBox.setContentText(invalidFileErrorBox.getContentText() + " Click Log, ");
+			if (!Parser.isValidServerLog(serverLog)) invalidFileErrorBox.setContentText(invalidFileErrorBox.getContentText() + " Server Log, ");
+			if (!Parser.isValidImpressionLog(impressionLog)) invalidFileErrorBox.setContentText(invalidFileErrorBox.getContentText() + " Impressions Log, ");
+
 			invalidFileErrorBox.showAndWait();
     	}
     }

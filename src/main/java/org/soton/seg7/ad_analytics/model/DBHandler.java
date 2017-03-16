@@ -1,6 +1,10 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.*;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.DBCreateViewOptions;
+import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -11,6 +15,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -33,29 +38,28 @@ public class DBHandler {
         JSONParser parser = new JSONParser();
 
         final String object;
-        try {
-            object = parser.parse(
-                    new FileReader(
-                            new File("static/config.json")
-                    )
-            ).toString();
-
-            final JSONObject config = new JSONObject(object);
-
-            HOST = config.get("host").toString();
-            PORT = Integer.parseInt(config.get("port").toString());
-            USER = config.get("user").toString();
-            PASS = config.get("pass").toString();
-            DB_STRING = config.get("db").toString();
+//            object = parser.parse(
+//                    new FileReader(
+//                            new File("static/config.json")
+//                    )
+//            ).toString();
+//
+//            final JSONObject config = new JSONObject(object);
+//
+//            System.out.println(object);
+//            HOST = config.get("host").toString();
+//            PORT = Integer.parseInt(config.get("port").toString());
+//            USER = config.get("user").toString();
+//            PASS = config.get("pass").toString();
+//            DB_STRING = config.get("db").toString();
+        HOST = "127.0.0.1";
+        PORT = 27017;
+        USER = "root";
+        PASS = "root";
+        DB_STRING = "analytics_data";
 
         if ((dbClient = initializeDatabase()) == null)
             throw new MongoAuthException();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
     }
 
     public static DBHandler getDBConnection() throws MongoAuthException{
@@ -66,22 +70,28 @@ public class DBHandler {
         return (handler = new DBHandler());
     }
 
-    public JSONArray sendQuery(DBObject query, DBObject fields, String collection) {
+    public List<DBObject> sendQuery(DBObject query, DBObject fields, String collection) {
 
         JSONArray array = new JSONArray();
+        List<DBObject> results = new ArrayList<>();
 
-        if (dbClient == null)
-            return new JSONArray().put(new JSONObject().put("error", "database not initialized"));
+        if (dbClient == null) {
+            results.add(new BasicDBObject("error", "database not initialized"));
+            return results;
+        }
 
         DB db = dbClient.getDB(DB_STRING);
         DBCollection coll = db.getCollection(collection);
 
         DBCursor cursor = coll.find(query, fields);
+        List<DBObject> it = cursor.toArray();
 
-        while(cursor.hasNext())
-            array.put(cursor.next());
+        return cursor.toArray();
+    }
 
-        return array;
+    public DBCollection getCollection(String collection) {
+        DB db = dbClient.getDB(DB_STRING);
+        return db.getCollection(collection);
     }
 
     public String insertData(JSONObject insertion, String collection) {
@@ -143,7 +153,7 @@ public class DBHandler {
                 )
         );
 
-        MongoClient client = new MongoClient(addresses, credentials);
+        MongoClient client = new MongoClient("localhost",27017);
 
         return client;
     }
