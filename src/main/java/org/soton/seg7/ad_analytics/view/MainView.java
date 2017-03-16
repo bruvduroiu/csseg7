@@ -11,9 +11,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.chart.BarChart;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.joda.time.DateTime;
 import org.soton.seg7.ad_analytics.controller.OverviewController;
@@ -21,10 +21,11 @@ import org.soton.seg7.ad_analytics.model.DBHandler;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Parser;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
+import sun.applet.Main;
 
 public class MainView extends Application {
 
-    private Stage primaryStage;
+    private static Stage primaryStage;
     private BorderPane rootLayout;
 
     private ObservableList<Graph> graphData = FXCollections.observableArrayList();
@@ -48,11 +49,11 @@ public class MainView extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-    	this.loadTestData();
-        this.primaryStage = primaryStage;
+//    	this.loadTestData();
+        MainView.primaryStage = primaryStage;
 
         initRootLayout();
-
+        showLoadStage();
         showOverview();
     }
 
@@ -92,7 +93,7 @@ public class MainView extends Application {
     }
 
    
-    public Stage getPrimaryStage() {
+    public static Stage getPrimaryStage() {
         return primaryStage;
     }
 
@@ -130,6 +131,27 @@ public class MainView extends Application {
             }
 
         } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void showLoadStage(){
+        try {
+            // Load overview.
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(MainView.class.getResource("FileLoaderView.fxml"));
+            AnchorPane fileLoad = loader.load();
+
+            Stage loadFileStage = new Stage();
+            loadFileStage.setTitle("Load files");
+            //window modal -> you can't acces another components in overview
+            loadFileStage.initModality(Modality.WINDOW_MODAL);
+            loadFileStage.initOwner(MainView.primaryStage);
+            Scene scene = new Scene(fileLoad);
+            loadFileStage.setScene(scene);
+            loadFileStage.showAndWait();
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
