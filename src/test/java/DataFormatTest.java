@@ -1,6 +1,7 @@
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -134,7 +135,13 @@ public class DataFormatTest {
 
             Map<DateTime, Double> result = DBQuery.getBounceRateByPage();
 			
-            assertEquals("Correct Hashmap", expectedMap, result);
+            DecimalFormat df = new DecimalFormat("#.############");
+            
+            assertEquals("Same number of elements : ", expectedMap.size(), result.size());
+            for (Map.Entry<DateTime, Double> entry : result.entrySet())
+			{
+            	assertEquals("Correct value of HashMap : ", df.format(expectedMap.get(entry.getKey())), df.format(entry.getValue()));
+            }
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
@@ -168,7 +175,13 @@ public class DataFormatTest {
 
             Map<DateTime, Double> result = DBQuery.getBounceRateByTime();
 			
-            assertEquals("Correct Hashmap", expectedMap, result);
+            DecimalFormat df = new DecimalFormat("#.############");
+            
+            assertEquals("Same number of elements : ", expectedMap.size(), result.size());
+            for (Map.Entry<DateTime, Double> entry : result.entrySet())
+			{
+            	assertEquals("Correct value of HashMap : ", df.format(expectedMap.get(entry.getKey())), df.format(entry.getValue()));
+            }
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
