@@ -5,10 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.PieChart;
-import javafx.scene.chart.XYChart;
+import javafx.scene.chart.*;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -26,6 +23,7 @@ import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -63,19 +61,10 @@ public class OverviewController {
     private int incomeFilter;
     private int genderFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter;
-    
-    @FXML
-    private ToggleGroup bounceSettingsGroup = new ToggleGroup();
-    
+
     @FXML
     private Label bounceSettingsLabel;
-    
-    @FXML
-    private RadioButton bounceByPage;
-    
-    @FXML
-    private RadioButton bounceByTime;
-    
+
     @FXML
     private Slider granularitySlider;
 
@@ -132,19 +121,30 @@ public class OverviewController {
         ageFilter = 0;
         incomeFilter = 0;
         genderFilter = 0;
-        
-        bounceByTime.setToggleGroup(bounceSettingsGroup);
-        bounceByTime.setSelected(true);
-        bounceByPage.setToggleGroup(bounceSettingsGroup);
-        bounceByTime.setVisible(false);
-    	bounceByPage.setVisible(false);
+
+        final ToggleGroup toggleGroup = new ToggleGroup();
+
+        radioBounceTime.setToggleGroup(toggleGroup);
+        radioBounceTime.setSelected(true);
+        radioBouncePage.setToggleGroup(toggleGroup);
+        radioBounceTime.setVisible(false);
+    	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
 
         ValueAxis<Double> yAxis = (ValueAxis<Double>) lineChart.getYAxis();
 
-        yAxis.setAutoRanging(false);
-        yAxis.setLowerBound(0);
-        yAxis.setUpperBound(150);
+        yAxis.setTickLabelFormatter(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                DecimalFormat df = new DecimalFormat("#.00");
+                return (currentGraph.toString().contains("Cost") ? "£" : "") + df.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                return null;
+            }
+        });
 
         list = graphList.getItems();
         list.clear();
@@ -326,7 +326,7 @@ public class OverviewController {
         granularitySlider.valueProperty().addListener(
         		(observable, oldValue, newValue) -> changeGranularity(newValue));
         
-        bounceSettingsGroup.selectedToggleProperty().addListener(
+        toggleGroup.selectedToggleProperty().addListener(
         		(observable, oldValue, newValue) -> {
         			if(currentGraph.equals(Graph.BOUNCE_RATE))
         				loadGraph(currentGraph.toString());
@@ -347,8 +347,8 @@ public class OverviewController {
 
     private void loadGraph(String graph) {
     	
-    	bounceByTime.setVisible(false);
-    	bounceByPage.setVisible(false);
+    	radioBounceTime.setVisible(false);
+    	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
 
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
@@ -371,8 +371,8 @@ public class OverviewController {
             loadCostPerAcquisition();
         else if (graph.equals(Graph.BOUNCE_RATE.toString())){
         	bounceSettingsLabel.setVisible(true);
-        	bounceByTime.setVisible(true);
-        	bounceByPage.setVisible(true);
+        	radioBounceTime.setVisible(true);
+        	radioBouncePage.setVisible(true);
             loadBounceRate();
         }
     }
@@ -428,7 +428,7 @@ public class OverviewController {
 
         try {
             Map<DateTime, Double> bounceRate;
-            if(bounceByTime.isSelected())
+            if(radioBounceTime.isSelected())
             	bounceRate = DBQuery.getBounceRateByTime();
             else
             	bounceRate = DBQuery.getBounceRateByPage();
