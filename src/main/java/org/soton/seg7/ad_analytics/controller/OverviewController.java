@@ -6,13 +6,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Slider;
-import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.*;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -360,9 +354,21 @@ public class OverviewController {
                 (observable, oldValue, newValue) -> loadGraph(newValue));
         
         // Listen for time granularity change
-        granularitySlider.valueProperty().addListener(
-        		(observable, oldValue, newValue) -> changeGranularity(newValue));
-        
+        granularitySlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                Alert errorHours = new Alert(Alert.AlertType.INFORMATION);
+                errorHours.setHeaderText("Must select a date for which to view metrics by hour");
+                errorHours.setContentText("Please select a day for which to view the metrics by hour by using the Start Date Calendar tool.");
+                if (startDate.getValue() == null && newValue.intValue() == 0) {
+                    granularitySlider.setValue((double)oldValue);
+                    errorHours.showAndWait();
+                }
+                else
+                    changeGranularity(newValue);
+            }
+        });
+
         toggleGroup.selectedToggleProperty().addListener(
         		(observable, oldValue, newValue) -> {
         			if(currentGraph.equals(Graph.BOUNCE_RATE))
