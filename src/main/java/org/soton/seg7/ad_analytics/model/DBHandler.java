@@ -38,31 +38,28 @@ public class DBHandler {
         JSONParser parser = new JSONParser();
 
         final String object;
-        try {
-            object = parser.parse(
-                    new FileReader(
-                            new File("static/config.json")
-                    )
-            ).toString();
-
-            final JSONObject config = new JSONObject(object);
-
-            System.out.println(object);
-
-            HOST = config.get("host").toString();
-            PORT = Integer.parseInt(config.get("port").toString());
-            USER = config.get("user").toString();
-            PASS = config.get("pass").toString();
-            DB_STRING = config.get("db").toString();
+//            object = parser.parse(
+//                    new FileReader(
+//                            new File("static/config.json")
+//                    )
+//            ).toString();
+//
+//            final JSONObject config = new JSONObject(object);
+//
+//            System.out.println(object);
+//            HOST = config.get("host").toString();
+//            PORT = Integer.parseInt(config.get("port").toString());
+//            USER = config.get("user").toString();
+//            PASS = config.get("pass").toString();
+//            DB_STRING = config.get("db").toString();
+        HOST = "127.0.0.1";
+        PORT = 27017;
+        USER = "root";
+        PASS = "root";
+        DB_STRING = "analytics_data";
 
         if ((dbClient = initializeDatabase()) == null)
             throw new MongoAuthException();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
     }
 
     public static DBHandler getDBConnection() throws MongoAuthException{
