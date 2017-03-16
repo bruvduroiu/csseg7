@@ -60,7 +60,8 @@ public class OverviewController {
     private int ageFilter;
     private int incomeFilter;
     private int genderFilter;
-    private int currentFilter = ageFilter + incomeFilter + genderFilter;
+    private int contextFilter;
+    private int currentFilter = ageFilter + incomeFilter + genderFilter + contextFilter;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -710,7 +711,7 @@ public class OverviewController {
 
 
     private Integer getCurrentFilter() {
-        return ageFilter + incomeFilter + genderFilter;
+        return ageFilter + incomeFilter + genderFilter + contextFilter;
     }
 
     private String getGranularityString() {
