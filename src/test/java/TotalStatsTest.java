@@ -24,6 +24,8 @@ public class TotalStatsTest {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
             handler.dropCollection("impression_log");
+            handler.dropCollection("click_data");
+            handler.dropCollection("impression_data");
 
             Parser.parseCSV(clickFile);
             Parser.parseCSV(impressionsFile);
@@ -45,6 +47,7 @@ public class TotalStatsTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
 
             Parser.parseCSV(clickFile);
 
@@ -64,6 +67,7 @@ public class TotalStatsTest {
 
         try {
             handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_data");
             handler.dropCollection("impression_log");
 
             Parser.parseCSV(impressionsFile);
@@ -85,6 +89,7 @@ public class TotalStatsTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
 
             Parser.parseCSV(clickFile);
 
@@ -126,6 +131,7 @@ public class TotalStatsTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
 
             Parser.parseCSV(clickFile);
 

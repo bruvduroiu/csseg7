@@ -43,6 +43,7 @@ public class ParserTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
 
             JSONObject parse = Parser.parseCSV(clickFile);
             Double numComputed = DBQuery.getTotalNumClicks();
@@ -62,6 +63,7 @@ public class ParserTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("impression_log");
+            handler.dropCollection("impression_data");
 
             JSONObject parse = Parser.parseCSV(impressionsFile);
             Double numComputed = DBQuery.getTotalNumImpressions(Filters.NO_FILTER);
@@ -83,6 +85,8 @@ public class ParserTest {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("impression_log");
             handler.dropCollection("click_log");
+            handler.dropCollection("impression_data");
+            handler.dropCollection("click_data");
 
             boolean passed1 = Parser.isValidImpressionLog(wrongFile);
             boolean passed2 = Parser.isValidClickLog(impressionsFile);

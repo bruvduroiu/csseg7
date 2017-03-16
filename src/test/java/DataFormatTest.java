@@ -54,6 +54,7 @@ public class DataFormatTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
 
             Parser.parseCSV(clickFile);
             Map<DateTime, Double> resNumClicks = DBQuery.getNumClicks();
@@ -74,6 +75,7 @@ public class DataFormatTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("server_log");
+            handler.dropCollection("server_data");
 
             Parser.parseCSV(serverFile);
             Map<DateTime, Double> resNumConversions = DBQuery.getNumConversions();
@@ -95,6 +97,8 @@ public class DataFormatTest {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("click_log");
             handler.dropCollection("impression_log");
+            handler.dropCollection("click_data");
+            handler.dropCollection("impression_data");
 
             Parser.parseCSV(clickFile);
             Parser.parseCSV(impressionsFile);
@@ -130,6 +134,7 @@ public class DataFormatTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("server_log");
+            handler.dropCollection("server_data");
 
             Parser.parseCSV(serverFile);
 
@@ -170,6 +175,7 @@ public class DataFormatTest {
         try {
             handler = DBHandler.getDBConnection();
             handler.dropCollection("server_log");
+            handler.dropCollection("server_data");
 
             Parser.parseCSV(serverFile);
 
