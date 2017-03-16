@@ -85,6 +85,7 @@ public class DataFormatTest {
             e.printStackTrace();
         }
     }
+    
 	@Test
     public void testCTROverTime() {
         final Map<DateTime, Double> expectedCtrMap = new HashMap<DateTime, Double>(){{
