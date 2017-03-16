@@ -1,6 +1,7 @@
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +25,7 @@ public class FiltersTest {
 
     @Test
     public void testINCOME_HIGH_CTR() {
-        final Double expectedResult = 0.049213748498263744;
+        final Double expectedResult = 0.2463596482194715;
 
         DBHandler handler;
 
@@ -48,7 +49,7 @@ public class FiltersTest {
     
     @Test
     public void testGENDER_FEMALE_TotalImpressions() {
-    	final Double expectedResult = 486104.0d;
+    	final Double expectedResult = 324635.0d;
 
         DBHandler handler;
 
@@ -69,7 +70,7 @@ public class FiltersTest {
     
     @Test
     public void testAGE25_34_CostImpressions() {
-    	final Float expectedResult = 487.0555f;
+    	final Float expectedResult = 122.1276f;
 
         DBHandler handler;
 
@@ -91,7 +92,7 @@ public class FiltersTest {
     
     @Test
     public void testCONTEXT_BLOG_TotalCostCampaign() {
-    	final Double expectedResult = 118097.921223;
+    	final Double expectedResult = 117680.673926;
 
         DBHandler handler;
 
@@ -111,9 +112,22 @@ public class FiltersTest {
     }
     
     @Test
-    public void testCTROverTime() {
+    public void testCONTEXT_SHOPPING_CTROverTime() {
         final Map<DateTime, Double> expectedCtrMap = new HashMap<DateTime, Double>(){{
-        	put(formatter.parseDateTime("2015-01-02 00"), 0.049980166600555334);put(formatter.parseDateTime("2015-01-07 00"), 0.04892249328204858);put(formatter.parseDateTime("2015-01-12 00"), 0.04943216509952375);put(formatter.parseDateTime("2015-01-01 00"), 0.04893645970338791);put(formatter.parseDateTime("2015-01-06 00"), 0.04903823002220498);put(formatter.parseDateTime("2015-01-11 00"), 0.048602846670157566);put(formatter.parseDateTime("2015-01-05 00"), 0.04885620001118631);put(formatter.parseDateTime("2015-01-10 00"), 0.0488211804605875);put(formatter.parseDateTime("2015-01-04 00"), 0.049258554558907916);put(formatter.parseDateTime("2015-01-09 00"), 0.05013963259972842);put(formatter.parseDateTime("2015-01-14 00"), 0.051361867704280154);put(formatter.parseDateTime("2015-01-03 00"), 0.050230533520433);put(formatter.parseDateTime("2015-01-08 00"), 0.048162740210661734);put(formatter.parseDateTime("2015-01-13 00"), 0.04869660096302095);}};
+        	put(formatter.parseDateTime("2015-01-07 00"), 0.17044515832950896);
+        	put(formatter.parseDateTime("2015-01-02 00"), 0.17242105263157895);
+        	put(formatter.parseDateTime("2015-01-12 00"), 0.1738383578115606);
+        	put(formatter.parseDateTime("2015-01-01 00"), 0.17350056279144557);
+        	put(formatter.parseDateTime("2015-01-06 00"), 0.17162921348314605);
+        	put(formatter.parseDateTime("2015-01-11 00"), 0.17066443794400335);
+        	put(formatter.parseDateTime("2015-01-10 00"), 0.17109172817022908);
+        	put(formatter.parseDateTime("2015-01-05 00"), 0.16964459118275393);
+        	put(formatter.parseDateTime("2015-01-04 00"), 0.17117968094038624);
+        	put(formatter.parseDateTime("2015-01-09 00"), 0.176242795389049);
+        	put(formatter.parseDateTime("2015-01-14 00"), 0.17690058479532164);
+        	put(formatter.parseDateTime("2015-01-08 00"), 0.16692986530422665);
+        	put(formatter.parseDateTime("2015-01-03 00"), 0.17763824184727567);
+        	put(formatter.parseDateTime("2015-01-13 00"), 0.16761920313520576);}};
 
         
         DBHandler handler;
@@ -128,9 +142,15 @@ public class FiltersTest {
             Parser.parseCSV(clickFile);
             Parser.parseCSV(impressionsFile);
 
-            Map<DateTime, Double> result = DBQuery.getCTROverTime(Filters.INCOME_MEDIUM);
-
-            assertEquals("Correct Hashmap", expectedCtrMap, result);
+            Map<DateTime, Double> result = DBQuery.getCTROverTime(Filters.CONTEXT_SHOPPING);
+            
+            DecimalFormat df = new DecimalFormat("#.############");
+            
+            assertEquals("Same number of elements : ", expectedCtrMap.size(), result.size());
+            for (Map.Entry<DateTime, Double> entry : result.entrySet())
+			{
+            	assertEquals("Correct value of HashMap : ", df.format(expectedCtrMap.get(entry.getKey())), df.format(entry.getValue()));
+            }
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
