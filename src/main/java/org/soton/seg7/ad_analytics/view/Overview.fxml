@@ -158,7 +158,7 @@
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                       </rowConstraints>
                                        <children>
-                                          <RadioButton fx:id="bounceByTime" alignment="TOP_CENTER" contentDisplay="CENTER" mnemonicParsing="false" text="Time Spent">
+                                          <RadioButton fx:id="radioBounceTime" alignment="TOP_CENTER" contentDisplay="CENTER" mnemonicParsing="false" text="Time Spent">
                                              <GridPane.margin>
                                                 <Insets left="20.0" />
                                              </GridPane.margin>
@@ -166,7 +166,7 @@
                                                 <Font size="11.0" />
                                              </font>
                                           </RadioButton>
-                                          <RadioButton fx:id="bounceByPage" mnemonicParsing="false" text="Pages Visited" GridPane.rowIndex="1">
+                                          <RadioButton fx:id="radioBouncePage" mnemonicParsing="false" text="Pages Visited" GridPane.rowIndex="1">
                                              <GridPane.margin>
                                                 <Insets left="20.0" />
                                              </GridPane.margin>

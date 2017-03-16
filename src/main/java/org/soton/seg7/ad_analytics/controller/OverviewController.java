@@ -115,6 +115,12 @@ public class OverviewController {
     @FXML
     private DatePicker endDate;
 
+    @FXML
+    private RadioButton radioBounceTime;
+
+    @FXML
+    private RadioButton radioBouncePage;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -133,6 +139,12 @@ public class OverviewController {
         bounceByTime.setVisible(false);
     	bounceByPage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
+
+        ValueAxis<Double> yAxis = (ValueAxis<Double>) lineChart.getYAxis();
+
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(0);
+        yAxis.setUpperBound(150);
 
         list = graphList.getItems();
         list.clear();
@@ -395,7 +407,7 @@ public class OverviewController {
             Collections.sort(dates);
 
             for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day)));
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
 
 
             lineChart.getData().clear();
@@ -444,7 +456,7 @@ public class OverviewController {
         lineChart.setTitle("Cost per Thousand Impressions / Day");
 
         try {
-            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter());
+            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter()/100);
             ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
             Collections.sort(dates);
 
@@ -474,7 +486,7 @@ public class OverviewController {
             Collections.sort(dates);
 
             for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day)));
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day)/100));
 
 
             lineChart.getData().clear();
@@ -595,7 +607,7 @@ public class OverviewController {
             Collections.sort(days);
 
             for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)));
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)/100));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
