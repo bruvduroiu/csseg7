@@ -97,7 +97,7 @@ public class OverviewController {
     private PieChart pieChart;
 
     @FXML
-    private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown;
+    private ComboBox<String> ageRangeDropdown, genderDropdown, incomeRangeDropdown, contextDropdown;
 
     @FXML
     private DatePicker startDate;
@@ -289,6 +289,42 @@ public class OverviewController {
             		break;
             	case "High":
             		incomeFilter = Filters.INCOME_HIGH;
+            		break;
+            	}
+            	loadGraph(currentGraph.toString());
+            	
+              }    
+          });
+        
+        // Context Dropdown
+        
+        contextDropdown.getItems().addAll(
+        		"All",
+        		"Blog",
+        		"News",
+        		"Shopping",
+        		"Social Media"
+        		);
+        
+        contextDropdown.getSelectionModel().selectFirst();
+        
+        contextDropdown.valueProperty().addListener(new ChangeListener<String>() {
+            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+            	switch(newVal) {
+            	case "All":
+            		contextFilter = 0;
+            		break;
+            	case "Blog":
+            		contextFilter = Filters.CONTEXT_BLOG;
+            		break;
+            	case "News":
+            		contextFilter = Filters.CONTEXT_NEWS;
+            		break;
+            	case "Shopping":
+            		contextFilter = Filters.CONTEXT_SHOPPING;
+            		break;
+            	case "Social Media":
+            		contextFilter = Filters.CONTEXT_SOCIAL_MEDIA;
             		break;
             	}
             	loadGraph(currentGraph.toString());
