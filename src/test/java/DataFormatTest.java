@@ -85,6 +85,7 @@ public class DataFormatTest {
             e.printStackTrace();
         }
     }
+    
 	@Test
     public void testCTROverTime() {
         final Map<DateTime, Double> expectedCtrMap = new HashMap<DateTime, Double>(){{
@@ -192,5 +193,94 @@ public class DataFormatTest {
             e.printStackTrace();
         }
     }
+    
+    @Test
+    public void testCostPerThousandImpressions(){
+    	Map<DateTime, Double> expectedMap = new HashMap<DateTime, Double>(){{
+    		put(formatter.parseDateTime("2015-01-02 00"), 240.83415781283375);
+    		put(formatter.parseDateTime("2015-01-07 00"), 246.25551556984036);
+    		put(formatter.parseDateTime("2015-01-12 00"), 241.30321609476127);
+    		put(formatter.parseDateTime("2015-01-01 00"), 237.14334464148033);
+    		put(formatter.parseDateTime("2015-01-06 00"), 234.8475279702507);
+    		put(formatter.parseDateTime("2015-01-11 00"), 240.1595129480649);
+    		put(formatter.parseDateTime("2015-01-05 00"), 243.67767347167066);
+    		put(formatter.parseDateTime("2015-01-10 00"), 241.3827716755101);
+    		put(formatter.parseDateTime("2015-01-04 00"), 240.4687145359548);
+    		put(formatter.parseDateTime("2015-01-09 00"), 252.5228986702877);
+    		put(formatter.parseDateTime("2015-01-14 00"), 244.51655408560308);
+    		put(formatter.parseDateTime("2015-01-03 00"), 250.64548907471578);
+    		put(formatter.parseDateTime("2015-01-08 00"), 233.0112104473212);
+    		put(formatter.parseDateTime("2015-01-13 00"), 240.3667802367229);}};
+
+        DBHandler handler;
+
+        try {
+        	handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_log");
+            handler.dropCollection("impression_data");
+
+            Parser.parseCSV(impressionsFile);
+
+            Map<DateTime, Double> result = DBQuery.getCostPerThousandImpressionsOverTime(Filters.NO_FILTER);			
+            
+            DecimalFormat df = new DecimalFormat("#.############");
+            
+            assertEquals("Same number of elements : ", expectedMap.size(), result.size());
+            for (Map.Entry<DateTime, Double> entry : result.entrySet())
+			{
+            	assertEquals("Correct value of HashMap : ", df.format(expectedMap.get(entry.getKey())), df.format(entry.getValue()));
+            }
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+        
+    @Test
+    public void testCostPerAcquisition(){
+    	Map<DateTime, Double> expectedMap = new HashMap<DateTime, Double>(){{
+    		put(formatter.parseDateTime("2015-01-02 00"), 50.80450417948718);
+    		put(formatter.parseDateTime("2015-01-07 00"), 63.848563489795914);
+    		put(formatter.parseDateTime("2015-01-12 00"), 49.85548175879397);
+    		put(formatter.parseDateTime("2015-01-01 00"), 55.27061651578947);
+    		put(formatter.parseDateTime("2015-01-06 00"), 63.885780717391306);
+    		put(formatter.parseDateTime("2015-01-11 00"), 60.31184670238095);
+    		put(formatter.parseDateTime("2015-01-05 00"), 63.398439579710136);
+    		put(formatter.parseDateTime("2015-01-10 00"), 54.370640141104296);
+    		put(formatter.parseDateTime("2015-01-04 00"), 57.51750661151079);
+    		put(formatter.parseDateTime("2015-01-09 00"), 59.2543644011976);
+    		put(formatter.parseDateTime("2015-01-14 00"), 57.83372849999999);
+    		put(formatter.parseDateTime("2015-01-03 00"), 61.44794883216784);
+    		put(formatter.parseDateTime("2015-01-08 00"), 53.9000923271605);
+    		put(formatter.parseDateTime("2015-01-13 00"), 67.38672639072847);}};
+
+        DBHandler handler;
+
+        try {
+        	handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_log");
+            handler.dropCollection("impression_data");
+            handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
+            handler.dropCollection("server_log");
+            handler.dropCollection("server_data");
+
+            Parser.parseCSV(impressionsFile);
+            Parser.parseCSV(clickFile);
+            Parser.parseCSV(serverFile);
+
+            Map<DateTime, Double> result = DBQuery.getCPAOverTime(Filters.NO_FILTER);
+            
+            DecimalFormat df = new DecimalFormat("#.############");
+            
+            assertEquals("Same number of elements : ", expectedMap.size(), result.size());
+            for (Map.Entry<DateTime, Double> entry : result.entrySet())
+			{
+            	assertEquals("Correct value of HashMap : ", df.format(expectedMap.get(entry.getKey())), df.format(entry.getValue()));
+            }
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 }
