@@ -18,6 +18,7 @@ public class ParserTest {
     File clickFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/click_log.csv");
     File impressionsFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/impression_log.csv");
     File serverFile = new File(new File("").getAbsolutePath().toString() + "/static/analytics_csv/server_log.csv");
+    File wrongFile = new File(new File("").getAbsolutePath().toString() + "/README.md");
 
     @Test
     public void testClickLogValidator() {
@@ -71,6 +72,27 @@ public class ParserTest {
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
+    }
+    
+    @Test
+    public void testWrongFileParse() {
 
+        DBHandler handler = null;
+
+        try {
+            handler = DBHandler.getDBConnection();
+            handler.dropCollection("impression_log");
+            handler.dropCollection("click_log");
+
+            boolean passed1 = Parser.isValidImpressionLog(wrongFile);
+            boolean passed2 = Parser.isValidClickLog(impressionsFile);
+
+
+            assertFalse("Readme as impression log : ", passed1);
+            assertFalse("Impression log as click log : ", passed2);
+
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
 }
