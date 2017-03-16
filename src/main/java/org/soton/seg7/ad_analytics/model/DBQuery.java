@@ -118,7 +118,7 @@ public class DBQuery {
 
         return Stream.concat(costImpressions.keySet().stream(), costClicks.keySet().stream())
                 .distinct()
-                .collect(Collectors.toMap(k->k, k->((costImpressions.getOrDefault(k,0d) + costClicks.getOrDefault(k,0d))/numConversions.getOrDefault(k,0d))));
+                .collect(Collectors.toMap(k->k, k->((numConversions.get(k)==0) ? 0 :(costImpressions.getOrDefault(k,0d) + costClicks.getOrDefault(k,0d))/numConversions.getOrDefault(k,1d))));
     }
 
     public static Map<DateTime, Double> getNumClicks() throws MongoAuthException {
