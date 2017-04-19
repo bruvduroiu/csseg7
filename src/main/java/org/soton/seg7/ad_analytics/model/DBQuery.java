@@ -286,6 +286,8 @@ public class DBQuery {
                 group_metric
         )).results();
 
+        if (!results.iterator().hasNext())
+            return Double.NaN;
         BasicDBObject result = (BasicDBObject) results.iterator().next();
 
         return result.getDouble("total");

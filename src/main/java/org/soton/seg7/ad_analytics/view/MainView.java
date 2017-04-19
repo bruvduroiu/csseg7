@@ -28,19 +28,11 @@ public class MainView extends Application {
     private static Stage primaryStage;
     private BorderPane rootLayout;
 
+    private static final boolean DEBUG_ON = true;
+
     private ObservableList<Graph> graphData = FXCollections.observableArrayList();
 
     public MainView() {
-        
-    	/*
-    	graphData.add(new LineGraph("Click-through-rate"));
-    	graphData.add(new LineGraph("Cost-per-click"));
-    	graphData.add(new LineGraph("Number of Clicks"));
-    	graphData.add(new LineGraph("Number of Conversions"));
-        graphData.add(new LineGraph("Number of Impressions"));
-        graphData.add(new LineGraph("Total Cost"));
-        graphData.add(new BarGraph("Click Cost Histogram"));
-        */
     }
 
     public ObservableList<Graph> getGraphData() {
@@ -53,7 +45,11 @@ public class MainView extends Application {
         MainView.primaryStage = primaryStage;
 
         initRootLayout();
-        showLoadStage();
+        if (DEBUG_ON) {
+            loadTestData();
+        } else {
+            showLoadStage();
+        }
         showOverview();
     }
 
@@ -113,9 +109,12 @@ public class MainView extends Application {
     	try{
     		//loading data
             handler = DBHandler.getDBConnection();
-            handler.dropCollection("impression_log");            
+            handler.dropCollection("impression_log");
+            handler.dropCollection("impression_data");
             handler.dropCollection("server_log");
+            handler.dropCollection("server_data");
             handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
             Parser.parseCSV(impressionsFile);
             Parser.parseCSV(serverFile);
             Parser.parseCSV(clickFile);

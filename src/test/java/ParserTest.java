@@ -6,6 +6,7 @@ import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.model.Parser;
 import java.io.File;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 
@@ -45,12 +46,17 @@ public class ParserTest {
             handler.dropCollection("click_log");
             handler.dropCollection("click_data");
 
-            JSONObject parse = Parser.parseCSV(clickFile);
+            Parser.parseCSV(clickFile);
+            JSONObject parse = Parser.getClicksFuture().get();
             Double numComputed = DBQuery.getTotalNumClicks();
             Double numInserted = parse.getDouble("numdoc");
 
             assertEquals("Correct num clicks", numComputed, numInserted);
         } catch (MongoAuthException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
             e.printStackTrace();
         }
     }
@@ -65,13 +71,18 @@ public class ParserTest {
             handler.dropCollection("impression_log");
             handler.dropCollection("impression_data");
 
-            JSONObject parse = Parser.parseCSV(impressionsFile);
+            Parser.parseCSV(impressionsFile);
+            JSONObject parse = Parser.getImpressionsFuture().get();
             Double numComputed = DBQuery.getTotalNumImpressions(Filters.NO_FILTER);
             Double numInserted = parse.getDouble("numdoc");
 
             assertEquals("Correct JSON file", numComputed, numInserted);
 
         } catch (MongoAuthException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
             e.printStackTrace();
         }
     }
