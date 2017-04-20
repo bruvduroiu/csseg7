@@ -756,6 +756,11 @@ public class OverviewController {
         initialize();
     }
 
+    //function that handles pressing of  button
+    @FXML
+    protected void handleExportButtonAction(ActionEvent event) {
+        //TODO implement saving file
+    }
 
     private Integer getCurrentFilter() {
         return ageFilter + incomeFilter + genderFilter + contextFilter;
