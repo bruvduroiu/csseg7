@@ -1,4 +1,5 @@
 package org.soton.seg7.ad_analytics.controller;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -385,6 +386,9 @@ public class OverviewController {
         				loadGraph(currentGraph.toString());
         				
         		});
+
+        Runtime.getRuntime().addShutdownHook(new Thread(Parser::shutdownParser));
+
     }
     
     private void changeGranularity(Number granularity){

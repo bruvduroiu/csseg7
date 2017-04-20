@@ -75,6 +75,7 @@ public class Parser {
     protected static Future<JSONObject> bootImpressionsFuture;
     protected static Future<JSONObject> bootServerFuture;
 
+
     private static ExecutorService executor;
 
     public static boolean isValidImpressionLog(File csvFile) {
@@ -201,21 +202,29 @@ public class Parser {
         }
     }
 
+    public static void shutdownParser() {
+        executor.shutdownNow();
+        while (!executor.isTerminated()) {}
+    }
+
 }
 
 class ThreadedImpressionParser implements Callable<JSONObject> {
 
     File csvFile;
     int skip;
+    boolean skipped;
 
     public ThreadedImpressionParser(File csvFile) {
         this.csvFile = csvFile;
         this.skip = 0;
+        this.skipped = false;
     }
 
     public ThreadedImpressionParser(File csvFile, int skip) {
         this.csvFile = csvFile;
         this.skip = skip;
+        this.skipped = true;
     }
     @Override
     public JSONObject call() {
@@ -262,7 +271,7 @@ class ThreadedImpressionParser implements Callable<JSONObject> {
                 }
 
 
-                if (dateKey.compareTo(cutoffDate) > 0)
+                if (!skipped && dateKey.compareTo(cutoffDate) > 0)
                     break;
                 dayCost.merge(dateKey, impression.getImpressionCost(), (oldVal, cost) -> oldVal + cost);
 
@@ -297,6 +306,9 @@ class ThreadedImpressionParser implements Callable<JSONObject> {
             System.out.printf("[DEBUG][PARSER] Parsed %s in %d sec.", csvFile.getName(), (finalTime-initTime)/1000);
             System.out.println();
 
+            if (!it.hasNext())
+                DBQuery.indexImpressions();
+
             return new JSONObject()
                     .put("insert", "ok")
                     .put("numdoc", numParsed);
@@ -314,15 +326,18 @@ class ThreadedClicksParser implements Callable<JSONObject> {
 
     File csvFile;
     int skip;
+    boolean skipped;
 
     public ThreadedClicksParser(File csvFile, int skip) {
         this.csvFile = csvFile;
         this.skip = skip;
+        this.skipped = true;
     }
 
     public ThreadedClicksParser(File csvFile) {
         this.csvFile = csvFile;
         this.skip = 0;
+        this.skipped = false;
     }
 
     @Override
@@ -357,6 +372,7 @@ class ThreadedClicksParser implements Callable<JSONObject> {
                 while (skip > 0) {
                     it.next();
                     skip--;
+                    skipped = true;
                 }
                 Click click = it.next();
 
@@ -369,7 +385,7 @@ class ThreadedClicksParser implements Callable<JSONObject> {
                     cutoffDate = minDate.plusDays(14);
                 }
 
-                if (dateKey.compareTo(cutoffDate) > 0)
+                if (!skipped && dateKey.compareTo(cutoffDate) > 0)
                     break;
 
                 clickCost.merge(dateKey, click.getClickCost(), (oldVal, cost) -> oldVal + cost);
@@ -416,17 +432,20 @@ class ThreadedClicksParser implements Callable<JSONObject> {
 class ThreadedServerParser implements Callable<JSONObject> {
     File csvFile;
     int skip;
+    boolean skipped;
     private static final Integer BOUNCE_MINUTES = 2;
     private static final Integer BOUNCE_PAGES = 1;
 
     public ThreadedServerParser(File csvFile, int skip) {
         this.csvFile = csvFile;
         this.skip = skip;
+        this.skipped = true;
     }
 
     public ThreadedServerParser(File csvFile) {
         this.csvFile = csvFile;
         this.skip = 0;
+        this.skipped = false;
     }
 
     @Override
@@ -477,7 +496,7 @@ class ThreadedServerParser implements Callable<JSONObject> {
                     cutoffDate = minDate.plusDays(14);
                 }
 
-                if (dateKey.compareTo(cutoffDate) > 0)
+                if (!skipped && dateKey.compareTo(cutoffDate) > 0)
                     break;
 
                 if (Minutes.minutesBetween(entry_date,exit_date).getMinutes() < BOUNCE_MINUTES)

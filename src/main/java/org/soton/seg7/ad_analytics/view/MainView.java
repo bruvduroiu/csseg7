@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
@@ -83,6 +84,8 @@ public class MainView extends Application {
 
             // Set overview into the center of root layout.
             rootLayout.setCenter(overview);
+
+            primaryStage.setOnCloseRequest(e -> System.exit(0));
         } catch (IOException e) {
             e.printStackTrace();
         }
