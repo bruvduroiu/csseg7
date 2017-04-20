@@ -36,6 +36,7 @@ public class OverviewController {
         CLICK_COST_HISTOGRAM("Click Cost Histogram"),
         COST_PER_THOUSAND_IMPRESSIONS("Cost per Thousand Impressions"),
         COST_PER_ACQUISITION("Cost per Acquisition"),
+        NUMBER_OF_BOUNCES("Total Bounces"),
         BOUNCE_RATE("Bounce Rate");
 
         String title;
@@ -150,6 +151,7 @@ public class OverviewController {
         list.add(Graph.CLICK_THROUGH_RATE.toString());
         list.add(Graph.COST_PER_ACQUISITION.toString());
         list.add(Graph.NUMBER_OF_CONVERSIONS.toString());
+        list.add(Graph.NUMBER_OF_BOUNCES.toString());
         list.add(Graph.BOUNCE_RATE.toString());
         list.add(Graph.CLICK_COST_HISTOGRAM.toString());
         list.add(Graph.COST_PER_THOUSAND_IMPRESSIONS.toString());
@@ -392,7 +394,7 @@ public class OverviewController {
 
         toggleGroup.selectedToggleProperty().addListener(
         		(observable, oldValue, newValue) -> {
-        			if(currentGraph.equals(Graph.BOUNCE_RATE))
+        			if(currentGraph.equals(Graph.BOUNCE_RATE) || currentGraph.equals(Graph.NUMBER_OF_BOUNCES))
         				loadGraph(currentGraph.toString());
         				
         		});
@@ -438,6 +440,12 @@ public class OverviewController {
         	radioBounceTime.setVisible(true);
         	radioBouncePage.setVisible(true);
             loadBounceRate();
+        }
+        else if (graph.equals(Graph.NUMBER_OF_BOUNCES.toString())) {
+            bounceSettingsLabel.setVisible(true);
+            radioBounceTime.setVisible(true);
+            radioBouncePage.setVisible(true);
+            loadNumberOfBounces();
         }
     }
     
@@ -501,6 +509,35 @@ public class OverviewController {
 
             for (DateTime day : dates)
                 series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), bounceRate.get(day)));
+
+
+            lineChart.getData().clear();
+            lineChart.getData().add(series);
+        }
+        catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadNumberOfBounces() {
+        currentGraph = Graph.NUMBER_OF_BOUNCES;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
+        XYChart.Series<String,Double> series = new XYChart.Series<>();
+        lineChart.setTitle("Number of Bounces / " + getGranularityString());
+
+        try {
+            Map<DateTime, Double> numBounces;
+            if(radioBounceTime.isSelected())
+                numBounces = DBQuery.getNumBouncesByTime();
+            else
+                numBounces = DBQuery.getNumBouncesByPage();
+            ArrayList<DateTime> dates = new ArrayList<>(numBounces.keySet());
+            Collections.sort(dates);
+
+            for (DateTime day : dates)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numBounces.get(day)));
 
 
             lineChart.getData().clear();

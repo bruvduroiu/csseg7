@@ -38,6 +38,7 @@ public class DBQuery {
 
     private static final String OP_SUM = "$sum";
     private static final String OP_COUNT = "$count";
+    private static final String OP_AVG = "$avg";
 
     private static final String BOUNCE_COND_PAGE = "bounceRatePage";
     private static final String BOUNCE_COND_TIME = "bounceRateTime";
@@ -183,9 +184,8 @@ public class DBQuery {
                 .distinct()
                 .collect(Collectors.toMap(k -> k, k -> numClicks.getOrDefault(k, 0d) / numImpressions.getOrDefault(k,1d)));
     }
-    
 
-    public static Map<DateTime, Double> getBounceRate(String condition) throws MongoAuthException {
+    public static Map<DateTime, Double> getBounceMetric(String operation, String condition) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
 
         List<DBObject> results =  new ArrayList<>();
@@ -194,18 +194,26 @@ public class DBQuery {
                 new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
-                                .append(condition, new BasicDBObject("$avg", "$"+condition)))))
+                                .append(condition, new BasicDBObject(operation, "$"+condition)))))
                 .results().forEach(results::add);
 
         return buildResultsMap(results, condition);
     }
 
     public static Map<DateTime, Double> getBounceRateByTime() throws MongoAuthException {
-        return getBounceRate(BOUNCE_COND_TIME);
+        return getBounceMetric(OP_AVG, BOUNCE_COND_TIME);
     }
 
     public static Map<DateTime, Double> getBounceRateByPage() throws MongoAuthException {
-        return getBounceRate(BOUNCE_COND_PAGE);
+        return getBounceMetric(OP_AVG, BOUNCE_COND_PAGE);
+    }
+
+    public static Map<DateTime, Double> getNumBouncesByTime() throws MongoAuthException {
+        return getBounceMetric(OP_SUM, BOUNCE_COND_TIME);
+    }
+
+    public static Map<DateTime, Double> getNumBouncesByPage() throws MongoAuthException {
+        return getBounceMetric(OP_SUM, BOUNCE_COND_PAGE);
     }
 
     public static Double getTotalCTR(Integer filter) throws MongoAuthException {
