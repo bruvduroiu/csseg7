@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -57,6 +58,8 @@ public class OverviewController {
     private int contextFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter + contextFilter;
 
+    private boolean breakdownHidden = false;
+
     @FXML
     private Label bounceSettingsLabel;
 
@@ -105,6 +108,12 @@ public class OverviewController {
     @FXML
     private RadioButton radioBouncePage;
 
+    @FXML
+    private AnchorPane breakdownPane;
+
+    @FXML
+    private SplitPane splitPane2;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -113,11 +122,14 @@ public class OverviewController {
 
     @FXML
     private void initialize() {
+
         ageFilter = 0;
         incomeFilter = 0;
         genderFilter = 0;
 
         final ToggleGroup toggleGroup = new ToggleGroup();
+
+        hideBreakdown();
 
         radioBounceTime.setToggleGroup(toggleGroup);
         radioBounceTime.setSelected(true);
@@ -179,8 +191,6 @@ public class OverviewController {
                 }
             }
         });
-        
-        
 
         // Age Range Dropdown
 
@@ -395,15 +405,18 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph) {
-    	
     	radioBounceTime.setVisible(false);
     	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
 
+        hideBreakdown();
+
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
-        else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString()))
+        else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString())) {
             loadNumberOfImpressions();
+            loadBreakdown();
+        }
         else if (graph.equals(Graph.NUMBER_OF_CLICKS.toString()))
             loadNumberOfClicks();
         else if (graph.equals(Graph.CLICK_THROUGH_RATE.toString()))
@@ -425,7 +438,21 @@ public class OverviewController {
             loadBounceRate();
         }
     }
-    
+
+    private void loadBreakdown() {
+        if (breakdownHidden) {
+            breakdownHidden = false;
+            splitPane2.getItems().add(1, breakdownPane);
+            splitPane2.setDividerPosition(0, 0.65);
+        }
+    }
+
+    private void hideBreakdown() {
+        if (!breakdownHidden) {
+            breakdownHidden = true;
+            splitPane2.getItems().remove(1);
+        }
+    }
 
     private void loadPieChart() {
         try {
