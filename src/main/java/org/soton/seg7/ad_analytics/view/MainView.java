@@ -13,6 +13,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.joda.time.DateTime;
@@ -140,7 +141,7 @@ public class MainView extends Application {
             // Load overview.
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(MainView.class.getResource("FileLoaderView.fxml"));
-            AnchorPane fileLoad = loader.load();
+            StackPane fileLoad = loader.load();
 
             Stage loadFileStage = new Stage();
             loadFileStage.setTitle("Load files");
