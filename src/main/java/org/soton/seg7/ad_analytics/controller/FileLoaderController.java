@@ -27,6 +27,8 @@ public class FileLoaderController {
 	private Label ServerLogT;
 	@FXML
 	private Label ImpressionLogT;
+
+	private File directory;
 	
 	File clickLog;
 	File serverLog;
@@ -34,6 +36,7 @@ public class FileLoaderController {
 	
 	public void init(Stage primaryStage){
 		this.stage = stage;
+		this.directory = new File(System.getProperty("user.home"));
 	}
 	
 	//function that handles pressing of Click Log button
@@ -106,13 +109,12 @@ public class FileLoaderController {
     	
     	FileChooser fileChooser = new FileChooser();
     	fileChooser.setTitle(title);
-    	fileChooser.setInitialDirectory(
-                new File(System.getProperty("user.home"))
-            ); 
+    	fileChooser.setInitialDirectory(directory);
     	File file = fileChooser.showOpenDialog(stage);
     	
     	if(file != null){
     		System.out.println("Chosen file: " + file);
+    		this.directory = file.getParentFile();
     	}
 
     	return file;
