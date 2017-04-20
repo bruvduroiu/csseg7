@@ -1,12 +1,15 @@
 package org.soton.seg7.ad_analytics.controller;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -14,6 +17,7 @@ import javafx.util.StringConverter;
 import org.joda.time.DateTime;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
+import org.soton.seg7.ad_analytics.model.Parser;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
@@ -21,9 +25,11 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.math.BigDecimal;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class OverviewController {
 
@@ -344,10 +350,9 @@ public class OverviewController {
         
 
         // Load the total cost stats and pie chart
-
         loadTotalCost();
-
         loadPieChart();
+
 
         try {
             // Display total cost of campaign in proper format
@@ -391,6 +396,9 @@ public class OverviewController {
         				loadGraph(currentGraph.toString());
         				
         		});
+
+        Runtime.getRuntime().addShutdownHook(new Thread(Parser::shutdownParser));
+
     }
     
     private void changeGranularity(Number granularity){
@@ -456,9 +464,12 @@ public class OverviewController {
 
     private void loadPieChart() {
         try {
+            Double totalCostClicks = DBQuery.getTotalCostClicks();
+            Double totalImpressionCost = DBQuery.getTotalCostImpressions(getCurrentFilter());
+
             ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList(
-                    new PieChart.Data("Total Click Cost", DBQuery.getTotalCostClicks()),
-                    new PieChart.Data("Total Impression Cost", DBQuery.getTotalCostImpressions(getCurrentFilter()))
+                    new PieChart.Data("Total Click Cost", Double.isNaN(totalCostClicks) ? 0d : totalCostClicks),
+                    new PieChart.Data("Total Impression Cost", Double.isNaN(totalImpressionCost) ? 0d : totalImpressionCost)
             );
             pieChart.getData().clear();
             pieChart.setTitle("Campaign Cost Breakdown");
@@ -524,6 +535,8 @@ public class OverviewController {
     }
 
     private void loadCostPerThousandImpressions() {
+        if (!Parser.impressionsDone())
+            return;
         currentGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
         histogram.setVisible(false);
         lineChart.setVisible(true);
@@ -557,7 +570,9 @@ public class OverviewController {
         lineChart.setTitle("Total Cost / Day");
 
         try {
-            Map<DateTime, Double> totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter());
+            Map<DateTime, Double> totalCostOverTime;
+            if ((totalCostOverTime= DBQuery.getTotalCostOverTime(getCurrentFilter())).size() == 0)
+                return;
             ArrayList<DateTime> dates = new ArrayList<>(totalCostOverTime.keySet());
             Collections.sort(dates);
 

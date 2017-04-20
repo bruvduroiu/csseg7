@@ -1,21 +1,14 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.*;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.DBCreateViewOptions;
-import org.bson.Document;
+import org.bson.BsonDocument;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -94,6 +87,10 @@ public class DBHandler {
         return db.getCollection(collection);
     }
 
+    public MongoDatabase getDB() {
+        return dbClient.getDatabase(DB_STRING);
+    }
+
     public String insertData(JSONObject insertion, String collection) {
 
         if (dbClient == null)
@@ -129,14 +126,25 @@ public class DBHandler {
         return new JSONObject(bsonArray.get(0).toString());
     }
 
+    @Deprecated
     public JSONObject dropCollection(String collection) {
         if (dbClient == null)
-            new JSONObject().put("error", "database not initialized");
+            return new JSONObject().put("error", "database not initialized");
 
         DB db = dbClient.getDB(DB_STRING);
         db.getCollection(collection).drop();
 
         return new JSONObject().put("success", "removed " + collection);
+    }
+
+    public JSONObject wipeCollection(String collection) {
+        if (dbClient == null)
+            return new JSONObject().put("error", "database not initialised");
+
+        MongoDatabase db = dbClient.getDatabase(DB_STRING);
+        db.getCollection(collection).deleteMany(new BsonDocument());
+
+        return new JSONObject().put("success", String.format("wiped %s", collection));
     }
 
     private MongoClient initializeDatabase() {
