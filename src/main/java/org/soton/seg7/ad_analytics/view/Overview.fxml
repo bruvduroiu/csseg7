@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
@@ -24,7 +30,7 @@
 
 <AnchorPane fx:id="background" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Overview.css" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
     <children>
-        <SplitPane dividerPositions="0.29797979797979796" layoutX="265.0" layoutY="134.0" prefHeight="600.0" prefWidth="1000.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <SplitPane dividerPositions="0.2453560371517028" layoutX="265.0" layoutY="134.0" prefHeight="800.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
             <items>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0" SplitPane.resizableWithParent="false">
                     <children>
@@ -82,11 +88,11 @@
                         </SplitPane>
                     </children>
                 </AnchorPane>
-                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="798.0" prefWidth="978.0">
                     <children>
                         <SplitPane fx:id="splitPane2" dividerPositions="0.7600502512562815" layoutX="100.0" layoutY="263.0" orientation="VERTICAL" prefHeight="598.0" prefWidth="698.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <items>
-                                <AnchorPane fx:id="graphDisplayPane" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                                <AnchorPane fx:id="graphDisplayPane" minHeight="0.0" minWidth="0.0" prefHeight="633.0" prefWidth="998.0">
                                     <children>
                                         <GridPane layoutX="15.0" layoutY="16.0" prefHeight="57.0" prefWidth="465.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="30.0">
                                             <columnConstraints>
@@ -97,11 +103,12 @@
                                                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
                                                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
                                     <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="110.0" prefWidth="110.0" />
-                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="150.0" />
+                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="144.0" minWidth="-Infinity" prefWidth="75.0" />
+                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="232.0" minWidth="-Infinity" prefWidth="225.0" />
                                             </columnConstraints>
                                             <rowConstraints>
-                                                <RowConstraints maxHeight="40.0" minHeight="10.0" prefHeight="31.0" vgrow="SOMETIMES" />
-                                                <RowConstraints maxHeight="63.0" minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
+                                                <RowConstraints maxHeight="40.0" minHeight="10.0" prefHeight="22.0" vgrow="SOMETIMES" />
+                                                <RowConstraints maxHeight="63.0" minHeight="10.0" prefHeight="35.0" vgrow="SOMETIMES" />
                                             </rowConstraints>
                                             <children>
                                                 <Label text="Age Range :" />
@@ -145,12 +152,12 @@
                                                 </GridPane>
                                     <Label text="Time Granularity :" GridPane.columnIndex="6" />
                                     <Slider fx:id="granularitySlider" majorTickUnit="1.0" max="2.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" value="1.0" GridPane.columnIndex="6" GridPane.rowIndex="1" />
-                                    <Label fx:id="bounceSettingsLabel" text="Bounce registered by :" GridPane.columnIndex="7">
+                                    <Label fx:id="bounceSettingsLabel" text="Bounce registered by :" GridPane.columnIndex="8">
                                        <GridPane.margin>
                                           <Insets left="20.0" />
                                        </GridPane.margin>
                                     </Label>
-                                    <GridPane alignment="TOP_CENTER" GridPane.columnIndex="7" GridPane.rowIndex="1">
+                                    <GridPane alignment="TOP_CENTER" GridPane.columnIndex="8" GridPane.rowIndex="1">
                                       <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                                       </columnConstraints>
@@ -182,6 +189,10 @@
                                     </GridPane>
                                     <Label text="Context :" GridPane.columnIndex="3" />
                                     <ComboBox fx:id="contextDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowSpan="2">
+                                       <GridPane.margin>
+                                          <Insets left="10.0" />
+                                       </GridPane.margin></Button>
                                             </children>
                                         </GridPane>
                                         <AnchorPane layoutX="15.0" layoutY="108.0" prefHeight="291.0" prefWidth="668.0" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="108.0">

@@ -4,11 +4,15 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.SnapshotParameters;
 import javafx.geometry.Pos;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.image.WritableImage;
+import javafx.stage.FileChooser;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -26,6 +30,11 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -850,6 +859,25 @@ public class OverviewController {
         initialize();
     }
 
+    //function that handles pressing of  button
+    @FXML
+    protected void handleExportButtonAction(ActionEvent event) {
+    	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
+
+
+    	FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Image");
+        //System.out.println(pic.getId());
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                ImageIO.write(SwingFXUtils.fromFXImage(image,
+                    null), "png", file);
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+    }
 
     private Integer getCurrentFilter() {
         return ageFilter + incomeFilter + genderFilter + contextFilter;

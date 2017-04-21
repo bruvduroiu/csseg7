@@ -69,3 +69,5 @@ bin/
 \.settings/
 
 # Ignore CSV files
+
+chart\.png
