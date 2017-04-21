@@ -11,11 +11,14 @@ import javafx.scene.SnapshotParameters;
 import javafx.geometry.Pos;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+<<<<<<< Updated upstream
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.scene.image.WritableImage;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.PropertyValueFactory;
+=======
+>>>>>>> Stashed changes
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
