@@ -766,7 +766,6 @@ public class OverviewController {
     }
 
     //function that handles pressing of  button
-    //TODO choice of saving location
     @FXML
     protected void handleExportButtonAction(ActionEvent event) {
     	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
