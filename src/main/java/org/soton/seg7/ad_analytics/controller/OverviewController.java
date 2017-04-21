@@ -3,10 +3,13 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.image.WritableImage;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -22,6 +25,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 
 public class OverviewController {
@@ -757,9 +765,19 @@ public class OverviewController {
     }
 
     //function that handles pressing of  button
+    //TODO choice of saving location
     @FXML
     protected void handleExportButtonAction(ActionEvent event) {
-        //TODO implement saving file
+    	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
+
+        // TODO: probably use a file chooser here
+        File file = new File("chart.png");
+
+        try {
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+        } catch (IOException e) {
+            System.out.println("error");
+        }
     }
 
     private Integer getCurrentFilter() {
