@@ -10,6 +10,7 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -770,13 +771,18 @@ public class OverviewController {
     protected void handleExportButtonAction(ActionEvent event) {
     	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
 
-        // TODO: probably use a file chooser here
-        File file = new File("chart.png");
 
-        try {
-            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
-        } catch (IOException e) {
-            System.out.println("error");
+    	FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Image");
+        //System.out.println(pic.getId());
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                ImageIO.write(SwingFXUtils.fromFXImage(image,
+                    null), "png", file);
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
         }
     }
 
