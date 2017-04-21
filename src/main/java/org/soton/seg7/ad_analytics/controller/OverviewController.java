@@ -11,14 +11,16 @@ import javafx.scene.SnapshotParameters;
 import javafx.geometry.Pos;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
-import javafx.scene.image.WritableImage;
-import javafx.stage.FileChooser;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.scene.image.WritableImage;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import org.joda.time.DateTime;
+import org.soton.seg7.ad_analytics.model.AudienceSegment;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.Parser;
@@ -124,15 +126,28 @@ public class OverviewController {
     @FXML
     private RadioButton radioBouncePage;
 
+
+    // FXML References relating to the Breakdown pane
+
     @FXML
     private AnchorPane breakdownPane;
 
     @FXML
     private SplitPane splitPane2;
 
+    @FXML
+    private TableColumn genderBreakdownCol;
+
+    @FXML
+    private TableColumn genderImpBreakdownCol;
+
+    @FXML
+    private TableView genderBreakdownTable;
+
     // Reference to the main application.
     private MainView mainView;
 
+    // Constructor is obsolete, instead use initialize() below
     public OverviewController() {
     }
 
@@ -485,6 +500,39 @@ public class OverviewController {
             splitPane2.getItems().add(1, breakdownPane);
             splitPane2.setDividerPosition(0, 0.65);
         }
+
+        genderBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+        genderImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+        ObservableList<AudienceSegment> genderBreakdownData = FXCollections.observableArrayList(
+                new AudienceSegment("Male", "101"),
+                new AudienceSegment("Female", "420")
+        );
+
+        ObservableList<AudienceSegment> ageBreakdownData = FXCollections.observableArrayList(
+                new AudienceSegment("<25", "101"),
+                new AudienceSegment("25-34", "420"),
+                new AudienceSegment("35-44", "420"),
+                new AudienceSegment("45-54", "420"),
+                new AudienceSegment(">55", "420")
+        );
+
+        ObservableList<AudienceSegment> incomeBreakdownData = FXCollections.observableArrayList(
+                new AudienceSegment("Low", "101"),
+                new AudienceSegment("Middle", "420"),
+                new AudienceSegment("High", "420")
+        );
+
+        ObservableList<AudienceSegment> contextBreakdownData = FXCollections.observableArrayList(
+                new AudienceSegment("News", "101"),
+                new AudienceSegment("Shopping", "420"),
+                new AudienceSegment("Social Media", "420"),
+                new AudienceSegment("Blog", "420"),
+                new AudienceSegment("Hobbies", "420"),
+                new AudienceSegment("Travel", "420")
+        );
+
+        genderBreakdownTable.setItems(genderBreakdownData);
     }
 
     private void hideBreakdown() {

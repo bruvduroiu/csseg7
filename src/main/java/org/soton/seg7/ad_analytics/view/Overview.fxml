@@ -22,6 +22,8 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -90,7 +92,7 @@
                 </AnchorPane>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="798.0" prefWidth="978.0">
                     <children>
-                        <SplitPane fx:id="splitPane2" dividerPositions="0.7600502512562815" layoutX="100.0" layoutY="263.0" orientation="VERTICAL" prefHeight="598.0" prefWidth="698.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <SplitPane fx:id="splitPane2" dividerPositions="0.65" layoutX="100.0" layoutY="263.0" orientation="VERTICAL" prefHeight="598.0" prefWidth="698.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <items>
                                 <AnchorPane fx:id="graphDisplayPane" minHeight="0.0" minWidth="0.0" prefHeight="633.0" prefWidth="998.0">
                                     <children>
@@ -223,6 +225,12 @@
                                             <font>
                                                 <Font name="System Font Regular" size="20.0" />
                                             </font></Label>
+                              <TableView fx:id="genderBreakdownTable" layoutX="46.0" layoutY="48.0" prefHeight="200.0" prefWidth="172.0">
+                                <columns>
+                                  <TableColumn fx:id="genderBreakdownCol" prefWidth="75.0" text="Gender" />
+                                  <TableColumn fx:id="genderImpBreakdownCol" prefWidth="96.0" text="Impressions" />
+                                </columns>
+                              </TableView>
                                     </children>
                                 </AnchorPane>
                             </items>
