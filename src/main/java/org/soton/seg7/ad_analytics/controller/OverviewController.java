@@ -88,6 +88,9 @@ public class OverviewController {
 
     private ExecutorService preemptiveExecutor;
     private Future<XYChart.Series<String, Double>> future_numberOfImpressions;
+    private Future<XYChart.Series<String, Double>> future_costThousandImpressions;
+    private Future<XYChart.Series<String, Double>> future_clickThroughRate;
+    private Future<XYChart.Series<String, Double>> future_costPerAcquisition;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -192,7 +195,7 @@ public class OverviewController {
     @FXML
     private void initialize() {
 
-        preemptiveExecutor = Executors.newSingleThreadExecutor();
+        preemptiveExecutor = Executors.newFixedThreadPool(3);
         loadImpressionsPreemptively();
 
         ageFilter = 0;
@@ -690,29 +693,17 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Cost per Acquisition / " + getGranularityString());
 
-        if (costPerAcquisition != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(costPerAcquisition);
-        } else {
-
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
-
+        if (costPerAcquisition == null )
             try {
-                Map<DateTime, Double> costPerAcquisition = DBQuery.getCPAOverTime(getCurrentFilter());
-                ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
-                Collections.sort(dates);
-
-                for (DateTime day : dates)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
-
-
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.costPerAcquisition = series;
-            } catch (MongoAuthException e) {
+                costPerAcquisition = future_costPerAcquisition.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
-        }
+
+        lineChart.getData().clear();
+        lineChart.getData().add(costPerAcquisition);
     }
 
     private void loadBounceRate() {
@@ -791,29 +782,17 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Cost per Thousand Impressions / Day");
-        if (costThousandImpressions != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(costThousandImpressions);
-        } else {
-
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
-
+        if (costThousandImpressions == null )
             try {
-                Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter() / 100);
-                ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
-                Collections.sort(dates);
-
-                for (DateTime day : dates)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
-
-
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.costThousandImpressions = series;
-            } catch (MongoAuthException e) {
+                costThousandImpressions = future_costThousandImpressions.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
-        }
+
+        lineChart.getData().clear();
+        lineChart.getData().add(costThousandImpressions);
     }
 
     private void loadTotalCost() {
@@ -886,30 +865,17 @@ public class OverviewController {
 
         lineChart.setTitle("Click Through Rate / Day");
 
-        if (clickThroughRate != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(clickThroughRate);
-        } else {
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
-
+        if (clickThroughRate == null )
             try {
-                Map<DateTime, Double> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
-                ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
-                Collections.sort(days);
-
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
-
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.clickThroughRate = series;
-            }
-            catch (MongoAuthException e) {
+                clickThroughRate = future_clickThroughRate.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
-        }
 
-
+        lineChart.getData().clear();
+        lineChart.getData().add(clickThroughRate);
     }
 
     private void loadNumberOfClicks() {
@@ -1118,8 +1084,10 @@ public class OverviewController {
 
     private void loadImpressionsPreemptively() {
 
-        if (future_numberOfImpressions != null)
-            future_numberOfImpressions.cancel(true);
+        if (future_numberOfImpressions != null) future_numberOfImpressions.cancel(true);
+        if (future_costThousandImpressions != null) future_costThousandImpressions.cancel(true);
+        if (future_clickThroughRate != null) future_clickThroughRate.cancel(true);
+        if (future_costPerAcquisition != null) future_costPerAcquisition.cancel(true);
 
         future_numberOfImpressions = preemptiveExecutor.submit(() -> {
             XYChart.Series<String, Double> series = new XYChart.Series<>();
@@ -1135,6 +1103,61 @@ public class OverviewController {
                 return series;
             }
             catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
+        future_costThousandImpressions = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter() / 100);
+                ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
+                Collections.sort(dates);
+
+                for (DateTime day : dates)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
+
+                return series;
+            } catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
+        future_clickThroughRate = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
+                ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
+
+                return series;
+            }
+            catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
+        future_costPerAcquisition = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> costPerAcquisition = DBQuery.getCPAOverTime(getCurrentFilter());
+                ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
+                Collections.sort(dates);
+
+                for (DateTime day : dates)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
+
+                return series;
+            } catch (MongoAuthException e) {
                 e.printStackTrace();
                 return null;
             }
