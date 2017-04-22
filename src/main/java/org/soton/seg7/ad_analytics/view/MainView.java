@@ -111,17 +111,17 @@ public class MainView extends Application {
     	DBHandler handler;
     	try{
     		//loading data
-            handler = DBHandler.getDBConnection();
-            handler.dropCollection("impression_log");
-            handler.dropCollection("impression_data");
-            handler.dropCollection("server_log");
-            handler.dropCollection("server_data");
-            handler.dropCollection("click_log");
-            handler.dropCollection("click_data");
-            handler.shardCollection("impression_data");
-            Parser.parseCSV(impressionsFile);
-            Parser.parseCSV(serverFile);
-            Parser.parseCSV(clickFile);
+//            handler = DBHandler.getDBConnection();
+//            handler.dropCollection("impression_log");
+//            handler.dropCollection("impression_data");
+//            handler.dropCollection("server_log");
+//            handler.dropCollection("server_data");
+//            handler.dropCollection("click_log");
+//            handler.dropCollection("click_data");
+//            handler.shardCollection("impression_data");
+//            Parser.parseCSV(impressionsFile);
+//            Parser.parseCSV(serverFile);
+//            Parser.parseCSV(clickFile);
             
             //getting data from database
             Map<DateTime, Double> clickCount = DBQuery.getNumClicks();
