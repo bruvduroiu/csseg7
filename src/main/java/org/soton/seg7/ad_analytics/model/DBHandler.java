@@ -126,7 +126,6 @@ public class DBHandler {
         return new JSONObject(bsonArray.get(0).toString());
     }
 
-    @Deprecated
     public JSONObject dropCollection(String collection) {
         if (dbClient == null)
             return new JSONObject().put("error", "database not initialized");
@@ -145,6 +144,30 @@ public class DBHandler {
         db.getCollection(collection).deleteMany(new BsonDocument());
 
         return new JSONObject().put("success", String.format("wiped %s", collection));
+    }
+
+    public JSONObject shardCollection(String collection) {
+        if (dbClient == null)
+            return new JSONObject().put("error", "database not initialized");
+
+        DB db = dbClient.getDB(DB_STRING);
+
+        DB sisterDB = db.getSisterDB("admin");
+
+        DBObject enableSharding = new BasicDBObject("enableSharding", DB_STRING);
+
+        CommandResult res = sisterDB.command(enableSharding);
+        if (!res.ok())
+            return new JSONObject().put("error", res.getErrorMessage());
+
+        DBObject cmd = new BasicDBObject("shardCollection", String.format("%s.%s",DB_STRING, collection))
+                .append("key", new BasicDBObject("Date", "hashed"));
+        res = sisterDB.command(cmd);
+
+        if (res.ok())
+            return new JSONObject().put("success", String.format("sharded %s", collection));
+        else
+            return new JSONObject().put("error", res.getErrorMessage());
     }
 
     private MongoClient initializeDatabase() {
