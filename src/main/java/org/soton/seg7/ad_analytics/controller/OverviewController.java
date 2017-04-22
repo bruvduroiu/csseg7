@@ -507,7 +507,7 @@ public class OverviewController {
             loadCostPerClick();
         else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString())) {
             loadNumberOfImpressions();
-//            loadBreakdown();
+            loadBreakdown();
         }
         else if (graph.equals(Graph.NUMBER_OF_CLICKS.toString()))
             loadNumberOfClicks();
