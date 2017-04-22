@@ -397,7 +397,7 @@ public class OverviewController {
         		);
         
         contextDropdown.getSelectionModel().selectFirst();
-        
+
         contextDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
             	switch(newVal) {
@@ -979,9 +979,9 @@ public class OverviewController {
             for(int i=0; i<15; i++) {
                 series.getData().add(new XYChart.Data(
                         (
-                                (new BigDecimal(binRange * i).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                                "£" + ((new BigDecimal(binRange * i).divide(new BigDecimal(100)).setScale(2, RoundingMode.HALF_UP).doubleValue()))
                                 + "-"
-                                + (new BigDecimal(binRange * (i+1)).setScale(2, RoundingMode.HALF_UP).doubleValue())),
+                                + "£" + ((new BigDecimal(binRange * (i+1)).divide(new BigDecimal(100)).setScale(2, RoundingMode.HALF_UP).doubleValue()))),
                         group[i]));
             }
 
