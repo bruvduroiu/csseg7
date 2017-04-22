@@ -112,12 +112,13 @@ public class MainView extends Application {
     	try{
     		//loading data
             handler = DBHandler.getDBConnection();
-            handler.wipeCollection("impression_log");
-            handler.wipeCollection("impression_data");
-            handler.wipeCollection("server_log");
-            handler.wipeCollection("server_data");
-            handler.wipeCollection("click_log");
-            handler.wipeCollection("click_data");
+            handler.dropCollection("impression_log");
+            handler.dropCollection("impression_data");
+            handler.dropCollection("server_log");
+            handler.dropCollection("server_data");
+            handler.dropCollection("click_log");
+            handler.dropCollection("click_data");
+            handler.shardCollection("impression_data");
             Parser.parseCSV(impressionsFile);
             Parser.parseCSV(serverFile);
             Parser.parseCSV(clickFile);

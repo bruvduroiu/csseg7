@@ -438,8 +438,6 @@ public class OverviewController {
         				
         		});
 
-        Runtime.getRuntime().addShutdownHook(new Thread(Parser::shutdownParser));
-
     }
     
     private void changeGranularity(Number granularity){
@@ -644,8 +642,6 @@ public class OverviewController {
     }
 
     private void loadCostPerThousandImpressions() {
-        if (!Parser.impressionsDone())
-            return;
         currentGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
         histogram.setVisible(false);
         lineChart.setVisible(true);
