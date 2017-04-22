@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.chart.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
@@ -199,7 +193,7 @@
                                         </GridPane>
                                         <AnchorPane layoutX="15.0" layoutY="108.0" prefHeight="291.0" prefWidth="668.0" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="108.0">
                                             <children>
-                                                <BarChart fx:id="histogram" layoutX="14.0" layoutY="14.0" legendVisible="false" prefHeight="276.0" prefWidth="667.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="14.0">
+                                                <BarChart fx:id="histogram" layoutX="14.0" layoutY="14.0" legendVisible="false" prefHeight="379.0" prefWidth="891.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="14.0">
                                                     <xAxis>
                                                         <CategoryAxis side="BOTTOM" />
                                                     </xAxis>
@@ -207,7 +201,7 @@
                                                         <NumberAxis side="LEFT" />
                                                     </yAxis>
                                                 </BarChart>
-                                                <LineChart fx:id="lineChart" layoutX="14.0" layoutY="14.0" legendVisible="false" prefHeight="276.0" prefWidth="667.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="14.0">
+                                                <LineChart fx:id="lineChart" layoutX="14.0" layoutY="14.0" legendVisible="false" prefHeight="379.0" prefWidth="891.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="25.0" AnchorPane.topAnchor="14.0">
                                                     <xAxis>
                                                         <CategoryAxis side="BOTTOM" />
                                                     </xAxis>
@@ -229,6 +223,24 @@
                                 <columns>
                                   <TableColumn fx:id="genderBreakdownCol" prefWidth="75.0" text="Gender" />
                                   <TableColumn fx:id="genderImpBreakdownCol" prefWidth="96.0" text="Impressions" />
+                                </columns>
+                              </TableView>
+                              <TableView fx:id="ageBreakdownTable" layoutX="249.0" layoutY="48.0" prefHeight="200.0" prefWidth="184.0">
+                                <columns>
+                                  <TableColumn fx:id="ageBreakdownCol" prefWidth="89.0" text="Age Range" />
+                                  <TableColumn fx:id="ageImpBreakdownCol" prefWidth="94.0" text="Impressions" />
+                                </columns>
+                              </TableView>
+                              <TableView fx:id="incomeBreakdownTable" layoutX="462.0" layoutY="48.0" prefHeight="200.0" prefWidth="159.0">
+                                <columns>
+                                  <TableColumn fx:id="incomeBreakdownCol" prefWidth="65.0" text="Income" />
+                                  <TableColumn fx:id="incomeImpBreakdownCol" prefWidth="95.0" text="Impressions" />
+                                </columns>
+                              </TableView>
+                              <TableView fx:id="contextBreakdownTable" layoutX="652.0" layoutY="48.0" prefHeight="200.0" prefWidth="159.0">
+                                <columns>
+                                  <TableColumn fx:id="contextBreakdownCol" prefWidth="68.0" text="Context" />
+                                  <TableColumn fx:id="contextImpBreakdownCol" prefWidth="93.0" text="Impressions" />
                                 </columns>
                               </TableView>
                                     </children>
