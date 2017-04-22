@@ -32,6 +32,7 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.concurrent.*;
 
 public class OverviewController {
 
@@ -84,6 +85,9 @@ public class OverviewController {
     private XYChart.Series<String, Double> costPerAcquisition;
     private XYChart.Series<String, Double> numberOfBounces;
     private XYChart.Series<String, Double> bounceRate;
+
+    private ExecutorService preemptiveExecutor;
+    private Future<XYChart.Series<String, Double>> future_numberOfImpressions;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -187,6 +191,9 @@ public class OverviewController {
 
     @FXML
     private void initialize() {
+
+        preemptiveExecutor = Executors.newSingleThreadExecutor();
+        loadImpressionsPreemptively();
 
         ageFilter = 0;
         incomeFilter = 0;
@@ -941,28 +948,17 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Number of Impressions / Day");
-        if (numberOfImpressions != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(numberOfImpressions);
-        } else {
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
-
+        if (numberOfImpressions == null )
             try {
-                Map<DateTime, Double> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
-                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
-                Collections.sort(days);
-
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
-
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.numberOfImpressions = series;
-            }
-            catch (MongoAuthException e) {
+                numberOfImpressions = future_numberOfImpressions.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
-        }
+
+        lineChart.getData().clear();
+        lineChart.getData().add(numberOfImpressions);
     }
 
     private void loadCostPerClick() {
@@ -1116,6 +1112,34 @@ public class OverviewController {
         this.costPerClick = null;
         this.numberOfImpressions = null;
         this.numberOfClicks = null;
+
+        loadImpressionsPreemptively();
+    }
+
+    private void loadImpressionsPreemptively() {
+
+        if (future_numberOfImpressions != null)
+            future_numberOfImpressions.cancel(true);
+
+        future_numberOfImpressions = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
+                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
+
+                return series;
+            }
+            catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
     }
 
     private Integer getCurrentFilter() {
