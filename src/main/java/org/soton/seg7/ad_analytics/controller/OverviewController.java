@@ -33,6 +33,8 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OverviewController {
 
@@ -87,7 +89,8 @@ public class OverviewController {
     private XYChart.Series<String, Double> bounceRate;
 
     private ExecutorService preemptiveExecutor;
-    private Future<XYChart.Series<String, Double>> future_numberOfImpressions;
+    private Future<Map<DateTime, Double>> future_num_impressions;
+    private Future<Map<DateTime, Double>> future_cost_impressions;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -192,7 +195,7 @@ public class OverviewController {
     @FXML
     private void initialize() {
 
-        preemptiveExecutor = Executors.newSingleThreadExecutor();
+        preemptiveExecutor = Executors.newFixedThreadPool(2);
         loadImpressionsPreemptively();
 
         ageFilter = 0;
@@ -281,6 +284,8 @@ public class OverviewController {
                 DBQuery.setDateRange(DateTime.parse(newVal.toString()), DateTime.parse(endDate.getValue().toString()));
             else
                 DBQuery.setDateRange(DateTime.parse(newVal.toString()), null);
+            if (oldVal == null || !oldVal.equals(newVal))
+                wipeCaches();
             loadGraph(currentGraph.toString());
         });
 
@@ -289,6 +294,8 @@ public class OverviewController {
                 DBQuery.setDateRange(DateTime.parse(startDate.getValue().toString()), DateTime.parse(newVal.toString()));
             else
                 DBQuery.setDateRange(null, DateTime.parse(newVal.toString()));
+            if (oldVal == null || !oldVal.equals(newVal))
+                wipeCaches();
             loadGraph(currentGraph.toString());
         });
 
@@ -698,7 +705,13 @@ public class OverviewController {
             XYChart.Series<String, Double> series = new XYChart.Series<>();
 
             try {
-                Map<DateTime, Double> costPerAcquisition = DBQuery.getCPAOverTime(getCurrentFilter());
+                Map<DateTime, Double> costClicks = DBQuery.getClickCostOverTime();
+                Map<DateTime, Double> numConversions = DBQuery.getNumConversions();
+                Map<DateTime, Double> costImpressions = future_cost_impressions.get();
+
+                Map<DateTime, Double> costPerAcquisition = Stream.concat(costImpressions.keySet().stream(), costClicks.keySet().stream())
+                        .distinct()
+                        .collect(Collectors.toMap(k->k, k->((numConversions.get(k)==0) ? 0 :(costImpressions.getOrDefault(k,0d) + costClicks.getOrDefault(k,0d))/numConversions.getOrDefault(k,1d))));
                 ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
                 Collections.sort(dates);
 
@@ -710,6 +723,10 @@ public class OverviewController {
                 lineChart.getData().add(series);
                 this.costPerAcquisition = series;
             } catch (MongoAuthException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
         }
@@ -799,7 +816,12 @@ public class OverviewController {
             XYChart.Series<String, Double> series = new XYChart.Series<>();
 
             try {
-                Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter() / 100);
+                Map<DateTime, Double> totalCost = DBQuery.getClickCostOverTime();
+                Map<DateTime, Double> numImpressions = future_num_impressions.get();
+
+                Map<DateTime, Double> costPerThousandImpressionsOverTime = Stream.concat(totalCost.keySet().stream(), numImpressions.keySet().stream())
+                        .distinct()
+                        .collect(Collectors.toMap(k->k, k->(totalCost.getOrDefault(k,0d) / numImpressions.getOrDefault(k,0d) * 1000)));
                 ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
                 Collections.sort(dates);
 
@@ -811,6 +833,10 @@ public class OverviewController {
                 lineChart.getData().add(series);
                 this.costThousandImpressions = series;
             } catch (MongoAuthException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
         }
@@ -893,7 +919,12 @@ public class OverviewController {
             XYChart.Series<String, Double> series = new XYChart.Series<>();
 
             try {
-                Map<DateTime, Double> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
+                Map<DateTime, Double> numImpressions = future_num_impressions.get();
+                Map<DateTime, Double> numClicks = DBQuery.getNumClicks();
+
+                Map<DateTime, Double> clickThroughRateMap = Stream.concat(numImpressions.keySet().stream(), numClicks.keySet().stream())
+                        .distinct()
+                        .collect(Collectors.toMap(k -> k, k -> numClicks.getOrDefault(k, 0d) / numImpressions.getOrDefault(k,1d)));
                 ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
                 Collections.sort(days);
 
@@ -905,6 +936,10 @@ public class OverviewController {
                 this.clickThroughRate = series;
             }
             catch (MongoAuthException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
         }
@@ -948,17 +983,31 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Number of Impressions / Day");
-        if (numberOfImpressions == null )
+        if (numberOfImpressions != null ) {
+            lineChart.getData().clear();
+            lineChart.getData().add(numberOfImpressions);
+        } else {
+
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
             try {
-                numberOfImpressions = future_numberOfImpressions.get();
+                Map<DateTime, Double> numberOfImpressions = future_num_impressions.get();
+                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
+
+
+                lineChart.getData().clear();
+                lineChart.getData().add(series);
+                this.numberOfImpressions = series;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
             }
-
-        lineChart.getData().clear();
-        lineChart.getData().add(numberOfImpressions);
+        }
     }
 
     private void loadCostPerClick() {
@@ -1118,23 +1167,22 @@ public class OverviewController {
 
     private void loadImpressionsPreemptively() {
 
-        if (future_numberOfImpressions != null)
-            future_numberOfImpressions.cancel(true);
+        if (future_cost_impressions != null) future_cost_impressions.cancel(true);
+        if (future_num_impressions != null) future_num_impressions.cancel(true);
 
-        future_numberOfImpressions = preemptiveExecutor.submit(() -> {
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
-
+        future_num_impressions = preemptiveExecutor.submit(() -> {
             try {
-                Map<DateTime, Double> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
-                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
-                Collections.sort(days);
-
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
-
-                return series;
+                return DBQuery.getNumImpressions(getCurrentFilter());
+            } catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
             }
-            catch (MongoAuthException e) {
+        });
+
+        future_cost_impressions = preemptiveExecutor.submit(() -> {
+            try {
+                return DBQuery.getImpressionCostOverTime(getCurrentFilter()/100);
+            } catch (MongoAuthException e) {
                 e.printStackTrace();
                 return null;
             }
