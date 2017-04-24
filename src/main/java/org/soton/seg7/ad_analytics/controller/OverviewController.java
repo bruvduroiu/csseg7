@@ -1047,7 +1047,7 @@ public class OverviewController {
         initialize();
     }
 
-    //function that handles pressing of  button
+    //function that handles pressing of Export button
     @FXML
     protected void handleExportButtonAction(ActionEvent event) {
     	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
@@ -1065,6 +1065,12 @@ public class OverviewController {
                 System.out.println(ex.getMessage());
             }
         }
+    }
+    
+    //function that handles pressing of ExportAll button
+    @FXML
+    protected void handleExportAllButtonAction(ActionEvent event){
+    	
     }
 
     private void wipeCaches() {

@@ -185,7 +185,11 @@
                                     </GridPane>
                                     <Label text="Context :" GridPane.columnIndex="3" />
                                     <ComboBox fx:id="contextDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowSpan="2">
+                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportAllButtonAction" text="Export All" GridPane.columnIndex="7">
+                                       <GridPane.margin>
+                                          <Insets left="10.0" />
+                                       </GridPane.margin></Button>
+                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowIndex="1">
                                        <GridPane.margin>
                                           <Insets left="10.0" />
                                        </GridPane.margin></Button>
