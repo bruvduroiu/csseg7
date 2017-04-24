@@ -1,6 +1,7 @@
 package org.soton.seg7.ad_analytics.controller;
 
 import java.io.File;
+import java.util.concurrent.*;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -103,37 +104,43 @@ public class FileLoaderController {
 			new Thread(new Runnable() {
 				public void run() {
 					try {
-						DBHandler handler = null;
-						try {
-							handler = DBHandler.getDBConnection();
-							handler.dropCollection("impression_log");
-							handler.dropCollection("server_log");
-							handler.dropCollection("click_log");
-							handler.dropCollection("impression_data");
-							handler.dropCollection("server_data");
-							handler.dropCollection("click_data");
-						} catch (MongoAuthException e) {
-							e.printStackTrace();
-						}
+						Executors.newSingleThreadExecutor().submit(
+							new Callable<Boolean>() {
+								public Boolean call() {
+									DBHandler handler = null;
+									try {
+										handler = DBHandler.getDBConnection();
+										handler.dropCollection("impression_log");
+										handler.dropCollection("server_log");
+										handler.dropCollection("click_log");
+										handler.dropCollection("impression_data");
+										handler.dropCollection("server_data");
+										handler.dropCollection("click_data");
+									} catch (MongoAuthException e) {
+										e.printStackTrace();
+										return false;
+									}
 
-						Parser.parseCSV(clickLog);
-						Parser.parseCSV(serverLog);
-						Parser.parseCSV(impressionLog);
-					} catch (Exception e) {
+									Parser.parseCSV(clickLog);
+									Parser.parseCSV(serverLog);
+									Parser.parseCSV(impressionLog);
+									return true;
+								}
+							}
+						).get();
+					}catch (InterruptedException | ExecutionException e) {
 						e.printStackTrace();
 					} finally {
-
 						Platform.runLater(new Runnable() {
 							@Override
 							public void run() {
 								// close the dialog.
+								endProgInd();
 								Node source = (Node) event.getSource();
 								Stage stage = (Stage) source.getScene().getWindow();
-
 								stage.close();
 							}
 						});
-
 					}
 				}
 			}).start();
