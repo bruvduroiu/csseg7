@@ -6,6 +6,7 @@ import org.bson.BsonDocument;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.mongojack.DBSort;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import java.util.ArrayList;
@@ -146,7 +147,7 @@ public class DBHandler {
         return new JSONObject().put("success", String.format("wiped %s", collection));
     }
 
-    public JSONObject shardCollection(String collection) {
+    public JSONObject enableSharding() {
         if (dbClient == null)
             return new JSONObject().put("error", "database not initialized");
 
@@ -157,17 +158,40 @@ public class DBHandler {
         DBObject enableSharding = new BasicDBObject("enableSharding", DB_STRING);
 
         CommandResult res = sisterDB.command(enableSharding);
-        if (!res.ok())
+
+        if (res.ok())
+            return new JSONObject().put("success", String.format("sharding enabled for %s", DB_STRING));
+        else
             return new JSONObject().put("error", res.getErrorMessage());
+    }
+
+    public JSONObject shardCollection(String collection) {
+        if (dbClient == null)
+            return new JSONObject().put("error", "database not initialized");
+
+        DB db = dbClient.getDB(DB_STRING);
+
+        DB sisterDB = db.getSisterDB("admin");
 
         DBObject cmd = new BasicDBObject("shardCollection", String.format("%s.%s",DB_STRING, collection))
                 .append("key", new BasicDBObject("Date", "hashed"));
-        res = sisterDB.command(cmd);
+        CommandResult res = sisterDB.command(cmd);
 
         if (res.ok())
             return new JSONObject().put("success", String.format("sharded %s", collection));
         else
             return new JSONObject().put("error", res.getErrorMessage());
+    }
+
+    public JSONObject dropDatabase() {
+        if(dbClient == null)
+            return new JSONObject().put("error", "database not initialised");
+
+        DB db = dbClient.getDB(DB_STRING);
+
+        db.dropDatabase();
+
+        return new JSONObject().put("success", String.format("dropped database %s", DB_STRING));
     }
 
     private MongoClient initializeDatabase() {
