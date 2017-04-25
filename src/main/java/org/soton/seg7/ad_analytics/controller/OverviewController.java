@@ -729,6 +729,20 @@ public class OverviewController {
 
         lineChart.getData().clear();
         lineChart.getData().add(costPerAcquisition);
+
+        for (XYChart.Series<String, Double> s : lineChart.getData()) {
+            for (XYChart.Data<String, Double> d : s.getData()) {
+                Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                        d.getXValue().toString() + "\n" +
+                        "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+
+                //Adding class on hover
+                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                //Removing class on exit
+                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+            }
+        }
     }
 
     private void loadBounceRate() {
@@ -760,6 +774,21 @@ public class OverviewController {
                 lineChart.getData().clear();
                 lineChart.getData().add(series);
                 this.bounceRate = series;
+
+                for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                    for (XYChart.Data<String, Double> d : s.getData()) {
+                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                                d.getXValue().toString() + "\n" +
+                                "Bounces Rate: " + Math.floor(d.getYValue() * 100) / 100));
+
+                        //Adding class on hover
+                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                        //Removing class on exit
+                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    }
+                }
+
             } catch (MongoAuthException e) {
                 e.printStackTrace();
             }
@@ -795,6 +824,21 @@ public class OverviewController {
             lineChart.getData().clear();
             lineChart.getData().add(series);
             this.numberOfBounces = series;
+
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Bounces: " + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
+            }
+
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -834,6 +878,20 @@ public class OverviewController {
 
         lineChart.getData().clear();
         lineChart.getData().add(costThousandImpressions);
+
+        for (XYChart.Series<String, Double> s : lineChart.getData()) {
+            for (XYChart.Data<String, Double> d : s.getData()) {
+                Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                        d.getXValue().toString() + "\n" +
+                        "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+
+                //Adding class on hover
+                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                //Removing class on exit
+                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+            }
+        }
     }
 
     private void loadTotalCost() {
@@ -864,6 +922,20 @@ public class OverviewController {
                 lineChart.getData().add(series);
                 this.totalCost = series;
 
+                for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                    for (XYChart.Data<String, Double> d : s.getData()) {
+                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                                d.getXValue().toString() + "\n" +
+                                        "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+
+                        //Adding class on hover
+                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                        //Removing class on exit
+                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    }
+                }
+
             } catch (MongoAuthException e) {
                 e.printStackTrace();
             }
@@ -892,6 +964,21 @@ public class OverviewController {
 
                 lineChart.getData().clear();
                 lineChart.getData().add(series);
+
+                for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                    for (XYChart.Data<String, Double> d : s.getData()) {
+                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                                d.getXValue().toString() + "\n" +
+                                "Conversions: " + Math.floor(d.getYValue() * 100) / 100));
+
+                        //Adding class on hover
+                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                        //Removing class on exit
+                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    }
+                }
+
             }
             catch (MongoAuthException e) {
                 e.printStackTrace();
@@ -933,6 +1020,20 @@ public class OverviewController {
 
         lineChart.getData().clear();
         lineChart.getData().add(clickThroughRate);
+
+        for (XYChart.Series<String, Double> s : lineChart.getData()) {
+            for (XYChart.Data<String, Double> d : s.getData()) {
+                Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                        d.getXValue().toString() + "\n" +
+                        "Click-through Rate: " + Math.floor(d.getYValue() * 100) / 100));
+
+                //Adding class on hover
+                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                //Removing class on exit
+                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+            }
+        }
     }
 
     private void loadNumberOfClicks() {
@@ -958,6 +1059,20 @@ public class OverviewController {
                 lineChart.getData().clear();
                 lineChart.getData().add(series);
                 this.numberOfClicks = series;
+
+                for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                    for (XYChart.Data<String, Double> d : s.getData()) {
+                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                                d.getXValue().toString() + "\n" +
+                                "Clicks: " + Math.floor(d.getYValue() * 100) / 100));
+
+                        //Adding class on hover
+                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                        //Removing class on exit
+                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    }
+                }
             }
             catch (MongoAuthException e) {
                 e.printStackTrace();
@@ -991,6 +1106,20 @@ public class OverviewController {
 
         lineChart.getData().clear();
         lineChart.getData().add(this.numberOfImpressions);
+
+        for (XYChart.Series<String, Double> s : lineChart.getData()) {
+            for (XYChart.Data<String, Double> d : s.getData()) {
+                Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                        d.getXValue().toString() + "\n" +
+                        "Impressions: " + Math.floor(d.getYValue() * 100) / 100));
+
+                //Adding class on hover
+                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                //Removing class on exit
+                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+            }
+        }
     }
 
     private void loadCostPerClick() {
@@ -1016,6 +1145,20 @@ public class OverviewController {
                 lineChart.getData().clear();
                 lineChart.getData().add(series);
                 this.costPerClick = series;
+
+                for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                    for (XYChart.Data<String, Double> d : s.getData()) {
+                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                                d.getXValue().toString() + "\n" +
+                                "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+
+                        //Adding class on hover
+                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                        //Removing class on exit
+                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    }
+                }
             }
             catch (MongoAuthException e) {
                 e.printStackTrace();
