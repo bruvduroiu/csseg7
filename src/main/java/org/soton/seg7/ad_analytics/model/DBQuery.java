@@ -115,6 +115,7 @@ public class DBQuery {
         return buildResultsMap(results, COUNT_METRIC);
     }
 
+    @Deprecated
     public static Map<DateTime, Double> getCPAOverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> costImpressions = getImpressionCostOverTime(filter);
         Map<DateTime, Double> costClicks = getClickCostOverTime();
@@ -167,7 +168,8 @@ public class DBQuery {
                 .collect(Collectors.toMap(k->k, k->clickCost.getOrDefault(k,0d) + impressionCost.getOrDefault(k,0d)));
 
     }
-    
+
+    @Deprecated
     public static Map<DateTime, Double> getCostPerThousandImpressionsOverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> totalCost = getClickCostOverTime();
         Map<DateTime, Double> numImpressions = getNumImpressions(filter);
@@ -177,8 +179,8 @@ public class DBQuery {
                 .collect(Collectors.toMap(k->k, k->(totalCost.getOrDefault(k,0d) / numImpressions.getOrDefault(k,0d) * 1000)));
 
     }
-    
 
+    @Deprecated
     public static Map<DateTime, Double> getCTROverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> numImpressions = getNumImpressions(filter);
         Map<DateTime, Double> numClicks = getNumClicks();

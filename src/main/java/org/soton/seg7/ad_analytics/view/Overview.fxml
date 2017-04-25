@@ -18,6 +18,7 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -34,8 +35,14 @@
                             <items>
                                 <AnchorPane fx:id="graphChoicePane" maxWidth="292.0" minHeight="348.0" minWidth="292.0" prefHeight="348.0" prefWidth="292.0" SplitPane.resizableWithParent="false">
                                     <children>
-                                        <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleChangeCampainButtonAction" prefHeight="25.0" prefWidth="262.0" text="Change Campaign" />
-                                        <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="348.0" prefWidth="262.0" />
+                                        <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleChangeCampainButtonAction" prefHeight="25.0" prefWidth="262.0" text="Change Campaign">
+                                 <tooltip>
+                                    <Tooltip text="Click to upload a different campaign (currently loaded campaign will be lost)" />
+                                 </tooltip></Button>
+                                        <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="348.0" prefWidth="262.0">
+                                 <tooltip>
+                                    <Tooltip text="Choose a metric from the list to view as a graph" />
+                                 </tooltip></ListView>
                                     </children>
                                 </AnchorPane>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
@@ -58,9 +65,15 @@
                                                                     </rowConstraints>
                                                                     <children>
                                                                         <Label text="Total Campaign Cost:" />
-                                                                        <Label fx:id="totalCampaignCostLabel" text="total campign cost" GridPane.columnIndex="1" />
+                                                                        <Label fx:id="totalCampaignCostLabel" text="total campign cost" GridPane.columnIndex="1">
+                                                         <tooltip>
+                                                            <Tooltip text="Total spent on the campaign" />
+                                                         </tooltip></Label>
                                                                         <Label text="Total Click Cost:" GridPane.rowIndex="1" />
-                                                                        <Label fx:id="totalCostOfClicksLabel" text="total click cost" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                                        <Label fx:id="totalCostOfClicksLabel" text="total click cost" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                         <tooltip>
+                                                            <Tooltip text="Total spent on clicks in the campaign" />
+                                                         </tooltip></Label>
                                                                         <Label text="Total Impression Cost:" GridPane.rowIndex="2" />
                                                                         <Label fx:id="totalCostOfImpressionsLabel" text="total impressions cost" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                                     </children>
@@ -112,9 +125,18 @@
                                                 <Label text="Income Range :" GridPane.columnIndex="2" />
                                                 <Label text="Start Date: " GridPane.columnIndex="4" />
                                                 <Label text="End Date :" GridPane.columnIndex="5" />
-                                                <ComboBox fx:id="ageRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.rowIndex="1" />
-                                                <ComboBox fx:id="genderDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                                <ComboBox fx:id="incomeRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                                <ComboBox fx:id="ageRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.rowIndex="1">
+                                       <tooltip>
+                                          <Tooltip text="Filter the loaded graph by Age Range" />
+                                       </tooltip></ComboBox>
+                                                <ComboBox fx:id="genderDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                       <tooltip>
+                                          <Tooltip text="Filter the loaded graph by Gender" />
+                                       </tooltip></ComboBox>
+                                                <ComboBox fx:id="incomeRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                       <tooltip>
+                                          <Tooltip text="Filter the loaded graph by Income Range" />
+                                       </tooltip></ComboBox>
                                                 <GridPane maxWidth="143.0" prefHeight="33.0" prefWidth="143.0" GridPane.columnIndex="4" GridPane.rowIndex="1">
                                                     <columnConstraints>
                                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="30.0" minWidth="30.0" prefWidth="30.0" />
@@ -128,7 +150,10 @@
                                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                                     </rowConstraints>
                                        <children>
-                                          <DatePicker fx:id="startDate" prefHeight="27.0" prefWidth="87.0" />
+                                          <DatePicker fx:id="startDate" prefHeight="27.0" prefWidth="87.0">
+                                             <tooltip>
+                                                <Tooltip text="Choose a start date to view the graph from" />
+                                             </tooltip></DatePicker>
                                        </children>
                                                 </GridPane>
                                                 <GridPane maxWidth="143.0" prefHeight="33.0" prefWidth="143.0" GridPane.columnIndex="5" GridPane.rowIndex="1">
@@ -143,11 +168,17 @@
                                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                                     </rowConstraints>
                                        <children>
-                                          <DatePicker fx:id="endDate" />
+                                          <DatePicker fx:id="endDate">
+                                             <tooltip>
+                                                <Tooltip text="Choose an end date to view the graph until" />
+                                             </tooltip></DatePicker>
                                        </children>
                                                 </GridPane>
                                     <Label text="Time Granularity :" GridPane.columnIndex="6" />
-                                    <Slider fx:id="granularitySlider" majorTickUnit="1.0" max="2.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" value="1.0" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+                                    <Slider fx:id="granularitySlider" majorTickUnit="1.0" max="2.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" value="1.0" GridPane.columnIndex="6" GridPane.rowIndex="1">
+                                       <tooltip>
+                                          <Tooltip text="Choose a time granularity to view the graph in" />
+                                       </tooltip></Slider>
                                     <Label fx:id="bounceSettingsLabel" text="Bounce registered by :" GridPane.columnIndex="8">
                                        <GridPane.margin>
                                           <Insets left="20.0" />
@@ -184,15 +215,17 @@
                                        </opaqueInsets>
                                     </GridPane>
                                     <Label text="Context :" GridPane.columnIndex="3" />
-                                    <ComboBox fx:id="contextDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportAllButtonAction" text="Export All" GridPane.columnIndex="7">
+                                    <ComboBox fx:id="contextDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="3" GridPane.rowIndex="1">
+                                       <tooltip>
+                                          <Tooltip text="Filter the loaded graph by Context" />
+                                       </tooltip></ComboBox>
+                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowSpan="2">
                                        <GridPane.margin>
                                           <Insets left="10.0" />
-                                       </GridPane.margin></Button>
-                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowIndex="1">
-                                       <GridPane.margin>
-                                          <Insets left="10.0" />
-                                       </GridPane.margin></Button>
+                                       </GridPane.margin>
+                                       <tooltip>
+                                          <Tooltip text="Export currently viewed graph to a file" />
+                                       </tooltip></Button>
                                             </children>
                                         </GridPane>
                                         <AnchorPane layoutX="15.0" layoutY="108.0" prefHeight="291.0" prefWidth="668.0" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="108.0">
