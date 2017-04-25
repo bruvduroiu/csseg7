@@ -152,6 +152,9 @@ public class OverviewController {
 
     @FXML
     private RadioButton radioBouncePage;
+    
+    @FXML
+    private AnchorPane graphPane;
 
 
     // FXML References relating to the Breakdown pane
@@ -1126,12 +1129,13 @@ public class OverviewController {
     //function that handles pressing of Export button
     @FXML
     protected void handleExportButtonAction(ActionEvent event) {
-    	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
+    	WritableImage image = splitPane2.snapshot(new SnapshotParameters(), null);
 
 
     	FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Image");
-        File file = fileChooser.showSaveDialog(stage);
+        File cFile = fileChooser.showSaveDialog(stage);
+        File file = new File(cFile.getAbsolutePath()+".png");
         if (file != null) {
             try {
                 ImageIO.write(SwingFXUtils.fromFXImage(image,
@@ -1149,23 +1153,35 @@ public class OverviewController {
         fileChooser.setTitle("Save Image");
         File file = fileChooser.showSaveDialog(stage);
     	Document document = new Document(PageSize.A4, 20, 20, 20, 20); 
-    	try {
-			PdfWriter.getInstance(document, new FileOutputStream(file));
+			try {
+				PdfWriter.getInstance(document, new FileOutputStream(file));
+			} catch (FileNotFoundException | DocumentException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			document.open();     	
-	    	for(String x : graphList.getItems()){
+	    	for(String x : list){
 	    		loadGraph(x);
-	        	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
+	    		try {
+					TimeUnit.SECONDS.sleep(1);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+	        	WritableImage image = splitPane2.snapshot(new SnapshotParameters(), null);
 	        	BufferedImage png = SwingFXUtils.fromFXImage(image,
 	                    null);
 	        	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	        	ImageIO.write(png, "png", baos);
-	        	Image iTextImage = Image.getInstance(baos.toByteArray());
-	        	document.add(iTextImage); 
+	        	try {
+					ImageIO.write(png, "png", baos);
+					Image iTextImage = Image.getInstance(baos.toByteArray());
+		        	document.add(iTextImage);
+				} catch (IOException | DocumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 	    	}
-		} catch (DocumentException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
+		
     	document.close();
     	loadGraph(currentGraph.toString());    	
     }

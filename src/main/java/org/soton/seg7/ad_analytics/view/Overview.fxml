@@ -219,13 +219,21 @@
                                        <tooltip>
                                           <Tooltip text="Filter the loaded graph by Context" />
                                        </tooltip></ComboBox>
-                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowSpan="2">
+                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportAllButtonAction" text="Export All" GridPane.columnIndex="7">
                                        <GridPane.margin>
                                           <Insets left="10.0" />
                                        </GridPane.margin>
                                        <tooltip>
-                                          <Tooltip text="Export currently viewed graph to a file" />
+                                          <Tooltip text="Export graphs to pdf" />
                                        </tooltip></Button>
+                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowIndex="1">
+                                       <GridPane.margin>
+                                          <Insets left="10.0" />
+                                       </GridPane.margin>
+                                       <tooltip>
+                                          <Tooltip text="Export current graph to png" />
+                                       </tooltip></Button>
+                                   
                                             </children>
                                         </GridPane>
                                         <AnchorPane layoutX="15.0" layoutY="108.0" prefHeight="291.0" prefWidth="668.0" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="108.0">
