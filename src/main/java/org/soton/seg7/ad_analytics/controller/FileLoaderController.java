@@ -2,11 +2,16 @@ package org.soton.seg7.ad_analytics.controller;
 
 import java.io.File;
 
+import com.sun.javaws.progress.Progress;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -27,6 +32,8 @@ public class FileLoaderController {
 	private Label ServerLogT;
 	@FXML
 	private Label ImpressionLogT;
+
+	private File directory;
 	
 	File clickLog;
 	File serverLog;
@@ -34,6 +41,7 @@ public class FileLoaderController {
 	
 	public void init(Stage primaryStage){
 		this.stage = stage;
+		this.directory = new File(System.getProperty("user.home"));
 	}
 	
 	//function that handles pressing of Click Log button
@@ -106,13 +114,12 @@ public class FileLoaderController {
     	
     	FileChooser fileChooser = new FileChooser();
     	fileChooser.setTitle(title);
-    	fileChooser.setInitialDirectory(
-                new File(System.getProperty("user.home"))
-            ); 
+    	fileChooser.setInitialDirectory(directory);
     	File file = fileChooser.showOpenDialog(stage);
     	
     	if(file != null){
     		System.out.println("Chosen file: " + file);
+    		this.directory = file.getParentFile();
     	}
 
     	return file;

@@ -6,6 +6,7 @@ import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.model.Parser;
 import java.io.File;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 

@@ -9,29 +9,40 @@ import javafx.fxml.FXML;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
-import javafx.scene.image.WritableImage;
 import javafx.stage.FileChooser;
+import javafx.scene.image.WritableImage;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import org.joda.time.DateTime;
+import org.soton.seg7.ad_analytics.model.AudienceSegment;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.pdf.PdfWriter;
+
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.concurrent.*;
 
 public class OverviewController {
 
@@ -45,6 +56,7 @@ public class OverviewController {
         CLICK_COST_HISTOGRAM("Click Cost Histogram"),
         COST_PER_THOUSAND_IMPRESSIONS("Cost per Thousand Impressions"),
         COST_PER_ACQUISITION("Cost per Acquisition"),
+        NUMBER_OF_BOUNCES("Total Bounces"),
         BOUNCE_RATE("Bounce Rate");
 
         String title;
@@ -65,6 +77,30 @@ public class OverviewController {
     private int genderFilter;
     private int contextFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter + contextFilter;
+
+    private boolean breakdownHidden = false;
+
+    private ObservableList<AudienceSegment> genderBreakdownData;
+    private ObservableList<AudienceSegment> ageBreakdownData;
+    private ObservableList<AudienceSegment> incomeBreakdownData;
+    private ObservableList<AudienceSegment> contextBreakdownData;
+
+    private XYChart.Series<String, Double> costPerClick;
+    private XYChart.Series<String, Double> numberOfImpressions;
+    private XYChart.Series<String, Double> numberOfClicks;
+    private XYChart.Series<String, Double> clickThroughRate;
+    private XYChart.Series<String, Double> numberOfConversions;
+    private XYChart.Series<String, Double> totalCost;
+    private XYChart.Series<String, Double> costThousandImpressions;
+    private XYChart.Series<String, Double> costPerAcquisition;
+    private XYChart.Series<String, Double> numberOfBounces;
+    private XYChart.Series<String, Double> bounceRate;
+
+    private ExecutorService preemptiveExecutor;
+    private Future<XYChart.Series<String, Double>> future_numberOfImpressions;
+    private Future<XYChart.Series<String, Double>> future_costThousandImpressions;
+    private Future<XYChart.Series<String, Double>> future_clickThroughRate;
+    private Future<XYChart.Series<String, Double>> future_costPerAcquisition;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -114,19 +150,71 @@ public class OverviewController {
     @FXML
     private RadioButton radioBouncePage;
 
+
+    // FXML References relating to the Breakdown pane
+
+    @FXML
+    private AnchorPane breakdownPane;
+
+    @FXML
+    private SplitPane splitPane2;
+
+    @FXML
+    private TableColumn genderBreakdownCol;
+
+    @FXML
+    private TableColumn genderImpBreakdownCol;
+
+    @FXML
+    private TableView genderBreakdownTable;
+
+    @FXML
+    private TableView ageBreakdownTable;
+
+    @FXML
+    private TableColumn ageBreakdownCol;
+
+    @FXML
+    private TableColumn ageImpBreakdownCol;
+
+    @FXML
+    private TableView incomeBreakdownTable;
+
+    @FXML
+    private TableColumn incomeBreakdownCol;
+
+    @FXML
+    private TableColumn incomeImpBreakdownCol;
+
+    @FXML
+    private TableView contextBreakdownTable;
+
+    @FXML
+    private TableColumn contextBreakdownCol;
+
+    @FXML
+    private TableColumn contextImpBreakdownCol;
+
     // Reference to the main application.
     private MainView mainView;
 
+    // Constructor is obsolete, instead use initialize() below
     public OverviewController() {
     }
 
     @FXML
     private void initialize() {
+
+        preemptiveExecutor = Executors.newFixedThreadPool(3);
+        loadImpressionsPreemptively();
+
         ageFilter = 0;
         incomeFilter = 0;
         genderFilter = 0;
 
         final ToggleGroup toggleGroup = new ToggleGroup();
+
+        hideBreakdown();
 
         radioBounceTime.setToggleGroup(toggleGroup);
         radioBounceTime.setSelected(true);
@@ -159,6 +247,7 @@ public class OverviewController {
         list.add(Graph.CLICK_THROUGH_RATE.toString());
         list.add(Graph.COST_PER_ACQUISITION.toString());
         list.add(Graph.NUMBER_OF_CONVERSIONS.toString());
+        list.add(Graph.NUMBER_OF_BOUNCES.toString());
         list.add(Graph.BOUNCE_RATE.toString());
         list.add(Graph.CLICK_COST_HISTOGRAM.toString());
         list.add(Graph.COST_PER_THOUSAND_IMPRESSIONS.toString());
@@ -188,8 +277,6 @@ public class OverviewController {
                 }
             }
         });
-        
-        
 
         // Age Range Dropdown
 
@@ -222,6 +309,8 @@ public class OverviewController {
 
         ageRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+                if (!oldVal.equals(newVal))
+                    wipeCaches();
             	switch(newVal) {
             	case "All":
             		ageFilter = 0;
@@ -242,7 +331,12 @@ public class OverviewController {
             		ageFilter = Filters.AGE_54;
             		break;
             	}
-            	loadGraph(currentGraph.toString());
+                // no unnecessary filtering for graphs we don't have filter data for
+            	if(!(
+            	        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
+                        || currentGraph.equals(Graph.COST_PER_CLICK)
+                        || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
+                )) loadGraph(currentGraph.toString());
               }    
           });
         
@@ -258,6 +352,8 @@ public class OverviewController {
 
         genderDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+                if (!oldVal.equals(newVal))
+                    wipeCaches();
             	switch(newVal) {
             	case "All":
             		genderFilter = 0;
@@ -269,7 +365,12 @@ public class OverviewController {
             		genderFilter = Filters.GENDER_FEMALE;
             		break;
             	}
-            	loadGraph(currentGraph.toString());
+                // no unnecessary filtering for graphs we don't have filter data for
+                if(!(
+                        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
+                                || currentGraph.equals(Graph.COST_PER_CLICK)
+                                || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
+                )) loadGraph(currentGraph.toString());
               }    
           });
 
@@ -286,6 +387,8 @@ public class OverviewController {
 
         incomeRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+                if (!oldVal.equals(newVal))
+                    wipeCaches();
             	switch(newVal) {
             	case "All":
             		incomeFilter = 0;
@@ -300,7 +403,12 @@ public class OverviewController {
             		incomeFilter = Filters.INCOME_HIGH;
             		break;
             	}
-            	loadGraph(currentGraph.toString());
+            	// no unnecessary filtering for graphs we don't have filter data for
+                if(!(
+                        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
+                                || currentGraph.equals(Graph.COST_PER_CLICK)
+                                || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
+                )) loadGraph(currentGraph.toString());
             	
               }    
           });
@@ -319,6 +427,8 @@ public class OverviewController {
         
         contextDropdown.valueProperty().addListener(new ChangeListener<String>() {
             @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
+                if (!oldVal.equals(newVal))
+                    wipeCaches();
             	switch(newVal) {
             	case "All":
             		contextFilter = 0;
@@ -340,12 +450,9 @@ public class OverviewController {
             	
               }    
           });
-        
 
         // Load the total cost stats and pie chart
-
         loadTotalCost();
-
         loadPieChart();
 
         try {
@@ -379,17 +486,23 @@ public class OverviewController {
                     granularitySlider.setValue((double)oldValue);
                     errorHours.showAndWait();
                 }
-                else
+                else {
+                    if (!oldValue.equals(newValue))
+                        wipeCaches();
                     changeGranularity(newValue);
+                }
             }
         });
 
         toggleGroup.selectedToggleProperty().addListener(
         		(observable, oldValue, newValue) -> {
-        			if(currentGraph.equals(Graph.BOUNCE_RATE))
-        				loadGraph(currentGraph.toString());
+        			if(currentGraph.equals(Graph.BOUNCE_RATE) || currentGraph.equals(Graph.NUMBER_OF_BOUNCES)) {
+        			    wipeCaches();
+                        loadGraph(currentGraph.toString());
+                    }
         				
         		});
+
     }
     
     private void changeGranularity(Number granularity){
@@ -404,15 +517,18 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph) {
-    	
     	radioBounceTime.setVisible(false);
     	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
 
+        hideBreakdown();
+
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
-        else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString()))
+        else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString())) {
             loadNumberOfImpressions();
+            loadBreakdown();
+        }
         else if (graph.equals(Graph.NUMBER_OF_CLICKS.toString()))
             loadNumberOfClicks();
         else if (graph.equals(Graph.CLICK_THROUGH_RATE.toString()))
@@ -433,14 +549,144 @@ public class OverviewController {
         	radioBouncePage.setVisible(true);
             loadBounceRate();
         }
+        else if (graph.equals(Graph.NUMBER_OF_BOUNCES.toString())) {
+            bounceSettingsLabel.setVisible(true);
+            radioBounceTime.setVisible(true);
+            radioBouncePage.setVisible(true);
+            loadNumberOfBounces();
+        }
     }
-    
+
+    private void loadBreakdown() {
+        if (breakdownHidden) {
+            breakdownHidden = false;
+            splitPane2.getItems().add(1, breakdownPane);
+            splitPane2.setDividerPosition(0, 0.65);
+        }
+
+        genderBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+        genderImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+        ageBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+        ageImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+        incomeBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+        incomeImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+        contextBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+        contextImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+        try {
+
+            int totalMale = 0, totalFemale = 0;
+            if (genderFilter == Filters.GENDER_FEMALE) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalFemale += i;
+            } else if (genderFilter == Filters.GENDER_MALE) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalMale += i;
+            } else {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - genderFilter + Filters.GENDER_FEMALE).values()) totalFemale += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - genderFilter + Filters.GENDER_MALE).values()) totalMale += i;
+            }
+
+            genderBreakdownData = FXCollections.observableArrayList(
+                    new AudienceSegment("Male", Integer.toString(totalMale)),
+                    new AudienceSegment("Female", Integer.toString(totalFemale))
+            );
+
+            int totalSub25 = 0, total25To34 = 0, total35To44 = 0, total45To54 = 0, totalOver55 = 0;
+            if (ageFilter == Filters.AGE_25) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalSub25 += i;
+            } else if (ageFilter == Filters.AGE_25_34) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) total25To34 += i;
+            } else if (ageFilter == Filters.AGE_35_44) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) total35To44 += i;
+            } else if (ageFilter == Filters.AGE_45_54) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) total45To54 += i;
+            } else if (ageFilter == Filters.AGE_54) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalOver55 += i;
+            } else {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_25).values()) totalSub25 += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_25_34).values()) total25To34 += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_35_44).values()) total35To44 += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_45_54).values()) total45To54 += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_54).values()) totalOver55 += i;
+            }
+
+            ageBreakdownData = FXCollections.observableArrayList(
+                    new AudienceSegment("<25", Integer.toString(totalSub25)),
+                    new AudienceSegment("25-34", Integer.toString(total25To34)),
+                    new AudienceSegment("35-44", Integer.toString(total35To44)),
+                    new AudienceSegment("45-54", Integer.toString(total45To54)),
+                    new AudienceSegment(">55", Integer.toString(totalOver55))
+            );
+
+            int totalLow = 0, totalHigh = 0, totalMedium = 0;
+            if (incomeFilter == Filters.INCOME_LOW) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalLow += i;
+            } else if (incomeFilter == Filters.INCOME_MEDIUM) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalMedium += i;
+            } else if (incomeFilter == Filters.INCOME_HIGH) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalHigh += i;
+            } else {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - incomeFilter + Filters.INCOME_LOW).values()) totalLow += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - incomeFilter + Filters.INCOME_MEDIUM).values()) totalMedium += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - incomeFilter + Filters.INCOME_HIGH).values()) totalHigh += i;
+            }
+
+            incomeBreakdownData = FXCollections.observableArrayList(
+                    new AudienceSegment("Low", Integer.toString(totalLow)),
+                    new AudienceSegment("Middle", Integer.toString(totalMedium)),
+                    new AudienceSegment("High", Integer.toString(totalHigh))
+            );
+
+            int totalShopping = 0, totalNews = 0, totalSocialMedia = 0, totalBlog = 0;
+            if (contextFilter == Filters.CONTEXT_SHOPPING) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalShopping += i;
+            } else if (contextFilter == Filters.CONTEXT_NEWS) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalNews += i;
+            } else if (contextFilter == Filters.CONTEXT_SOCIAL_MEDIA) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalSocialMedia += i;
+            } else if (contextFilter == Filters.CONTEXT_BLOG) {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalBlog += i;
+            } else {
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_SHOPPING).values()) totalShopping += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_NEWS).values()) totalNews += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_SOCIAL_MEDIA).values()) totalSocialMedia += i;
+                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_BLOG).values()) totalBlog += i;
+            }
+
+            contextBreakdownData = FXCollections.observableArrayList(
+                    new AudienceSegment("News", Integer.toString(totalNews)),
+                    new AudienceSegment("Shopping", Integer.toString(totalShopping)),
+                    new AudienceSegment("Social Media", Integer.toString(totalSocialMedia)),
+                    new AudienceSegment("Blog", Integer.toString(totalBlog))
+            );
+
+        } catch  (MongoAuthException e) {
+            e.printStackTrace();
+        }
+
+        genderBreakdownTable.setItems(genderBreakdownData);
+        ageBreakdownTable.setItems(ageBreakdownData);
+        incomeBreakdownTable.setItems(incomeBreakdownData);
+        contextBreakdownTable.setItems(contextBreakdownData);
+    }
+
+    private void hideBreakdown() {
+        if (!breakdownHidden) {
+            breakdownHidden = true;
+            splitPane2.getItems().remove(1);
+        }
+    }
 
     private void loadPieChart() {
         try {
+            Double totalCostClicks = DBQuery.getTotalCostClicks();
+            Double totalImpressionCost = DBQuery.getTotalCostImpressions(getCurrentFilter());
+
             ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList(
-                    new PieChart.Data("Total Click Cost", DBQuery.getTotalCostClicks()),
-                    new PieChart.Data("Total Impression Cost", DBQuery.getTotalCostImpressions(getCurrentFilter()))
+                    new PieChart.Data("Total Click Cost", Double.isNaN(totalCostClicks) ? 0d : totalCostClicks),
+                    new PieChart.Data("Total Impression Cost", Double.isNaN(totalImpressionCost) ? 0d : totalImpressionCost)
             );
             pieChart.getData().clear();
             pieChart.setTitle("Campaign Cost Breakdown");
@@ -455,50 +701,85 @@ public class OverviewController {
         currentGraph = Graph.COST_PER_ACQUISITION;
         histogram.setVisible(false);
         lineChart.setVisible(true);
-
-        XYChart.Series<String,Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Acquisition / " + getGranularityString());
 
-        try {
-            Map<DateTime, Double> costPerAcquisition = DBQuery.getCPAOverTime(getCurrentFilter());
-            ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
-            Collections.sort(dates);
+        if (costPerAcquisition == null )
+            try {
+                costPerAcquisition = future_costPerAcquisition.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
 
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
-
-
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(costPerAcquisition);
     }
 
     private void loadBounceRate() {
         currentGraph = Graph.BOUNCE_RATE;
         histogram.setVisible(false);
         lineChart.setVisible(true);
-
-        XYChart.Series<String,Double> series = new XYChart.Series<>();
         lineChart.setTitle("Bounce Rate / " + getGranularityString());
 
+        if (bounceRate != null ) {
+            lineChart.getData().clear();
+            lineChart.getData().add(bounceRate);
+        } else {
+
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> bounceRate;
+                if (radioBounceTime.isSelected())
+                    bounceRate = DBQuery.getBounceRateByTime();
+                else
+                    bounceRate = DBQuery.getBounceRateByPage();
+                ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
+                Collections.sort(dates);
+
+                for (DateTime day : dates)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), bounceRate.get(day)));
+
+
+                lineChart.getData().clear();
+                lineChart.getData().add(series);
+                this.bounceRate = series;
+            } catch (MongoAuthException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void loadNumberOfBounces() {
+        currentGraph = Graph.NUMBER_OF_BOUNCES;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+        lineChart.setTitle("Number of Bounces / " + getGranularityString());
+
+        if (numberOfBounces != null ) {
+            lineChart.getData().clear();
+            lineChart.getData().add(numberOfBounces);
+        }
+
+        XYChart.Series<String,Double> series = new XYChart.Series<>();
+
         try {
-            Map<DateTime, Double> bounceRate;
+            Map<DateTime, Double> numBounces;
             if(radioBounceTime.isSelected())
-            	bounceRate = DBQuery.getBounceRateByTime();
+                numBounces = DBQuery.getNumBouncesByTime();
             else
-            	bounceRate = DBQuery.getBounceRateByPage();
-            ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
+                numBounces = DBQuery.getNumBouncesByPage();
+            ArrayList<DateTime> dates = new ArrayList<>(numBounces.keySet());
             Collections.sort(dates);
 
             for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), bounceRate.get(day)));
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numBounces.get(day)));
 
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
+            this.numberOfBounces = series;
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -510,48 +791,51 @@ public class OverviewController {
         histogram.setVisible(false);
         lineChart.setVisible(true);
 
-        XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Thousand Impressions / Day");
+        if (costThousandImpressions == null )
+            try {
+                costThousandImpressions = future_costThousandImpressions.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
 
-        try {
-            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter()/100);
-            ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
-            Collections.sort(dates);
-
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
-
-
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(costThousandImpressions);
     }
 
     private void loadTotalCost() {
         currentGraph = Graph.TOTAL_COST;
         histogram.setVisible(false);
         lineChart.setVisible(true);
-
-        XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Total Cost / Day");
 
-        try {
-            Map<DateTime, Double> totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter());
-            ArrayList<DateTime> dates = new ArrayList<>(totalCostOverTime.keySet());
-            Collections.sort(dates);
-
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day)/100));
-
-
+        if (totalCost != null ) {
             lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
+            lineChart.getData().add(totalCost);
+        } else {
+
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> totalCostOverTime;
+                if ((totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter())).size() == 0)
+                    return;
+                ArrayList<DateTime> dates = new ArrayList<>(totalCostOverTime.keySet());
+                Collections.sort(dates);
+
+                for (DateTime day : dates)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day) / 100));
+
+
+                lineChart.getData().clear();
+                lineChart.getData().add(series);
+                this.totalCost = series;
+
+            } catch (MongoAuthException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -559,23 +843,28 @@ public class OverviewController {
         currentGraph = Graph.NUMBER_OF_CONVERSIONS;
         histogram.setVisible(false);
         lineChart.setVisible(true);
-
-        XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Conversions / Day");
 
-        try {
-            Map<DateTime, Double> conversionsMap = DBQuery.getNumConversions();
-            ArrayList<DateTime> days = new ArrayList<>(conversionsMap.keySet());
-            Collections.sort(days);
-
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), conversionsMap.get(day)));
-
+        if (numberOfConversions != null ) {
             lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
+            lineChart.getData().add(numberOfConversions);
+        } else {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> conversionsMap = DBQuery.getNumConversions();
+                ArrayList<DateTime> days = new ArrayList<>(conversionsMap.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), conversionsMap.get(day)));
+
+                lineChart.getData().clear();
+                lineChart.getData().add(series);
+            }
+            catch (MongoAuthException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -584,23 +873,19 @@ public class OverviewController {
         histogram.setVisible(false);
         lineChart.setVisible(true);
 
-        XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Click Through Rate / Day");
 
-        try {
-            Map<DateTime, Double> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
-            ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
-            Collections.sort(days);
+        if (clickThroughRate == null )
+            try {
+                clickThroughRate = future_clickThroughRate.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
 
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
-
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(clickThroughRate);
     }
 
     private void loadNumberOfClicks() {
@@ -608,22 +893,28 @@ public class OverviewController {
         histogram.setVisible(false);
         lineChart.setVisible(true);
 
-        XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Clicks / Day");
-
-        try {
-            Map<DateTime, Double> numberOfClicks = DBQuery.getNumClicks();
-            ArrayList<DateTime> days = new ArrayList<>(numberOfClicks.keySet());
-            Collections.sort(days);
-
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfClicks.get(day)));
-
+        if (numberOfClicks != null ) {
             lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
+            lineChart.getData().add(numberOfClicks);
+        } else {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> numberOfClicks = DBQuery.getNumClicks();
+                ArrayList<DateTime> days = new ArrayList<>(numberOfClicks.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfClicks.get(day)));
+
+                lineChart.getData().clear();
+                lineChart.getData().add(series);
+                this.numberOfClicks = series;
+            }
+            catch (MongoAuthException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -632,23 +923,18 @@ public class OverviewController {
         histogram.setVisible(false);
         lineChart.setVisible(true);
 
-        XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Impressions / Day");
+        if (numberOfImpressions == null )
+            try {
+                numberOfImpressions = future_numberOfImpressions.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
 
-        try {
-            Map<DateTime, Double> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
-            ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
-            Collections.sort(days);
-
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
-
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(numberOfImpressions);
     }
 
     private void loadCostPerClick() {
@@ -656,22 +942,28 @@ public class OverviewController {
         histogram.setVisible(false);
         lineChart.setVisible(true);
 
-        XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Click / Day");
-
-        try {
-            Map<DateTime, Double> costPerClick = DBQuery.getClickCostOverTime();
-            ArrayList<DateTime> days = new ArrayList<>(costPerClick.keySet());
-            Collections.sort(days);
-
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)/100));
-
+        if (costPerClick != null ) {
             lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
+            lineChart.getData().add(costPerClick);
+        } else {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> costPerClick = DBQuery.getClickCostOverTime();
+                ArrayList<DateTime> days = new ArrayList<>(costPerClick.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)/100));
+
+                lineChart.getData().clear();
+                lineChart.getData().add(series);
+                this.costPerClick = series;
+            }
+            catch (MongoAuthException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -765,7 +1057,7 @@ public class OverviewController {
         initialize();
     }
 
-    //function that handles pressing of  button
+    //function that handles pressing of Export button
     @FXML
     protected void handleExportButtonAction(ActionEvent event) {
     	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
@@ -773,7 +1065,6 @@ public class OverviewController {
 
     	FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Image");
-        //System.out.println(pic.getId());
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
             try {
@@ -783,6 +1074,132 @@ public class OverviewController {
                 System.out.println(ex.getMessage());
             }
         }
+    }
+    
+    //function that handles pressing of ExportAll button
+    @FXML
+    protected void handleExportAllButtonAction(ActionEvent event){
+    	FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Image");
+        File file = fileChooser.showSaveDialog(stage);
+    	Document document = new Document(PageSize.A4, 20, 20, 20, 20); 
+    	try {
+			PdfWriter.getInstance(document, new FileOutputStream(file));
+			document.open();     	
+	    	for(String x : graphList.getItems()){
+	    		loadGraph(x);
+	        	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
+	        	BufferedImage png = SwingFXUtils.fromFXImage(image,
+	                    null);
+	        	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	        	ImageIO.write(png, "png", baos);
+	        	Image iTextImage = Image.getInstance(baos.toByteArray());
+	        	document.add(iTextImage); 
+	    	}
+		} catch (DocumentException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+    	document.close();
+    	loadGraph(currentGraph.toString());    	
+    }
+
+    private void wipeCaches() {
+        this.numberOfConversions = null;
+        this.clickThroughRate = null;
+        this.totalCost = null;
+        this.costThousandImpressions = null;
+        this.numberOfBounces = null;
+        this.bounceRate = null;
+        this.costPerAcquisition = null;
+        this.costPerClick = null;
+        this.numberOfImpressions = null;
+        this.numberOfClicks = null;
+
+        loadImpressionsPreemptively();
+    }
+
+    private void loadImpressionsPreemptively() {
+
+        if (future_numberOfImpressions != null) future_numberOfImpressions.cancel(true);
+        if (future_costThousandImpressions != null) future_costThousandImpressions.cancel(true);
+        if (future_clickThroughRate != null) future_clickThroughRate.cancel(true);
+        if (future_costPerAcquisition != null) future_costPerAcquisition.cancel(true);
+
+        future_numberOfImpressions = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
+                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
+
+                return series;
+            }
+            catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
+        future_costThousandImpressions = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter() / 100);
+                ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
+                Collections.sort(dates);
+
+                for (DateTime day : dates)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
+
+                return series;
+            } catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
+        future_clickThroughRate = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
+                ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
+
+                return series;
+            }
+            catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
+        future_costPerAcquisition = preemptiveExecutor.submit(() -> {
+            XYChart.Series<String, Double> series = new XYChart.Series<>();
+
+            try {
+                Map<DateTime, Double> costPerAcquisition = DBQuery.getCPAOverTime(getCurrentFilter());
+                ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
+                Collections.sort(dates);
+
+                for (DateTime day : dates)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
+
+                return series;
+            } catch (MongoAuthException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+
     }
 
     private Integer getCurrentFilter() {

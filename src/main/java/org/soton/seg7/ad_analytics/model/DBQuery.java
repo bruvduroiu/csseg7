@@ -1,12 +1,15 @@
 package org.soton.seg7.ad_analytics.model;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
+import javax.persistence.Basic;
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -38,6 +41,7 @@ public class DBQuery {
 
     private static final String OP_SUM = "$sum";
     private static final String OP_COUNT = "$count";
+    private static final String OP_AVG = "$avg";
 
     private static final String BOUNCE_COND_PAGE = "bounceRatePage";
     private static final String BOUNCE_COND_TIME = "bounceRateTime";
@@ -183,9 +187,8 @@ public class DBQuery {
                 .distinct()
                 .collect(Collectors.toMap(k -> k, k -> numClicks.getOrDefault(k, 0d) / numImpressions.getOrDefault(k,1d)));
     }
-    
 
-    public static Map<DateTime, Double> getBounceRate(String condition) throws MongoAuthException {
+    public static Map<DateTime, Double> getBounceMetric(String operation, String condition) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
 
         List<DBObject> results =  new ArrayList<>();
@@ -194,18 +197,26 @@ public class DBQuery {
                 new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
-                                .append(condition, new BasicDBObject("$avg", "$"+condition)))))
+                                .append(condition, new BasicDBObject(operation, "$"+condition)))))
                 .results().forEach(results::add);
 
         return buildResultsMap(results, condition);
     }
 
     public static Map<DateTime, Double> getBounceRateByTime() throws MongoAuthException {
-        return getBounceRate(BOUNCE_COND_TIME);
+        return getBounceMetric(OP_AVG, BOUNCE_COND_TIME);
     }
 
     public static Map<DateTime, Double> getBounceRateByPage() throws MongoAuthException {
-        return getBounceRate(BOUNCE_COND_PAGE);
+        return getBounceMetric(OP_AVG, BOUNCE_COND_PAGE);
+    }
+
+    public static Map<DateTime, Double> getNumBouncesByTime() throws MongoAuthException {
+        return getBounceMetric(OP_SUM, BOUNCE_COND_TIME);
+    }
+
+    public static Map<DateTime, Double> getNumBouncesByPage() throws MongoAuthException {
+        return getBounceMetric(OP_SUM, BOUNCE_COND_PAGE);
     }
 
     public static Double getTotalCTR(Integer filter) throws MongoAuthException {
@@ -286,6 +297,8 @@ public class DBQuery {
                 group_metric
         )).results();
 
+        if (!results.iterator().hasNext())
+            return Double.NaN;
         BasicDBObject result = (BasicDBObject) results.iterator().next();
 
         return result.getDouble("total");
@@ -435,5 +448,21 @@ public class DBQuery {
             dateQuery.add(new BasicDBObject("Date", new BasicDBObject("$lte", new Date())));
 
         return dateQuery;
+    }
+
+    public static void indexImpressions() {
+        try {
+            System.out.println("[DEBUG][INDEXING] Starting indexing process.");
+            DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
+
+            String[] indexes = {"Age", "Income", "Gender", "Context"};
+
+            Arrays.asList(indexes).forEach((index) -> impression_data.createIndex(
+                    new BasicDBObject(index,1),
+                    new BasicDBObject("background", true)));
+            System.out.println("[DEBUG][INDEXING] Created indexes.");
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
     }
 }
