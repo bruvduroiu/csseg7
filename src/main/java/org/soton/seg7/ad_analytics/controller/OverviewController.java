@@ -23,13 +23,23 @@ import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.pdf.PdfWriter;
+
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.*;
@@ -1055,7 +1065,6 @@ public class OverviewController {
 
     	FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Image");
-        //System.out.println(pic.getId());
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
             try {
@@ -1070,7 +1079,29 @@ public class OverviewController {
     //function that handles pressing of ExportAll button
     @FXML
     protected void handleExportAllButtonAction(ActionEvent event){
-    	
+    	FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Image");
+        File file = fileChooser.showSaveDialog(stage);
+    	Document document = new Document(PageSize.A4, 20, 20, 20, 20); 
+    	try {
+			PdfWriter.getInstance(document, new FileOutputStream(file));
+			document.open();     	
+	    	for(String x : graphList.getItems()){
+	    		loadGraph(x);
+	        	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
+	        	BufferedImage png = SwingFXUtils.fromFXImage(image,
+	                    null);
+	        	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	        	ImageIO.write(png, "png", baos);
+	        	Image iTextImage = Image.getInstance(baos.toByteArray());
+	        	document.add(iTextImage); 
+	    	}
+		} catch (DocumentException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+    	document.close();
+    	loadGraph(currentGraph.toString());    	
     }
 
     private void wipeCaches() {
