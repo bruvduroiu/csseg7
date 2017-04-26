@@ -72,3 +72,5 @@ bin/
 static/analytics_csv/
 
 chart\.png
+
+*.png

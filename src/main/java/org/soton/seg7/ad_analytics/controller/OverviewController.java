@@ -23,13 +23,23 @@ import org.soton.seg7.ad_analytics.model.Filters;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.pdf.PdfWriter;
+
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.*;
@@ -142,6 +152,9 @@ public class OverviewController {
 
     @FXML
     private RadioButton radioBouncePage;
+    
+    @FXML
+    private AnchorPane graphPane;
 
 
     // FXML References relating to the Breakdown pane
@@ -1149,16 +1162,16 @@ public class OverviewController {
         initialize();
     }
 
-    //function that handles pressing of  button
+    //function that handles pressing of Export button
     @FXML
     protected void handleExportButtonAction(ActionEvent event) {
-    	WritableImage image = lineChart.snapshot(new SnapshotParameters(), null);
+    	WritableImage image = splitPane2.snapshot(new SnapshotParameters(), null);
 
 
     	FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Image");
-        //System.out.println(pic.getId());
-        File file = fileChooser.showSaveDialog(stage);
+        File cFile = fileChooser.showSaveDialog(stage);
+        File file = new File(cFile.getAbsolutePath()+".png");
         if (file != null) {
             try {
                 ImageIO.write(SwingFXUtils.fromFXImage(image,
@@ -1167,6 +1180,43 @@ public class OverviewController {
                 System.out.println(ex.getMessage());
             }
         }
+    }
+    
+    //function that handles pressing of ExportAll button
+    @FXML
+    protected void handleExportAllButtonAction(ActionEvent event){
+    	FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Image");
+        File file = fileChooser.showSaveDialog(stage);
+    	Document document = new Document(PageSize.A4, 20, 20, 20, 20); 
+		try {
+			PdfWriter.getInstance(document, new FileOutputStream(file));
+		} catch (FileNotFoundException | DocumentException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		document.open();
+		WritableImage image = null;
+    	BufferedImage png = null;
+    	ByteArrayOutputStream baos = null;
+    	Image iTextImage = null;
+    	for(String x : list){
+    		loadGraph(x);
+    		
+        	image = splitPane2.snapshot(new SnapshotParameters(), null);
+        	png = SwingFXUtils.fromFXImage(image, null);
+        	baos = new ByteArrayOutputStream();
+        	try {
+				ImageIO.write(png, "png", baos);
+				iTextImage = Image.getInstance(baos.toByteArray());
+				iTextImage.scaleToFit(PageSize.A4.getWidth(), PageSize.A4.getHeight());
+	        	document.add(iTextImage);
+			} catch (IOException | DocumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    	document.close();
     }
 
     private void wipeCaches() {
