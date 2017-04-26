@@ -188,6 +188,9 @@ public class OverviewController {
     @FXML
     private TableColumn contextImpBreakdownCol;
 
+    @FXML
+    private Button apply_button;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -304,39 +307,6 @@ public class OverviewController {
 
         ageRangeDropdown.getSelectionModel().selectFirst();
 
-        ageRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
-            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
-                if (!oldVal.equals(newVal))
-                    wipeCaches();
-            	switch(newVal) {
-            	case "All":
-            		ageFilter = 0;
-            		break;
-            	case "<25":
-            		ageFilter = Filters.AGE_25;
-            		break;
-            	case "25-34":
-            		ageFilter = Filters.AGE_25_34;
-            		break;
-            	case "35-44":
-            		ageFilter = Filters.AGE_35_44;
-            		break;
-            	case "45-54":
-            		ageFilter = Filters.AGE_45_54;
-            		break;
-            	case "54>":
-            		ageFilter = Filters.AGE_54;
-            		break;
-            	}
-                // no unnecessary filtering for graphs we don't have filter data for
-            	if(!(
-            	        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
-                        || currentGraph.equals(Graph.COST_PER_CLICK)
-                        || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
-                )) loadGraph(currentGraph.toString());
-              }    
-          });
-        
         // Gender Dropdown
         
         genderDropdown.getItems().addAll(
@@ -346,30 +316,6 @@ public class OverviewController {
         		);
         
         genderDropdown.getSelectionModel().selectFirst();
-
-        genderDropdown.valueProperty().addListener(new ChangeListener<String>() {
-            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
-                if (!oldVal.equals(newVal))
-                    wipeCaches();
-            	switch(newVal) {
-            	case "All":
-            		genderFilter = 0;
-            		break;
-            	case "Male":
-            		genderFilter = Filters.GENDER_MALE;
-            		break;
-            	case "Female":
-            		genderFilter = Filters.GENDER_FEMALE;
-            		break;
-            	}
-                // no unnecessary filtering for graphs we don't have filter data for
-                if(!(
-                        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
-                                || currentGraph.equals(Graph.COST_PER_CLICK)
-                                || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
-                )) loadGraph(currentGraph.toString());
-              }    
-          });
 
         // Income Dropdown
         
@@ -382,34 +328,7 @@ public class OverviewController {
         
         incomeRangeDropdown.getSelectionModel().selectFirst();
 
-        incomeRangeDropdown.valueProperty().addListener(new ChangeListener<String>() {
-            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
-                if (!oldVal.equals(newVal))
-                    wipeCaches();
-            	switch(newVal) {
-            	case "All":
-            		incomeFilter = 0;
-            		break;
-            	case "Low":
-            		incomeFilter = Filters.INCOME_LOW;
-            		break;
-            	case "Medium":
-            		incomeFilter = Filters.INCOME_MEDIUM;
-            		break;
-            	case "High":
-            		incomeFilter = Filters.INCOME_HIGH;
-            		break;
-            	}
-            	// no unnecessary filtering for graphs we don't have filter data for
-                if(!(
-                        currentGraph.equals(Graph.CLICK_COST_HISTOGRAM)
-                                || currentGraph.equals(Graph.COST_PER_CLICK)
-                                || currentGraph.equals(Graph.NUMBER_OF_CLICKS)
-                )) loadGraph(currentGraph.toString());
-            	
-              }    
-          });
-        
+
         // Context Dropdown
         
         contextDropdown.getItems().addAll(
@@ -422,32 +341,6 @@ public class OverviewController {
         
         contextDropdown.getSelectionModel().selectFirst();
         
-        contextDropdown.valueProperty().addListener(new ChangeListener<String>() {
-            @Override public void changed(ObservableValue ov, String oldVal, String newVal) {
-                if (!oldVal.equals(newVal))
-                    wipeCaches();
-            	switch(newVal) {
-            	case "All":
-            		contextFilter = 0;
-            		break;
-            	case "Blog":
-            		contextFilter = Filters.CONTEXT_BLOG;
-            		break;
-            	case "News":
-            		contextFilter = Filters.CONTEXT_NEWS;
-            		break;
-            	case "Shopping":
-            		contextFilter = Filters.CONTEXT_SHOPPING;
-            		break;
-            	case "Social Media":
-            		contextFilter = Filters.CONTEXT_SOCIAL_MEDIA;
-            		break;
-            	}
-            	loadGraph(currentGraph.toString());
-            	
-              }    
-          });
-
         // Load the total cost stats and pie chart
         loadTotalCost();
         loadPieChart();
@@ -524,7 +417,7 @@ public class OverviewController {
             loadCostPerClick();
         else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString())) {
             loadNumberOfImpressions();
-            loadBreakdown();
+//            loadBreakdown();
         }
         else if (graph.equals(Graph.NUMBER_OF_CLICKS.toString()))
             loadNumberOfClicks();
@@ -1327,6 +1220,89 @@ public class OverviewController {
                 : (granularity == DBQuery.GRANULARITY_DAY)
                 ? "Day"
                 : "Hour";
+    }
+
+    @FXML
+    private void applyFilters() {
+
+        int prev_filter = getCurrentFilter();
+
+        String ageRange = ageRangeDropdown.getSelectionModel().getSelectedItem();
+        String income = incomeRangeDropdown.getSelectionModel().getSelectedItem();
+        String gender = genderDropdown.getSelectionModel().getSelectedItem();
+        String context = contextDropdown.getSelectionModel().getSelectedItem();
+
+        switch(ageRange) {
+            case "All":
+                ageFilter = 0;
+                break;
+            case "<25":
+                ageFilter = Filters.AGE_25;
+                break;
+            case "25-34":
+                ageFilter = Filters.AGE_25_34;
+                break;
+            case "35-44":
+                ageFilter = Filters.AGE_35_44;
+                break;
+            case "45-54":
+                ageFilter = Filters.AGE_45_54;
+                break;
+            case "54>":
+                ageFilter = Filters.AGE_54;
+                break;
+        }
+
+        switch(gender) {
+            case "All":
+                genderFilter = 0;
+                break;
+            case "Male":
+                genderFilter = Filters.GENDER_MALE;
+                break;
+            case "Female":
+                genderFilter = Filters.GENDER_FEMALE;
+                break;
+        }
+
+        switch(income) {
+            case "All":
+                incomeFilter = 0;
+                break;
+            case "Low":
+                incomeFilter = Filters.INCOME_LOW;
+                break;
+            case "Medium":
+                contextFilter = Filters.INCOME_MEDIUM;
+                break;
+            case "High":
+                contextFilter = Filters.INCOME_HIGH;
+                break;
+        }
+
+        switch(context) {
+            case "All":
+                contextFilter = 0;
+                break;
+            case "Blog":
+                contextFilter = Filters.CONTEXT_BLOG;
+                break;
+            case "News":
+                contextFilter = Filters.CONTEXT_NEWS;
+                break;
+            case "Shopping":
+                contextFilter = Filters.CONTEXT_SHOPPING;
+                break;
+            case "Social Media":
+                contextFilter = Filters.CONTEXT_SOCIAL_MEDIA;
+                break;
+        }
+
+        if (getCurrentFilter() != prev_filter) {
+            wipeCaches();
+            loadGraph(currentGraph.toString());
+        }
+
     }
 
 }
