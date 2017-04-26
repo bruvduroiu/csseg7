@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
@@ -25,7 +31,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="background" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Overview.css" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
+<AnchorPane fx:id="background" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Overview.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
     <children>
         <SplitPane dividerPositions="0.2453560371517028" layoutX="265.0" layoutY="134.0" prefHeight="800.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
             <items>
@@ -39,10 +45,20 @@
                                  <tooltip>
                                     <Tooltip text="Click to upload a different campaign (currently loaded campaign will be lost)" />
                                  </tooltip></Button>
-                                        <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="348.0" prefWidth="262.0">
+                                        <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="286.0" prefWidth="262.0">
                                  <tooltip>
                                     <Tooltip text="Choose a metric from the list to view as a graph" />
                                  </tooltip></ListView>
+                                 <Button alignment="CENTER" layoutX="13.0" layoutY="339.0" mnemonicParsing="false" onAction="#handleExportButtonAction" prefHeight="25.0" prefWidth="262.0" text="Export this graph (PNG)">
+                                 <tooltip>
+                                    <Tooltip text="Export current graph to png" />
+                                 </tooltip>
+                              </Button>
+                              <Button alignment="CENTER" layoutX="13.0" layoutY="368.0" mnemonicParsing="false" onAction="#handleExportAllButtonAction" prefHeight="25.0" prefWidth="262.0" text="Export all graphs (PDF)">
+                                 <tooltip>
+                                    <Tooltip text="Export graphs to pdf" />
+                                 </tooltip>
+                              </Button>
                                     </children>
                                 </AnchorPane>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
@@ -113,7 +129,6 @@
                                                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
                                     <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="110.0" prefWidth="110.0" />
                                     <ColumnConstraints hgrow="SOMETIMES" maxWidth="144.0" minWidth="-Infinity" prefWidth="75.0" />
-                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="232.0" minWidth="-Infinity" prefWidth="225.0" />
                                             </columnConstraints>
                                             <rowConstraints>
                                                 <RowConstraints maxHeight="40.0" minHeight="10.0" prefHeight="22.0" vgrow="SOMETIMES" />
@@ -179,12 +194,12 @@
                                        <tooltip>
                                           <Tooltip text="Choose a time granularity to view the graph in" />
                                        </tooltip></Slider>
-                                    <Label fx:id="bounceSettingsLabel" text="Bounce registered by :" GridPane.columnIndex="8">
+                                    <Label fx:id="bounceSettingsLabel" text="Bounce registered by :" GridPane.columnIndex="7">
                                        <GridPane.margin>
                                           <Insets left="20.0" />
                                        </GridPane.margin>
                                     </Label>
-                                    <GridPane alignment="TOP_CENTER" GridPane.columnIndex="8" GridPane.rowIndex="1">
+                                    <GridPane alignment="TOP_CENTER" GridPane.columnIndex="7" GridPane.rowIndex="1">
                                       <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                                       </columnConstraints>
@@ -219,20 +234,6 @@
                                        <tooltip>
                                           <Tooltip text="Filter the loaded graph by Context" />
                                        </tooltip></ComboBox>
-                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportAllButtonAction" text="Export All" GridPane.columnIndex="7">
-                                       <GridPane.margin>
-                                          <Insets left="10.0" />
-                                       </GridPane.margin>
-                                       <tooltip>
-                                          <Tooltip text="Export graphs to pdf" />
-                                       </tooltip></Button>
-                                    <Button alignment="CENTER" mnemonicParsing="false" onAction="#handleExportButtonAction" text="Export" GridPane.columnIndex="7" GridPane.rowIndex="1">
-                                       <GridPane.margin>
-                                          <Insets left="10.0" />
-                                       </GridPane.margin>
-                                       <tooltip>
-                                          <Tooltip text="Export current graph to png" />
-                                       </tooltip></Button>
                                    
                                             </children>
                                         </GridPane>
