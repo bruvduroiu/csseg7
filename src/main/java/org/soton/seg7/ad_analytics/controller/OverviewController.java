@@ -25,10 +25,7 @@ import org.soton.seg7.ad_analytics.view.MainView;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 import java.math.BigDecimal;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -138,7 +135,7 @@ public class OverviewController {
 
         final ToggleGroup toggleGroup = new ToggleGroup();
 
-        queryData = null;
+        queryData = new HashMap<>();
 
         radioBounceTime.setToggleGroup(toggleGroup);
         radioBounceTime.setSelected(true);
@@ -604,7 +601,7 @@ public class OverviewController {
                 } catch (MongoAuthException e) {
                     e.printStackTrace();
                 }
-                return queryData.isEmpty();
+                return true;
             }
         });
 
@@ -842,7 +839,6 @@ public class OverviewController {
 
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
-
     }
 
 
