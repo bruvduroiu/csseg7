@@ -234,7 +234,7 @@ public class DBQuery {
 
     public static Double getTotalNumImpressions(Integer filter) throws MongoAuthException {
         return (filter == Filters.NO_FILTER)
-                ? getTotalMetric(OP_SUM, COUNT_METRIC, COL_IMPRESSIONS, filter)
+                ? getTotalMetric(OP_SUM, COUNT_AGGREGATE, COL_IMPRESSIONS, filter)
                 : getTotalCountMetric(DATA_IMPRESSIONS, filter);
     }
 

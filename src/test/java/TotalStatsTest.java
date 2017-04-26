@@ -74,7 +74,7 @@ public class TotalStatsTest {
 
             Double result = DBQuery.getTotalNumImpressions(Filters.NO_FILTER);
 
-            assertEquals("Correct Num Clicks file:", expectedResult, result);
+            assertEquals("Correct Num Impressions:", expectedResult, result);
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
