@@ -1173,6 +1173,7 @@ public class OverviewController {
         	try {
 				ImageIO.write(png, "png", baos);
 				iTextImage = Image.getInstance(baos.toByteArray());
+				iTextImage.scaleToFit(PageSize.A4.getWidth(), PageSize.A4.getHeight());
 	        	document.add(iTextImage);
 			} catch (IOException | DocumentException e) {
 				// TODO Auto-generated catch block
