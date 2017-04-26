@@ -61,6 +61,7 @@ public class OverviewController {
     private Graph currentGraph;
 
     private static Map<DateTime, Double> queryData;
+    private static ArrayList<Double> clickCosts;
 
     private int ageFilter;
     private int incomeFilter;
@@ -144,6 +145,7 @@ public class OverviewController {
 
         try {
             queryData = DBQuery.getTotalCostOverTime(getCurrentFilter());
+            clickCosts = DBQuery.getAllClickCosts();
         } catch (MongoAuthException e) { e.printStackTrace(); }
 
         radioBounceTime.setToggleGroup(toggleGroup);
@@ -782,67 +784,70 @@ public class OverviewController {
         histogram.setBarGap(0);
 
         //collect all the data
-        try {
-
-            ArrayList<Double> clickCosts = DBQuery.getAllClickCosts();
-            Collections.sort(clickCosts);
-
-            double binRange = clickCosts.get(clickCosts.size() -1) / 15;
-            int[] group = new int[15];
-
-            for(double cost : clickCosts) {
-                if(cost <= binRange) {
-                    group[0]++;
-                }else if(cost <= binRange * 2) {
-                    group[1]++;
-                }else if(cost <= binRange * 3) {
-                    group[2]++;
-                }else if(cost <= binRange * 4) {
-                    group[3]++;
-                }else if(cost <= binRange * 5) {
-                    group[4]++;
-                }else if(cost <= binRange * 6) {
-                    group[5]++;
-                }else if(cost <= binRange * 7) {
-                    group[6]++;
-                }else if(cost <= binRange * 8) {
-                    group[7]++;
-                }else if(cost <= binRange * 9) {
-                    group[8]++;
-                }else if(cost <= binRange * 10) {
-                    group[9]++;
-                }else if(cost <= binRange * 11) {
-                    group[10]++;
-                }else if(cost <= binRange * 12) {
-                    group[11]++;
-                }else if(cost <= binRange * 13) {
-                    group[12]++;
-                }else if(cost <= binRange * 14) {
-                    group[13]++;
-                }else if(cost <= binRange * 15) {
-                    group[14]++;
-                } else {
-                    System.err.println("The histogram has loaded incorrectly, cost (" + cost + ") > upper bracket (" + binRange * 15 + ")");
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    clickCosts = DBQuery.getAllClickCosts();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
                 }
+                return true;
             }
+        });
 
-            //put all the data into the series
-            for(int i=0; i<15; i++) {
-                series.getData().add(new XYChart.Data(
-                        (
-                                (new BigDecimal(binRange * i).setScale(2, RoundingMode.HALF_UP).doubleValue())
-                                + "-"
-                                + (new BigDecimal(binRange * (i+1)).setScale(2, RoundingMode.HALF_UP).doubleValue())),
-                        group[i]));
+        Collections.sort(clickCosts);
+
+        double binRange = clickCosts.get(clickCosts.size() -1) / 15;
+        int[] group = new int[15];
+
+        for(double cost : clickCosts) {
+            if(cost <= binRange) {
+                group[0]++;
+            }else if(cost <= binRange * 2) {
+                group[1]++;
+            }else if(cost <= binRange * 3) {
+                group[2]++;
+            }else if(cost <= binRange * 4) {
+                group[3]++;
+            }else if(cost <= binRange * 5) {
+                group[4]++;
+            }else if(cost <= binRange * 6) {
+                group[5]++;
+            }else if(cost <= binRange * 7) {
+                group[6]++;
+            }else if(cost <= binRange * 8) {
+                group[7]++;
+            }else if(cost <= binRange * 9) {
+                group[8]++;
+            }else if(cost <= binRange * 10) {
+                group[9]++;
+            }else if(cost <= binRange * 11) {
+                group[10]++;
+            }else if(cost <= binRange * 12) {
+                group[11]++;
+            }else if(cost <= binRange * 13) {
+                group[12]++;
+            }else if(cost <= binRange * 14) {
+                group[13]++;
+            }else if(cost <= binRange * 15) {
+                group[14]++;
+            } else {
+                System.err.println("The histogram has loaded incorrectly, cost (" + cost + ") > upper bracket (" + binRange * 15 + ")");
             }
-
-            histogram.getData().clear();
-            histogram.getData().addAll(series);
-
         }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
+
+        //put all the data into the series
+        for(int i=0; i<15; i++) {
+            series.getData().add(new XYChart.Data(
+                (
+                    (new BigDecimal(binRange * i).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                    + "-"
+                    + (new BigDecimal(binRange * (i+1)).setScale(2, RoundingMode.HALF_UP).doubleValue())),
+                 group[i]));
         }
+
+        histogram.getData().clear();
+        histogram.getData().addAll(series);
     }
 
 
