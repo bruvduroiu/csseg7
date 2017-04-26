@@ -135,7 +135,9 @@ public class OverviewController {
 
         final ToggleGroup toggleGroup = new ToggleGroup();
 
-        queryData = new HashMap<>();
+        try {
+            queryData = DBQuery.getTotalCostOverTime(getCurrentFilter());
+        } catch (MongoAuthException e) { e.printStackTrace(); }
 
         radioBounceTime.setToggleGroup(toggleGroup);
         radioBounceTime.setSelected(true);
@@ -353,7 +355,7 @@ public class OverviewController {
 
         // Load the total cost stats and pie chart
 
-        loadTotalCost();
+        loadGraph(Graph.TOTAL_COST.toString());
 
         loadPieChart();
 
