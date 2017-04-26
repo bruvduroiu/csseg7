@@ -2,7 +2,6 @@ package org.soton.seg7.ad_analytics.controller;
 
 import java.io.File;
 
-import com.sun.javaws.progress.Progress;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;

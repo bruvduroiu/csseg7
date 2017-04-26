@@ -49,7 +49,8 @@ public class OverviewController {
         COST_PER_THOUSAND_IMPRESSIONS("Cost per Thousand Impressions"),
         COST_PER_ACQUISITION("Cost per Acquisition"),
         NUMBER_OF_BOUNCES("Total Bounces"),
-        BOUNCE_RATE("Bounce Rate");
+        BOUNCE_RATE("Bounce Rate"),
+    	NUMBER_OF_UNIQUES("Unique visitors");
 
         String title;
 
@@ -87,6 +88,7 @@ public class OverviewController {
     private XYChart.Series<String, Double> costPerAcquisition;
     private XYChart.Series<String, Double> numberOfBounces;
     private XYChart.Series<String, Double> bounceRate;
+    private XYChart.Series<String, Double> numberOfUniques;
 
     private ExecutorService preemptiveExecutor;
     private Future<Map<DateTime, Double>> future_num_impressions;
@@ -244,6 +246,7 @@ public class OverviewController {
         list.add(Graph.BOUNCE_RATE.toString());
         list.add(Graph.CLICK_COST_HISTOGRAM.toString());
         list.add(Graph.COST_PER_THOUSAND_IMPRESSIONS.toString());
+        list.add(Graph.NUMBER_OF_UNIQUES.toString());
 
         graphList.scrollTo(0);
         graphList.getSelectionModel().select(0);
@@ -552,6 +555,8 @@ public class OverviewController {
             radioBouncePage.setVisible(true);
             loadNumberOfBounces();
         }
+        else if (graph.equals(Graph.NUMBER_OF_UNIQUES.toString()))
+        	loadNumberOfUniques();
     }
 
     private void loadBreakdown() {
@@ -1239,6 +1244,48 @@ public class OverviewController {
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
+        }
+    }
+    
+    private void loadNumberOfUniques() {
+        currentGraph = Graph.NUMBER_OF_UNIQUES;
+        histogram.setVisible(false);
+        lineChart.setVisible(true);
+
+        lineChart.setTitle("Number of Impressions / Day");
+        if (numberOfImpressions == null )
+            try {
+                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                Map<DateTime, Double> numberOfImpressions = future_num_impressions.get();
+                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
+                Collections.sort(days);
+
+                for (DateTime day : days)
+                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
+
+
+                this.numberOfImpressions = series;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+        lineChart.getData().clear();
+        lineChart.getData().add(this.numberOfImpressions);
+
+        for (XYChart.Series<String, Double> s : lineChart.getData()) {
+            for (XYChart.Data<String, Double> d : s.getData()) {
+                Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                        d.getXValue().toString() + "\n" +
+                        "Impressions: " + Math.floor(d.getYValue() * 100) / 100));
+
+                //Adding class on hover
+                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                //Removing class on exit
+                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+            }
         }
     }
 
