@@ -1,18 +1,25 @@
 package org.soton.seg7.ad_analytics.controller;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import org.joda.time.DateTime;
+import org.soton.seg7.ad_analytics.model.DBHandler;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
+import org.soton.seg7.ad_analytics.model.Parser;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
@@ -23,6 +30,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.math.BigDecimal;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class OverviewController {
 
@@ -51,11 +62,16 @@ public class OverviewController {
     }
     private Graph currentGraph;
 
+    private static Map<DateTime, Double> queryData;
+
     private int ageFilter;
     private int incomeFilter;
     private int genderFilter;
     private int contextFilter;
     private int currentFilter = ageFilter + incomeFilter + genderFilter + contextFilter;
+
+    @FXML
+    private AnchorPane background;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -105,6 +121,9 @@ public class OverviewController {
     @FXML
     private RadioButton radioBouncePage;
 
+    ProgressIndicator pi = new ProgressIndicator();
+    VBox box = new VBox(pi);
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -118,6 +137,8 @@ public class OverviewController {
         genderFilter = 0;
 
         final ToggleGroup toggleGroup = new ToggleGroup();
+
+        queryData = null;
 
         radioBounceTime.setToggleGroup(toggleGroup);
         radioBounceTime.setSelected(true);
@@ -395,7 +416,9 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph) {
-    	
+
+        runProgInd();
+
     	radioBounceTime.setVisible(false);
     	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
@@ -419,13 +442,46 @@ public class OverviewController {
         else if (graph.equals(Graph.COST_PER_ACQUISITION.toString()))
             loadCostPerAcquisition();
         else if (graph.equals(Graph.BOUNCE_RATE.toString())){
-        	bounceSettingsLabel.setVisible(true);
-        	radioBounceTime.setVisible(true);
-        	radioBouncePage.setVisible(true);
+            bounceSettingsLabel.setVisible(true);
+            radioBounceTime.setVisible(true);
+            radioBouncePage.setVisible(true);
             loadBounceRate();
         }
     }
-    
+
+    protected void runProgInd() {
+        box.setAlignment(Pos.CENTER);
+        // Grey Background
+        background.setDisable(true);
+        background.getChildren().add(box);
+
+    }
+
+    protected void endProgInd() {
+        background.setDisable(false);
+        background.getChildren().remove(box);
+    }
+
+    private void queryDB(Callable<Boolean> query) {
+        //Submits Callable<Boolean> thread to a Future thread
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    System.out.println("Should say: " + false);
+                    System.out.println("Does say:   " + Executors.newSingleThreadExecutor().submit(query).get());
+                }catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                } finally {
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            endProgInd();
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
 
     private void loadPieChart() {
         try {
@@ -450,22 +506,27 @@ public class OverviewController {
         XYChart.Series<String,Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Acquisition / " + getGranularityString());
 
-        try {
-            Map<DateTime, Double> costPerAcquisition = DBQuery.getCPAOverTime(getCurrentFilter());
-            ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
-            Collections.sort(dates);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getTotalCostOverTime(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
+        ArrayList<DateTime> dates = new ArrayList<>(queryData.keySet());
+        Collections.sort(dates);
 
+        for (DateTime day : dates)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day) / 100));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
+
 
     private void loadBounceRate() {
         currentGraph = Graph.BOUNCE_RATE;
@@ -475,26 +536,30 @@ public class OverviewController {
         XYChart.Series<String,Double> series = new XYChart.Series<>();
         lineChart.setTitle("Bounce Rate / " + getGranularityString());
 
-        try {
-            Map<DateTime, Double> bounceRate;
-            if(radioBounceTime.isSelected())
-            	bounceRate = DBQuery.getBounceRateByTime();
-            else
-            	bounceRate = DBQuery.getBounceRateByPage();
-            ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
-            Collections.sort(dates);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    if(radioBounceTime.isSelected())
+                        queryData = DBQuery.getBounceRateByTime();
+                    else
+                        queryData = DBQuery.getBounceRateByPage();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), bounceRate.get(day)));
+        ArrayList<DateTime> dates = new ArrayList<>(queryData.keySet());
+        Collections.sort(dates);
 
+        for (DateTime day : dates)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
+
 
     private void loadCostPerThousandImpressions() {
         currentGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
@@ -504,21 +569,25 @@ public class OverviewController {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Thousand Impressions / Day");
 
-        try {
-            Map<DateTime, Double> costPerThousandImpressionsOverTime = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter()/100);
-            ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
-            Collections.sort(dates);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter()/100);
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
+        ArrayList<DateTime> dates = new ArrayList<>(queryData.keySet());
+        Collections.sort(dates);
 
+        for (DateTime day : dates)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
 
     private void loadTotalCost() {
@@ -529,24 +598,29 @@ public class OverviewController {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Total Cost / Day");
 
-        try {
-            Map<DateTime, Double> totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter());
-            ArrayList<DateTime> dates = new ArrayList<>(totalCostOverTime.keySet());
-            Collections.sort(dates);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getTotalCostOverTime(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return queryData.isEmpty();
+            }
+        });
 
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day)/100));
+        ArrayList<DateTime> dates = new ArrayList<>(queryData.keySet());
+        Collections.sort(dates);
 
+        for (DateTime day : dates)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)/100));
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
 
     private void loadNumberOfConversions() {
+
         currentGraph = Graph.NUMBER_OF_CONVERSIONS;
         histogram.setVisible(false);
         lineChart.setVisible(true);
@@ -554,20 +628,25 @@ public class OverviewController {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Conversions / Day");
 
-        try {
-            Map<DateTime, Double> conversionsMap = DBQuery.getNumConversions();
-            ArrayList<DateTime> days = new ArrayList<>(conversionsMap.keySet());
-            Collections.sort(days);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getNumConversions();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), conversionsMap.get(day)));
+        ArrayList<DateTime> days = new ArrayList<>(queryData.keySet());
+        Collections.sort(days);
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        for (DateTime day : days)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)));
+
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
 
     private void loadClickThroughRate() {
@@ -578,20 +657,25 @@ public class OverviewController {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Click Through Rate / Day");
 
-        try {
-            Map<DateTime, Double> clickThroughRateMap = DBQuery.getCTROverTime(getCurrentFilter());
-            ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
-            Collections.sort(days);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getCTROverTime(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
+        ArrayList<DateTime> days = new ArrayList<>(queryData.keySet());
+        Collections.sort(days);
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        for (DateTime day : days)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)));
+
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
 
     private void loadNumberOfClicks() {
@@ -602,20 +686,25 @@ public class OverviewController {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Clicks / Day");
 
-        try {
-            Map<DateTime, Double> numberOfClicks = DBQuery.getNumClicks();
-            ArrayList<DateTime> days = new ArrayList<>(numberOfClicks.keySet());
-            Collections.sort(days);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getNumClicks();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfClicks.get(day)));
+        ArrayList<DateTime> days = new ArrayList<>(queryData.keySet());
+        Collections.sort(days);
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        for (DateTime day : days)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)));
+
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
 
     private void loadNumberOfImpressions() {
@@ -626,20 +715,25 @@ public class OverviewController {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Number of Impressions / Day");
 
-        try {
-            Map<DateTime, Double> numberOfImpressions = DBQuery.getNumImpressions(getCurrentFilter());
-            ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
-            Collections.sort(days);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getNumImpressions(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
+        ArrayList<DateTime> days = new ArrayList<>(queryData.keySet());
+        Collections.sort(days);
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        for (DateTime day : days)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)));
+
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
 
     private void loadCostPerClick() {
@@ -650,20 +744,25 @@ public class OverviewController {
         XYChart.Series<String, Double> series = new XYChart.Series<>();
         lineChart.setTitle("Cost per Click / Day");
 
-        try {
-            Map<DateTime, Double> costPerClick = DBQuery.getClickCostOverTime();
-            ArrayList<DateTime> days = new ArrayList<>(costPerClick.keySet());
-            Collections.sort(days);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getClickCostOverTime();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
-            for (DateTime day : days)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)/100));
+        ArrayList<DateTime> days = new ArrayList<>(queryData.keySet());
+        Collections.sort(days);
 
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        for (DateTime day : days)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)/100));
+
+        lineChart.getData().clear();
+        lineChart.getData().add(series);
     }
 
 
@@ -686,7 +785,6 @@ public class OverviewController {
             double binRange = clickCosts.get(clickCosts.size() -1) / 15;
             int[] group = new int[15];
 
-            // I cba with frequency density so just sorting the costs into frequency bars
             for(double cost : clickCosts) {
                 if(cost <= binRange) {
                     group[0]++;
