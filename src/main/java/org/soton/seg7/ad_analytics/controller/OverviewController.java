@@ -467,8 +467,7 @@ public class OverviewController {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    System.out.println("Should say: " + false);
-                    System.out.println("Does say:   " + Executors.newSingleThreadExecutor().submit(query).get());
+                    Executors.newSingleThreadExecutor().submit(query).get();
                 }catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 } finally {
