@@ -1251,20 +1251,28 @@ public class OverviewController {
         currentGraph = Graph.NUMBER_OF_UNIQUES;
         histogram.setVisible(false);
         lineChart.setVisible(true);
+        lineChart.setTitle("Number of clicks from unique visitors");
+
 
         lineChart.setTitle("Number of Impressions / Day");
         if (numberOfUniques == null ) {
 			XYChart.Series<String, Double> series = new XYChart.Series<>();
-			Map<DateTime, Double> numberOfUniques = DBQuery.getNumUniques();
-			ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
-			Collections.sort(days);
+			Map<DateTime, Double> numberOfUniques;
+			try {
+				numberOfUniques = DBQuery.getNumUniques();
+				ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
+				Collections.sort(days);
 
-			for (DateTime day : days)
-			    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
+				for (DateTime day : days)
+				    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
 
-			lineChart.getData().clear();
-			lineChart.getData().add(series);
-			this.numberOfUniques = series;
+				lineChart.getData().clear();
+				lineChart.getData().add(series);
+				this.numberOfUniques = series;
+			} catch (MongoAuthException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
         
 		for (XYChart.Series<String, Double> s : lineChart.getData()) {
