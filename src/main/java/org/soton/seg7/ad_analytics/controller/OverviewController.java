@@ -1153,37 +1153,33 @@ public class OverviewController {
         fileChooser.setTitle("Save Image");
         File file = fileChooser.showSaveDialog(stage);
     	Document document = new Document(PageSize.A4, 20, 20, 20, 20); 
-			try {
-				PdfWriter.getInstance(document, new FileOutputStream(file));
-			} catch (FileNotFoundException | DocumentException e1) {
+		try {
+			PdfWriter.getInstance(document, new FileOutputStream(file));
+		} catch (FileNotFoundException | DocumentException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		document.open();
+		WritableImage image = null;
+    	BufferedImage png = null;
+    	ByteArrayOutputStream baos = null;
+    	Image iTextImage = null;
+    	for(String x : list){
+    		loadGraph(x);
+    		
+        	image = splitPane2.snapshot(new SnapshotParameters(), null);
+        	png = SwingFXUtils.fromFXImage(image, null);
+        	baos = new ByteArrayOutputStream();
+        	try {
+				ImageIO.write(png, "png", baos);
+				iTextImage = Image.getInstance(baos.toByteArray());
+	        	document.add(iTextImage);
+			} catch (IOException | DocumentException e) {
 				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				e.printStackTrace();
 			}
-			document.open();     	
-	    	for(String x : list){
-	    		loadGraph(x);
-	    		try {
-					TimeUnit.SECONDS.sleep(1);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-	        	WritableImage image = splitPane2.snapshot(new SnapshotParameters(), null);
-	        	BufferedImage png = SwingFXUtils.fromFXImage(image,
-	                    null);
-	        	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	        	try {
-					ImageIO.write(png, "png", baos);
-					Image iTextImage = Image.getInstance(baos.toByteArray());
-		        	document.add(iTextImage);
-				} catch (IOException | DocumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-	    	}
-		
+    	}
     	document.close();
-    	loadGraph(currentGraph.toString());    	
     }
 
     private void wipeCaches() {
