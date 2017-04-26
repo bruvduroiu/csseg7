@@ -11,6 +11,7 @@ import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -69,6 +70,12 @@ public class OverviewController {
 
     @FXML
     private AnchorPane background;
+    
+    @FXML
+    private VBox bx;
+    
+    @FXML
+    private StackPane overviewRoot;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -451,14 +458,14 @@ public class OverviewController {
     protected void runProgInd() {
         box.setAlignment(Pos.CENTER);
         // Grey Background
-        background.setDisable(true);
-        background.getChildren().add(box);
+        bx.setDisable(true);
+        overviewRoot.getChildren().add(box);
 
     }
 
     protected void endProgInd() {
-        background.setDisable(false);
-        background.getChildren().remove(box);
+        bx.setDisable(false);
+        overviewRoot.getChildren().remove(box);
     }
 
     private void queryDB(Callable<Boolean> query) {

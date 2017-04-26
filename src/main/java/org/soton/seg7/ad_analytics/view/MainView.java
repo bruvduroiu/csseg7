@@ -80,7 +80,7 @@ public class MainView extends Application {
             // Load overview.
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(MainView.class.getResource("Overview.fxml"));
-            AnchorPane overview = (AnchorPane) loader.load();
+            StackPane overview = (StackPane) loader.load();
             
          // Give the controller access to the main app.
             OverviewController controller = loader.getController();
