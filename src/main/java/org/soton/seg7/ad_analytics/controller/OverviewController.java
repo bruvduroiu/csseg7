@@ -1253,32 +1253,25 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Number of Impressions / Day");
-        if (numberOfImpressions == null )
-            try {
-                XYChart.Series<String, Double> series = new XYChart.Series<>();
-                Map<DateTime, Double> numberOfImpressions = future_num_impressions.get();
-                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
-                Collections.sort(days);
+        if (numberOfUniques == null ) {
+			XYChart.Series<String, Double> series = new XYChart.Series<>();
+			Map<DateTime, Double> numberOfUniques = DBQuery.getNumUniques();
+			ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
+			Collections.sort(days);
 
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
+			for (DateTime day : days)
+			    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
 
-
-                this.numberOfImpressions = series;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-
-        lineChart.getData().clear();
-        lineChart.getData().add(this.numberOfImpressions);
-
-        for (XYChart.Series<String, Double> s : lineChart.getData()) {
+			lineChart.getData().clear();
+			lineChart.getData().add(series);
+			this.numberOfUniques = series;
+        }
+        
+		for (XYChart.Series<String, Double> s : lineChart.getData()) {
             for (XYChart.Data<String, Double> d : s.getData()) {
                 Tooltip.install(d.getNode(), new Tooltip("Date: " +
                         d.getXValue().toString() + "\n" +
-                        "Impressions: " + Math.floor(d.getYValue() * 100) / 100));
+                        "Clicks: " + Math.floor(d.getYValue() * 100) / 100));
 
                 //Adding class on hover
                 d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));

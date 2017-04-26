@@ -467,4 +467,26 @@ public class DBQuery {
             e.printStackTrace();
         }
     }
+
+	public static Map<DateTime, Double> getNumUniques() {
+		DBHandler handler;
+		List<DBObject>results = null;
+		try {
+			handler = DBHandler.getDBConnection();
+			results =  new ArrayList<>();
+
+	        handler.getCollection(COL_CLICKS).aggregate(Arrays.asList(
+	                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
+	                new BasicDBObject("$group",
+	                        new BasicDBObject("_id", getGranularityAggregate())
+	                                .append("num", new BasicDBObject("$sum", 1)))))
+	                .results().forEach(results::add);
+		} catch (MongoAuthException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+
+        return buildResultsMap(results, COUNT_METRIC);
+	}
 }
