@@ -368,6 +368,7 @@ public class OverviewController {
         // Load the total cost stats and pie chart
         loadTotalCost();
         loadPieChart();
+        loadBreakdown();
 
         try {
             // Display total cost of campaign in proper format
@@ -435,7 +436,6 @@ public class OverviewController {
     	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
 
-        hideBreakdown();
 
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
@@ -959,8 +959,6 @@ public class OverviewController {
         lineChart.getData().clear();
         lineChart.getData().add(this.numberOfImpressions);
 
-        if (breakdown_data != null)
-            loadBreakdown();
 
         for (XYChart.Series<String, Double> s : lineChart.getData()) {
             for (XYChart.Data<String, Double> d : s.getData()) {
@@ -1258,7 +1256,6 @@ public class OverviewController {
 
         if (future_cost_impressions != null) future_cost_impressions.cancel(true);
         if (future_num_impressions != null) future_num_impressions.cancel(true);
-        if (future_breakdown != null) future_breakdown.cancel(true);
 
         future_num_impressions = preemptiveExecutor.submit(() -> {
             try {
@@ -1294,7 +1291,8 @@ public class OverviewController {
             }
         };
 
-        future_breakdown = preemptiveExecutor.submit(wrappedTask);
+        if (breakdown_data == null && future_breakdown == null)
+            future_breakdown = preemptiveExecutor.submit(wrappedTask);
 
     }
 

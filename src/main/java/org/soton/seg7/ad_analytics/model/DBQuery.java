@@ -117,30 +117,17 @@ public class DBQuery {
 
     public static Map<String, String> getBreakdown() throws MongoAuthException {
 
-        Map<String, String> result = new HashMap<>();
+        Map<String, String> results = new HashMap<>();
+        DBCollection breakdown = DBHandler.getDBConnection().getCollection("breakdown");
 
-        String map = "function() {" +
-                "emit(this.Age, 1);" +
-                "emit(this.Gender,1);" +
-                "emit(this.Income,1);" +
-                "emit(this.Context,1); }";
+        DBCursor cursor = breakdown.find();
 
-        String reduce = "function(k,v) {return Array.sum(v);}";
-
-        DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
-
-        List<BasicDBObject> date_res = getDateFilterQuery();
-
-        MapReduceCommand cmd = new MapReduceCommand(impression_data,map,reduce,null, MapReduceCommand.OutputType.INLINE, new BasicDBObject("$and", getDateFilterQuery()));
-
-        MapReduceOutput out = impression_data.mapReduce(cmd);
-
-        for (DBObject o : out.results()) {
-            BasicDBObject obj = (BasicDBObject) o;
-            result.put(obj.getString("_id"), obj.getString("value"));
+        while (cursor.hasNext()) {
+            BasicDBObject obj = (BasicDBObject) cursor.next();
+            results.put(obj.getString("_id"), obj.getString("value"));
         }
 
-        return result;
+        return results;
     }
 
     @Deprecated
@@ -494,6 +481,25 @@ public class DBQuery {
         } catch (MongoAuthException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void makeBreakdown() throws MongoAuthException {
+        Map<String, String> result = new HashMap<>();
+
+        String map = "function() {" +
+                "emit(this.Age, 1);" +
+                "emit(this.Gender,1);" +
+                "emit(this.Income,1);" +
+                "emit(this.Context,1); }";
+
+        String reduce = "function(k,v) {return Array.sum(v);}";
+
+        DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
+
+        MapReduceCommand cmd = new MapReduceCommand(impression_data,map,reduce,"breakdown", MapReduceCommand.OutputType.REPLACE, new BasicDBObject("$and", getDateFilterQuery()));
+
+        impression_data.mapReduce(cmd);
+
     }
 
 	public static Map<DateTime, Double> getNumUniques() throws MongoAuthException {

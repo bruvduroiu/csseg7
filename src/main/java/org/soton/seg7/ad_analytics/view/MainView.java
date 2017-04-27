@@ -121,6 +121,7 @@ public class MainView extends Application {
                 Parser.parseCSV(clickFile);
 
                 DBQuery.indexImpressions();
+                DBQuery.makeBreakdown();
             }
             //getting data from database
             Map<DateTime, Double> clickCount = DBQuery.getNumClicks();
