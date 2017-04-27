@@ -1260,21 +1260,28 @@ public class OverviewController {
 
         if (numberOfUniques == null ) {
 			XYChart.Series<String, Double> series = new XYChart.Series<>();
-			try {
-				Map<DateTime, Double> numberOfUniques = DBQuery.getNumUniques();
-				ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
-				Collections.sort(days);
+			Map<DateTime, Double> numberOfUniques;
+			
+			queryDB(() -> {
+			    try {
+			        queryData = DBQuery.getNumUniques();
+			    } catch (MongoAuthException e) {
+			        e.printStackTrace();
+			    }
+			    return true;
+			});
 
-				for (DateTime day : days)
-				    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
+			numberOfUniques = queryData;
 
-				lineChart.getData().clear();
-				lineChart.getData().add(series);
-				this.numberOfUniques = series;
-			} catch (MongoAuthException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
+			Collections.sort(days);
+
+			for (DateTime day : days)
+			    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
+
+			lineChart.getData().clear();
+			lineChart.getData().add(series);
+			this.numberOfUniques = series;
         } else {
         	lineChart.getData().clear();
             lineChart.getData().add(numberOfUniques);
@@ -1348,8 +1355,14 @@ public class OverviewController {
     	Image iTextImage = null;
     	for(String x : list){
     		loadGraph(x);
-    		
         	image = splitPane2.snapshot(new SnapshotParameters(), null);
+        	try {
+        		ImageIO.write(SwingFXUtils.fromFXImage(image,
+				        null), "png", new File(file.getAbsolutePath()+x+".png"));
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
         	png = SwingFXUtils.fromFXImage(image, null);
         	baos = new ByteArrayOutputStream();
         	try {
