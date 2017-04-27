@@ -408,7 +408,7 @@ public class OverviewController {
         
         contextDropdown.getSelectionModel().selectFirst();
         
-        // Load the total cost stats and pie chart
+        // Load the preferred graph and pie chart
         readDefaultGraphPref();
         
         loadGraph(Graph.HOME.toString());
@@ -465,39 +465,28 @@ public class OverviewController {
     	try { 
     		BufferedReader reader = new BufferedReader(new FileReader("preferredGraph.txt")); 
     	    String graphPref = reader.readLine();
-    	    switch(graphPref) {
-    	    case "Total Cost":
+    	    if(graphPref.equals("Total Cost"))
     	    	defaultGraph = Graph.TOTAL_COST;
-    	    	break;
-    	    case "Bounce Rate":
+    	    else if(graphPref.equals("Bounce Rate"))
     	    	defaultGraph = Graph.BOUNCE_RATE;
-    	    	break;
-    	    case "Click Cost Histogram":
+    	    else if(graphPref.equals("Click Cost Histogram"))
     	    	defaultGraph = Graph.CLICK_COST_HISTOGRAM;
-    	    	break;
-    	    case "Click Through Rate":
+    	    else if(graphPref.equals("Click through Rate"))
     	    	defaultGraph = Graph.CLICK_THROUGH_RATE;
-    	    	break;
-    	    case "Cost per Acquisition":
+    	    else if(graphPref.equals("Cost per Acquisition"))
     	    	defaultGraph = Graph.COST_PER_ACQUISITION;
-    	    	break;
-    	    case "Cost per Click":
+    	    else if(graphPref.equals("Cost per Click"))
     	    	defaultGraph = Graph.COST_PER_CLICK;
-    	    	break;
-    	    case "Cost per Thousand Impressions":
+    	    else if(graphPref.equals("Cost per Thousand Impressions"))
     	    	defaultGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
-    	    	break;
-    	    case "Number of Clicks":
+    	    else if(graphPref.equals("Number of Clicks"))
     	    	defaultGraph = Graph.NUMBER_OF_CLICKS;
-    	    	break;
-    	    case "Number of Conversions":
+    	    else if(graphPref.equals("Number of Conversions"))
     	    	defaultGraph = Graph.NUMBER_OF_CONVERSIONS;
-    	    	break;
-    	    case "Number of Impressions":
+    	    else if(graphPref.equals("Number of Impressions"))
     	    	defaultGraph = Graph.NUMBER_OF_IMPRESSIONS;
-    	    	break;
-    	    }
-    	} catch (IOException x) {
+    	} catch (Exception x) {
+    		System.out.println(x);
     	    defaultGraph = Graph.TOTAL_COST;
     	}
     }
