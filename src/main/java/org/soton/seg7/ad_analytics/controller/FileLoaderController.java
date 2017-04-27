@@ -162,6 +162,8 @@ public class FileLoaderController {
 				invalidFileErrorBox.setContentText(invalidFileErrorBox.getContentText() + " Impressions Log, ");
 
 			invalidFileErrorBox.showAndWait();
+
+			endProgInd();
     	}
     }
     
@@ -179,8 +181,7 @@ public class FileLoaderController {
     		this.directory = file.getParentFile();
     	}
 
-			endProgInd();
-		}
+    	return file;
 	}
 
 	protected void runProgInd() {
@@ -194,22 +195,6 @@ public class FileLoaderController {
 	protected void endProgInd() {
 		bx.setDisable(false);
 		root.getChildren().remove(box);
-	}
-
-	// runs file chooser
-	// takes title of file explorer window as argument
-	public File fileChooser(String title) {
-
-		FileChooser fileChooser = new FileChooser();
-		fileChooser.setTitle(title);
-		fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
-		File file = fileChooser.showOpenDialog(stage);
-
-		if (file != null) {
-			System.out.println("Chosen file: " + file);
-		}
-
-		return file;
 	}
 
 }
