@@ -74,3 +74,5 @@ static/analytics_csv/
 chart\.png
 
 *.png
+
+preferredGraph\.txt
