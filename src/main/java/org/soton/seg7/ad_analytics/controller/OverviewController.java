@@ -1,4 +1,5 @@
 package org.soton.seg7.ad_analytics.controller;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -108,6 +109,8 @@ public class OverviewController {
     private ExecutorService preemptiveExecutor;
     private Future<Map<DateTime, Double>> future_num_impressions;
     private Future<Map<DateTime, Double>> future_cost_impressions;
+    private Future<?> future_breakdown;
+    private Map<String, String> breakdown_data;
 
     private Map<DateTime, Double> num_impressions;
     private Map<DateTime, Double> cost_impressions;
@@ -438,7 +441,6 @@ public class OverviewController {
             loadCostPerClick();
         else if (graph.equals(Graph.NUMBER_OF_IMPRESSIONS.toString())) {
             loadNumberOfImpressions();
-//            loadBreakdown();
         }
         else if (graph.equals(Graph.NUMBER_OF_CLICKS.toString()))
             loadNumberOfClicks();
@@ -471,118 +473,58 @@ public class OverviewController {
     }
 
     private void loadBreakdown() {
-        if (breakdownHidden) {
-            breakdownHidden = false;
-            splitPane2.getItems().add(1, breakdownPane);
-            splitPane2.setDividerPosition(0, 0.65);
-        }
-
-        genderBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
-        genderImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
-
-        ageBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
-        ageImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
-
-        incomeBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
-        incomeImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
-
-        contextBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
-        contextImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
-
-        try {
-
-            int totalMale = 0, totalFemale = 0;
-            if (genderFilter == Filters.GENDER_FEMALE) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalFemale += i;
-            } else if (genderFilter == Filters.GENDER_MALE) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalMale += i;
-            } else {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - genderFilter + Filters.GENDER_FEMALE).values()) totalFemale += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - genderFilter + Filters.GENDER_MALE).values()) totalMale += i;
+        if (breakdown_data != null) {
+            if (breakdownHidden) {
+                breakdownHidden = false;
+                splitPane2.getItems().add(1, breakdownPane);
+                splitPane2.setDividerPosition(0, 0.65);
             }
+
+            genderBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+            genderImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+            ageBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+            ageImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+            incomeBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+            incomeImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
+
+            contextBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("segmentName"));
+            contextImpBreakdownCol.setCellValueFactory(new PropertyValueFactory<>("numberOfImpressions"));
 
             genderBreakdownData = FXCollections.observableArrayList(
-                    new AudienceSegment("Male", Integer.toString(totalMale)),
-                    new AudienceSegment("Female", Integer.toString(totalFemale))
+                    new AudienceSegment("Male", breakdown_data.get("M")),
+                    new AudienceSegment("Female", breakdown_data.get("F"))
             );
-
-            int totalSub25 = 0, total25To34 = 0, total35To44 = 0, total45To54 = 0, totalOver55 = 0;
-            if (ageFilter == Filters.AGE_25) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalSub25 += i;
-            } else if (ageFilter == Filters.AGE_25_34) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) total25To34 += i;
-            } else if (ageFilter == Filters.AGE_35_44) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) total35To44 += i;
-            } else if (ageFilter == Filters.AGE_45_54) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) total45To54 += i;
-            } else if (ageFilter == Filters.AGE_54) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalOver55 += i;
-            } else {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_25).values()) totalSub25 += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_25_34).values()) total25To34 += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_35_44).values()) total35To44 += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_45_54).values()) total45To54 += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - ageFilter + Filters.AGE_54).values()) totalOver55 += i;
-            }
 
             ageBreakdownData = FXCollections.observableArrayList(
-                    new AudienceSegment("<25", Integer.toString(totalSub25)),
-                    new AudienceSegment("25-34", Integer.toString(total25To34)),
-                    new AudienceSegment("35-44", Integer.toString(total35To44)),
-                    new AudienceSegment("45-54", Integer.toString(total45To54)),
-                    new AudienceSegment(">55", Integer.toString(totalOver55))
+                    new AudienceSegment("<25", breakdown_data.get("<25")),
+                    new AudienceSegment("25-34", breakdown_data.get("25-34")),
+                    new AudienceSegment("35-44", breakdown_data.get("35-44")),
+                    new AudienceSegment("45-54", breakdown_data.get("45-54")),
+                    new AudienceSegment(">54", breakdown_data.get(">55"))
             );
-
-            int totalLow = 0, totalHigh = 0, totalMedium = 0;
-            if (incomeFilter == Filters.INCOME_LOW) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalLow += i;
-            } else if (incomeFilter == Filters.INCOME_MEDIUM) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalMedium += i;
-            } else if (incomeFilter == Filters.INCOME_HIGH) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalHigh += i;
-            } else {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - incomeFilter + Filters.INCOME_LOW).values()) totalLow += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - incomeFilter + Filters.INCOME_MEDIUM).values()) totalMedium += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - incomeFilter + Filters.INCOME_HIGH).values()) totalHigh += i;
-            }
 
             incomeBreakdownData = FXCollections.observableArrayList(
-                    new AudienceSegment("Low", Integer.toString(totalLow)),
-                    new AudienceSegment("Middle", Integer.toString(totalMedium)),
-                    new AudienceSegment("High", Integer.toString(totalHigh))
+                    new AudienceSegment("Low", breakdown_data.get("Low")),
+                    new AudienceSegment("Middle", breakdown_data.get("Medium")),
+                    new AudienceSegment("High", breakdown_data.get("High"))
             );
-
-            int totalShopping = 0, totalNews = 0, totalSocialMedia = 0, totalBlog = 0;
-            if (contextFilter == Filters.CONTEXT_SHOPPING) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalShopping += i;
-            } else if (contextFilter == Filters.CONTEXT_NEWS) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalNews += i;
-            } else if (contextFilter == Filters.CONTEXT_SOCIAL_MEDIA) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalSocialMedia += i;
-            } else if (contextFilter == Filters.CONTEXT_BLOG) {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter()).values()) totalBlog += i;
-            } else {
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_SHOPPING).values()) totalShopping += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_NEWS).values()) totalNews += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_SOCIAL_MEDIA).values()) totalSocialMedia += i;
-                for (Double i : DBQuery.getNumImpressions(getCurrentFilter() - contextFilter + Filters.CONTEXT_BLOG).values()) totalBlog += i;
-            }
 
             contextBreakdownData = FXCollections.observableArrayList(
-                    new AudienceSegment("News", Integer.toString(totalNews)),
-                    new AudienceSegment("Shopping", Integer.toString(totalShopping)),
-                    new AudienceSegment("Social Media", Integer.toString(totalSocialMedia)),
-                    new AudienceSegment("Blog", Integer.toString(totalBlog))
+                    new AudienceSegment("News", breakdown_data.get("News")),
+                    new AudienceSegment("Shopping", breakdown_data.get("Shopping")),
+                    new AudienceSegment("Social Media", breakdown_data.get("Social Media")),
+                    new AudienceSegment("Blog", breakdown_data.get("Blog")),
+                    new AudienceSegment("Hobbies", breakdown_data.get("Hobbies")),
+                    new AudienceSegment("Travel", breakdown_data.get("Travel"))
             );
 
-        } catch  (MongoAuthException e) {
-            e.printStackTrace();
+            genderBreakdownTable.setItems(genderBreakdownData);
+            ageBreakdownTable.setItems(ageBreakdownData);
+            incomeBreakdownTable.setItems(incomeBreakdownData);
+            contextBreakdownTable.setItems(contextBreakdownData);
         }
-
-        genderBreakdownTable.setItems(genderBreakdownData);
-        ageBreakdownTable.setItems(ageBreakdownData);
-        incomeBreakdownTable.setItems(incomeBreakdownData);
-        contextBreakdownTable.setItems(contextBreakdownData);
     }
 
     private void hideBreakdown() {
@@ -638,9 +580,7 @@ public class OverviewController {
             } catch (MongoAuthException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                e.printStackTrace();
             } catch (ExecutionException e) {
-                e.printStackTrace();
             }
 
         lineChart.getData().clear();
@@ -787,9 +727,7 @@ public class OverviewController {
             } catch (MongoAuthException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                e.printStackTrace();
             } catch (ExecutionException e) {
-                e.printStackTrace();
             }
 
         lineChart.getData().clear();
@@ -1015,13 +953,14 @@ public class OverviewController {
 
                 this.numberOfImpressions = series;
             } catch (InterruptedException e) {
-                e.printStackTrace();
             } catch (ExecutionException e) {
-                e.printStackTrace();
             }
 
         lineChart.getData().clear();
         lineChart.getData().add(this.numberOfImpressions);
+
+        if (breakdown_data != null)
+            loadBreakdown();
 
         for (XYChart.Series<String, Double> s : lineChart.getData()) {
             for (XYChart.Data<String, Double> d : s.getData()) {
@@ -1310,6 +1249,7 @@ public class OverviewController {
         this.costPerClick = null;
         this.numberOfImpressions = null;
         this.numberOfClicks = null;
+        this.breakdown_data = null;
 
         loadImpressionsPreemptively();
     }
@@ -1318,6 +1258,7 @@ public class OverviewController {
 
         if (future_cost_impressions != null) future_cost_impressions.cancel(true);
         if (future_num_impressions != null) future_num_impressions.cancel(true);
+        if (future_breakdown != null) future_breakdown.cancel(true);
 
         future_num_impressions = preemptiveExecutor.submit(() -> {
             try {
@@ -1336,6 +1277,24 @@ public class OverviewController {
                 return null;
             }
         });
+
+        Runnable wrappedTask = () -> {
+            try {
+                try {
+                    breakdown_data = Executors.newSingleThreadExecutor().submit(DBQuery::getBreakdown).get();
+                } catch (InterruptedException e) {
+                } catch (ExecutionException e) {
+                }
+            } finally {
+                try {
+                    Platform.runLater(this::loadBreakdown);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        future_breakdown = preemptiveExecutor.submit(wrappedTask);
 
     }
 
