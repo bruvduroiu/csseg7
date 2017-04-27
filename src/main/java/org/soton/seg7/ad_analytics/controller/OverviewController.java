@@ -30,6 +30,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.pdf.PdfWriter;
 
+import java.io.*;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -42,11 +43,6 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -55,6 +51,7 @@ import java.util.stream.Stream;
 public class OverviewController {
 
     private enum Graph {
+        HOME("Home"),
         COST_PER_CLICK("Cost per Click"),
         NUMBER_OF_IMPRESSIONS("Number of Impressions"),
         NUMBER_OF_CLICKS("Number of Clicks"),
@@ -80,6 +77,7 @@ public class OverviewController {
         }
     }
     private Graph currentGraph;
+    private Graph defaultGraph;
 
     private int ageFilter;
     private int incomeFilter;
@@ -114,6 +112,9 @@ public class OverviewController {
 
     private Map<DateTime, Double> num_impressions;
     private Map<DateTime, Double> cost_impressions;
+
+    @FXML
+    private Button setDefaultGraph;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -259,6 +260,7 @@ public class OverviewController {
 
         list = graphList.getItems();
         list.clear();
+        list.add(Graph.HOME.toString());
         list.add(Graph.TOTAL_COST.toString());
         list.add(Graph.COST_PER_CLICK.toString());
         list.add(Graph.NUMBER_OF_IMPRESSIONS.toString());
@@ -366,7 +368,8 @@ public class OverviewController {
         contextDropdown.getSelectionModel().selectFirst();
         
         // Load the total cost stats and pie chart
-        loadTotalCost();
+        readDefaultGraphPref();
+        loadGraph(Graph.HOME.toString());
         loadPieChart();
         loadBreakdown();
 
@@ -419,7 +422,51 @@ public class OverviewController {
         		});
 
     }
-    
+
+    private void readDefaultGraphPref(){
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader("preferredGraph.txt"));
+            String graphPref = reader.readLine();
+                if (graphPref.equals("Total Cost"))
+                    defaultGraph = Graph.TOTAL_COST;
+                else if (graphPref.equals("Bounce Rate"))
+                    defaultGraph = Graph.BOUNCE_RATE;
+                else if (graphPref.equals("Click Cost Histogram"))
+                    defaultGraph = Graph.CLICK_COST_HISTOGRAM;
+                else if (graphPref.equals("Click Through Rate"))
+                    defaultGraph = Graph.CLICK_THROUGH_RATE;
+                else if (graphPref.equals("Cost per Acquisition"))
+                    defaultGraph = Graph.COST_PER_ACQUISITION;
+                else if (graphPref.equals("Cost per Click"))
+                    defaultGraph = Graph.COST_PER_CLICK;
+                else if (graphPref.equals("Cost per Thousand Impressions"))
+                    defaultGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
+                else if (graphPref.equals("Number of Clicks"))
+                    defaultGraph = Graph.NUMBER_OF_CLICKS;
+                else if (graphPref.equals("Number of Conversions"))
+                    defaultGraph = Graph.NUMBER_OF_CONVERSIONS;
+                else if (graphPref.equals("Number of Impressions"))
+                    defaultGraph = Graph.NUMBER_OF_IMPRESSIONS;
+                else
+                    defaultGraph = Graph.TOTAL_COST;
+        } catch (IOException x) {
+            defaultGraph = Graph.TOTAL_COST;
+        }
+    }
+
+    @FXML
+    private void setDefaultGraph(ActionEvent event){
+        defaultGraph = currentGraph;
+        try{
+            PrintWriter writer = new PrintWriter("preferredGraph.txt", "UTF-8");
+            writer.println(currentGraph.toString());
+            writer.close();
+        } catch (IOException e) {
+            // do something
+        }
+    }
+
+
     private void changeGranularity(Number granularity){
     	if(granularity.intValue() == 0)
     		DBQuery.setGranularity(3);
@@ -461,6 +508,8 @@ public class OverviewController {
         	radioBounceTime.setVisible(true);
         	radioBouncePage.setVisible(true);
             loadBounceRate();
+        } else if (graph.equals(Graph.HOME.toString())){
+                loadGraph(defaultGraph.toString());
         }
         else if (graph.equals(Graph.NUMBER_OF_BOUNCES.toString())) {
             bounceSettingsLabel.setVisible(true);

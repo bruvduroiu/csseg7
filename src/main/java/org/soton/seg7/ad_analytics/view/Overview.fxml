@@ -63,7 +63,7 @@
                                     <Tooltip text="Export graphs to pdf" />
                                  </tooltip>
                               </Button>
-                              <Button fx:id="set_default_graph" layoutX="14.0" layoutY="402.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="262.0" text="Set default graph" />
+                                        <Button fx:id="set_default_graph" layoutX="15.0" layoutY="48.0" mnemonicParsing="false" onAction="#setDefaultGraph" prefHeight="27.0" prefWidth="258.0" text="Make Graph Default" />
                                     </children>
                                 </AnchorPane>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
