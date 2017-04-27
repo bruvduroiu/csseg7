@@ -1253,8 +1253,6 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Number of clicks from unique visitors");
 
-
-        lineChart.setTitle("Number of Impressions / Day");
         if (numberOfUniques == null ) {
 			XYChart.Series<String, Double> series = new XYChart.Series<>();
 			Map<DateTime, Double> numberOfUniques;

@@ -485,18 +485,17 @@ public class DBQuery {
 		DBHandler handler = DBHandler.getDBConnection();
 		List<DBObject> IDs =  new ArrayList<>();
 		List<DBObject> results =  new ArrayList<>();
-
+		
         handler.getCollection(COL_CLICKS).aggregate(Arrays.asList(
                 new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate()
-                                .append("ID", "$ID"))
-                                .append("num", new BasicDBObject("$sum", 1))),
+                        		).append("IDs", new BasicDBObject("$addToSet","$_id"))),
+                new BasicDBObject("$unwind","$IDs"),
                 new BasicDBObject("$group",
-                		new BasicDBObject("_id", new BasicDBObject("year","$_id.year")
-								.append("month", "$_id.month")
-								.append("day", "$_id.day"))
-                		.append("num", new BasicDBObject("$sum", "$num")))))
+                        new BasicDBObject("_id", "$_id"
+                        		).append("num", new BasicDBObject("$sum",1)))
+                ))
                 .results().forEach(results::add);
         
         
