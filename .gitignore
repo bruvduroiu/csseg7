@@ -69,7 +69,6 @@ bin/
 \.settings/
 
 # Ignore CSV files
-static/analytics_csv/
 
 chart\.png
 

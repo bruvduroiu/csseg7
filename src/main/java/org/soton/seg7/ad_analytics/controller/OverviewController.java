@@ -450,7 +450,7 @@ public class OverviewController {
                 else
                     defaultGraph = Graph.TOTAL_COST;
         } catch (IOException x) {
-            defaultGraph = Graph.TOTAL_COST;
+            defaultGraph = Graph.NUMBER_OF_BOUNCES;
         }
     }
 
@@ -594,17 +594,10 @@ public class OverviewController {
             );
             pieChart.getData().clear();
             pieChart.setTitle("Campaign Cost Breakdown");
-            for (XYChart.Series<String, Double> s : lineChart.getData()) {
-                for (XYChart.Data<String, Double> d : s.getData()) {
-                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                            d.getXValue().toString() + "\n" +
-                            "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
-                }
-            }
             pieChart.getData().addAll(pieChartData);
 
             for (PieChart.Data d : pieChart.getData()) {
-                Tooltip.install(d.getNode(), new Tooltip(d.getName() + ": " + d.getPieValue()));
+                Tooltip.install(d.getNode(), new Tooltip(d.getName() + ": £" + String.format("%.2f",d.getPieValue()/100)));
             }
 
         } catch (MongoAuthException e) {
