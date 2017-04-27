@@ -1409,10 +1409,10 @@ public class OverviewController {
                 incomeFilter = Filters.INCOME_LOW;
                 break;
             case "Medium":
-                contextFilter = Filters.INCOME_MEDIUM;
+                incomeFilter = Filters.INCOME_MEDIUM;
                 break;
             case "High":
-                contextFilter = Filters.INCOME_HIGH;
+                incomeFilter = Filters.INCOME_HIGH;
                 break;
         }
 
