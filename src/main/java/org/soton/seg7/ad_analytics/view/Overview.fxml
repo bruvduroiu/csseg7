@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
@@ -25,7 +31,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="background" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Overview.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
+<AnchorPane fx:id="background" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Overview.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
     <children>
         <SplitPane dividerPositions="0.29797979797979796" layoutX="265.0" layoutY="134.0" prefHeight="600.0" prefWidth="1000.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <items>
@@ -35,20 +41,24 @@
                             <items>
                                 <AnchorPane fx:id="graphChoicePane" maxWidth="292.0" minHeight="348.0" minWidth="292.0" prefHeight="348.0" prefWidth="292.0" SplitPane.resizableWithParent="false">
                                     <children>
-                                        <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleChangeCampainButtonAction" prefHeight="25.0" prefWidth="262.0" text="Change Campaign">
+                                        <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleChangeCampainButtonAction" prefHeight="25.0" prefWidth="262.0" text="Change Campaign"> 
                                  <tooltip>
                                     <Tooltip text="Click to upload a different campaign (currently loaded campaign will be lost)" />
+                                 </tooltip></Button>
+                                        <Button layoutX="14.0" layoutY="371.0" mnemonicParsing="false" onAction="#handlePrintButtonAction" prefHeight="25.0" prefWidth="262.0" text="Print graph">
+                                 <tooltip>
+                                    <Tooltip text="Click to print current graph" />
                                  </tooltip></Button>
                                         <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="286.0" prefWidth="262.0">
                                  <tooltip>
                                     <Tooltip text="Choose a metric from the list to view as a graph" />
                                  </tooltip></ListView>
-                                 <Button alignment="CENTER" layoutX="13.0" layoutY="339.0" mnemonicParsing="false" onAction="#handleExportButtonAction" prefHeight="25.0" prefWidth="262.0" text="Export this graph (PNG)">
+                                 <Button alignment="CENTER" layoutX="13.0" layoutY="339.0" mnemonicParsing="false" onAction="#handleExportButtonAction" prefHeight="25.0" prefWidth="126.0" text="Export graph">
                                  <tooltip>
                                     <Tooltip text="Export current graph to png" />
                                  </tooltip>
                               </Button>
-                              <Button alignment="CENTER" layoutX="14.0" layoutY="371.0" mnemonicParsing="false" onAction="#handleExportAllButtonAction" prefHeight="25.0" prefWidth="262.0" text="Export all graphs (PDF)">
+                              <Button alignment="CENTER" layoutX="152.0" layoutY="339.0" mnemonicParsing="false" onAction="#handleExportAllButtonAction" prefHeight="25.0" prefWidth="126.0" text="Export all">
                                  <tooltip>
                                     <Tooltip text="Export graphs to pdf" />
                                  </tooltip>

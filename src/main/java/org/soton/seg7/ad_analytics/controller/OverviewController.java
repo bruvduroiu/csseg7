@@ -35,7 +35,12 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -1265,6 +1270,33 @@ public class OverviewController {
 			}
     	}
     	document.close();
+    }
+    
+    @FXML
+    protected void handlePrintButtonAction(ActionEvent event) {
+    	WritableImage image = splitPane2.snapshot(new SnapshotParameters(), null);
+
+        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+
+        PrinterJob printJob = PrinterJob.getPrinterJob();
+        printJob.setPrintable(new Printable() {
+          @Override
+          public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+            // Get the upper left corner that it printable
+            int x = (int) Math.ceil(pageFormat.getImageableX());
+            int y = (int) Math.ceil(pageFormat.getImageableY());
+            if (pageIndex != 0) {
+              return NO_SUCH_PAGE;
+            }
+            graphics.drawImage(bufferedImage, x, y, bufferedImage.getWidth(), bufferedImage.getHeight(), null);
+            return PAGE_EXISTS;
+          }
+        });
+        try {
+          printJob.print();
+        } catch (PrinterException e1) {
+          e1.printStackTrace();
+        }
     }
 
     private void wipeCaches() {
