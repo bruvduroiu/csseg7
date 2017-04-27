@@ -551,7 +551,7 @@ public class OverviewController {
                     new AudienceSegment("25-34", breakdown_data.get("25-34")),
                     new AudienceSegment("35-44", breakdown_data.get("35-44")),
                     new AudienceSegment("45-54", breakdown_data.get("45-54")),
-                    new AudienceSegment(">54", breakdown_data.get(">55"))
+                    new AudienceSegment(">54", breakdown_data.get(">54"))
             );
 
             incomeBreakdownData = FXCollections.observableArrayList(
