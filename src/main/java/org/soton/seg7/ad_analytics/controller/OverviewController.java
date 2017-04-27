@@ -60,7 +60,7 @@ public class OverviewController {
         COST_PER_ACQUISITION("Cost per Acquisition"),
         NUMBER_OF_BOUNCES("Total Bounces"),
         BOUNCE_RATE("Bounce Rate"),
-    	NUMBER_OF_UNIQUES("Unique visitors");
+    	NUMBER_OF_UNIQUES("Unique clicks");
 
         String title;
 
@@ -1161,9 +1161,8 @@ public class OverviewController {
 
         if (numberOfUniques == null ) {
 			XYChart.Series<String, Double> series = new XYChart.Series<>();
-			Map<DateTime, Double> numberOfUniques;
 			try {
-				numberOfUniques = DBQuery.getNumUniques();
+				Map<DateTime, Double> numberOfUniques = DBQuery.getNumUniques();
 				ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
 				Collections.sort(days);
 
@@ -1177,9 +1176,12 @@ public class OverviewController {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+        } else {
+        	lineChart.getData().clear();
+            lineChart.getData().add(numberOfUniques);
         }
         
-		for (XYChart.Series<String, Double> s : lineChart.getData()) {
+        for (XYChart.Series<String, Double> s : lineChart.getData()) {
             for (XYChart.Data<String, Double> d : s.getData()) {
                 Tooltip.install(d.getNode(), new Tooltip("Date: " +
                         d.getXValue().toString() + "\n" +
