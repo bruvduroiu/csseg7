@@ -49,11 +49,14 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 import java.math.BigDecimal;
 import java.util.concurrent.*;
@@ -67,6 +70,7 @@ import java.util.concurrent.Future;
 public class OverviewController {
 
     private enum Graph {
+    	HOME("Home"),
         COST_PER_CLICK("Cost per Click"),
         NUMBER_OF_IMPRESSIONS("Number of Impressions"),
         NUMBER_OF_CLICKS("Number of Clicks"),
@@ -92,6 +96,7 @@ public class OverviewController {
         }
     }
     private Graph currentGraph;
+    private Graph defaultGraph;
 
     private static Map<DateTime, Double> queryData;
     private static Map<DateTime, Double> queryData2;
@@ -129,6 +134,9 @@ public class OverviewController {
 
     private Map<DateTime, Double> num_impressions;
     private Map<DateTime, Double> cost_impressions;
+    
+    @FXML
+    private Button setDefaultGraph;
 
     @FXML
     private AnchorPane background;
@@ -293,6 +301,7 @@ public class OverviewController {
 
         list = graphList.getItems();
         list.clear();
+        list.add(Graph.HOME.toString());
         list.add(Graph.TOTAL_COST.toString());
         list.add(Graph.COST_PER_CLICK.toString());
         list.add(Graph.NUMBER_OF_IMPRESSIONS.toString());
@@ -400,7 +409,9 @@ public class OverviewController {
         contextDropdown.getSelectionModel().selectFirst();
         
         // Load the total cost stats and pie chart
-        loadGraph(Graph.TOTAL_COST.toString());
+        readDefaultGraphPref();
+        
+        loadGraph(Graph.HOME.toString());
         loadPieChart();
 
         try {
@@ -449,6 +460,61 @@ public class OverviewController {
         		});
 
     }
+    
+    private void readDefaultGraphPref(){
+    	try { 
+    		BufferedReader reader = new BufferedReader(new FileReader("preferredGraph.txt")); 
+    	    String graphPref = reader.readLine();
+    	    switch(graphPref) {
+    	    case "Total Cost":
+    	    	defaultGraph = Graph.TOTAL_COST;
+    	    	break;
+    	    case "Bounce Rate":
+    	    	defaultGraph = Graph.BOUNCE_RATE;
+    	    	break;
+    	    case "Click Cost Histogram":
+    	    	defaultGraph = Graph.CLICK_COST_HISTOGRAM;
+    	    	break;
+    	    case "Click Through Rate":
+    	    	defaultGraph = Graph.CLICK_THROUGH_RATE;
+    	    	break;
+    	    case "Cost per Acquisition":
+    	    	defaultGraph = Graph.COST_PER_ACQUISITION;
+    	    	break;
+    	    case "Cost per Click":
+    	    	defaultGraph = Graph.COST_PER_CLICK;
+    	    	break;
+    	    case "Cost per Thousand Impressions":
+    	    	defaultGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
+    	    	break;
+    	    case "Number of Clicks":
+    	    	defaultGraph = Graph.NUMBER_OF_CLICKS;
+    	    	break;
+    	    case "Number of Conversions":
+    	    	defaultGraph = Graph.NUMBER_OF_CONVERSIONS;
+    	    	break;
+    	    case "Number of Impressions":
+    	    	defaultGraph = Graph.NUMBER_OF_IMPRESSIONS;
+    	    	break;
+    	    }
+    	} catch (IOException x) {
+    	    defaultGraph = Graph.TOTAL_COST;
+    	}
+    }
+   
+    @FXML
+    private void setDefaultGraph(ActionEvent event){
+    	defaultGraph = currentGraph;
+    	try{
+    	    PrintWriter writer = new PrintWriter("preferredGraph.txt", "UTF-8");
+    	    writer.println(currentGraph.toString());
+    	    writer.close();
+    	} catch (IOException e) {
+    	   // do something
+    	}
+    }
+    
+    
     
     private void changeGranularity(Number granularity){
     	if(granularity.intValue() == 0)
@@ -502,6 +568,10 @@ public class OverviewController {
             radioBounceTime.setVisible(true);
             radioBouncePage.setVisible(true);
             loadNumberOfBounces();
+        }
+        else if (graph.equals(Graph.HOME.toString())){
+        	endProgInd();
+        	loadGraph(defaultGraph.toString());
         }
         else if (graph.equals(Graph.NUMBER_OF_UNIQUES.toString()))
         	loadNumberOfUniques();
