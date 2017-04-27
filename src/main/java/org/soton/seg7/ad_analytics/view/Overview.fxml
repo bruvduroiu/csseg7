@@ -43,7 +43,7 @@
                                           <Button layoutX="12.0" layoutY="325.0" mnemonicParsing="false" onAction="#handleExportButtonAction" prefHeight="27.0" prefWidth="262.0" text="Save Graph (PNG)" />
                                           <Button layoutX="12.0" layoutY="358.0" mnemonicParsing="false" onAction="#handleExportAllButtonAction" prefHeight="27.0" prefWidth="262.0" text="Save Report (PDF)" />
                                           <Button layoutX="13.0" layoutY="391.0" mnemonicParsing="false" onAction="#handlePrintButtonAction" prefHeight="27.0" prefWidth="261.0" text="Print Report" />
-                                          <Button layoutX="15.0" layoutY="48.0" mnemonicParsing="false" onAction="#set_default_graph" prefHeight="27.0" prefWidth="258.0" text="Make Graph Default" />
+                                          <Button fx:id="set_default_graph" layoutX="15.0" layoutY="48.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="258.0" text="Make Graph Default" />
                                                 </children>
                                             </AnchorPane>
                                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
