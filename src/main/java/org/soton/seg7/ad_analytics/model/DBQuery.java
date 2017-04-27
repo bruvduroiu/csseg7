@@ -1,11 +1,11 @@
 package org.soton.seg7.ad_analytics.model;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
+import com.mongodb.*;
+import com.mongodb.util.JSON;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.json.JSONObject;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
 import javax.persistence.Basic;
@@ -113,6 +113,34 @@ public class DBQuery {
                 .results().forEach(results::add);
 
         return buildResultsMap(results, COUNT_METRIC);
+    }
+
+    public static Map<String, String> getBreakdown() throws MongoAuthException {
+
+        Map<String, String> result = new HashMap<>();
+
+        String map = "function() {" +
+                "emit(this.Age, 1);" +
+                "emit(this.Gender,1);" +
+                "emit(this.Income,1);" +
+                "emit(this.Context,1); }";
+
+        String reduce = "function(k,v) {return Array.sum(v);}";
+
+        DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
+
+        List<BasicDBObject> date_res = getDateFilterQuery();
+
+        MapReduceCommand cmd = new MapReduceCommand(impression_data,map,reduce,null, MapReduceCommand.OutputType.INLINE, new BasicDBObject("$and", getDateFilterQuery()));
+
+        MapReduceOutput out = impression_data.mapReduce(cmd);
+
+        for (DBObject o : out.results()) {
+            BasicDBObject obj = (BasicDBObject) o;
+            result.put(obj.getString("_id"), obj.getString("value"));
+        }
+
+        return result;
     }
 
     @Deprecated
