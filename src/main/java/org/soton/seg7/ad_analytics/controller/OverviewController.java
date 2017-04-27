@@ -1150,27 +1150,22 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Number of clicks from unique visitors");
 
-        if (numberOfUniques == null ) {
-			XYChart.Series<String, Double> series = new XYChart.Series<>();
-			try {
-				Map<DateTime, Double> numberOfUniques = DBQuery.getNumUniques();
-				ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
-				Collections.sort(days);
+		XYChart.Series<String, Double> series = new XYChart.Series<>();
+		try {
+			Map<DateTime, Double> numberOfUniques = DBQuery.getNumUniques();
+			ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
+			Collections.sort(days);
 
-				for (DateTime day : days)
-				    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
+			for (DateTime day : days)
+			    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
 
-				lineChart.getData().clear();
-				lineChart.getData().add(series);
-				this.numberOfUniques = series;
-			} catch (MongoAuthException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        } else {
-        	lineChart.getData().clear();
-            lineChart.getData().add(numberOfUniques);
-        }
+			lineChart.getData().clear();
+			lineChart.getData().add(series);
+			this.numberOfUniques = series;
+		} catch (MongoAuthException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         
         for (XYChart.Series<String, Double> s : lineChart.getData()) {
             for (XYChart.Data<String, Double> d : s.getData()) {
