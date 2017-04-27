@@ -424,6 +424,19 @@ public class DBQuery {
 
         return timeGranularity;
     }
+    
+    private static BasicDBObject getGranularityAggregate(String dateField) {
+        BasicDBObject timeGranularity = new BasicDBObject("year", new BasicDBObject("$year", "$Date"));
+
+        if (granularity >= GRANULARITY_MONTH)
+            timeGranularity.append("month", new BasicDBObject("$month", dateField));
+        if (granularity >= GRANULARITY_DAY)
+            timeGranularity.append("day", new BasicDBObject("$dayOfMonth", dateField));
+        if (granularity >= GRANULARITY_HOUR)
+            timeGranularity.append("hour", new BasicDBObject("$hour", dateField));
+
+        return timeGranularity;
+    }
 
     public static DateTimeFormatter getDateFormat() {
         if (granularity == GRANULARITY_MONTH)
@@ -467,4 +480,25 @@ public class DBQuery {
             e.printStackTrace();
         }
     }
+
+	public static Map<DateTime, Double> getNumUniques() throws MongoAuthException {
+		DBHandler handler = DBHandler.getDBConnection();
+		List<DBObject> IDs =  new ArrayList<>();
+		List<DBObject> results =  new ArrayList<>();
+		
+        handler.getCollection(COL_CLICKS).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", getGranularityAggregate()
+                        		).append("IDs", new BasicDBObject("$addToSet","$_id"))),
+                new BasicDBObject("$unwind","$IDs"),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", "$_id"
+                        		).append("num", new BasicDBObject("$sum",1)))
+                ))
+                .results().forEach(results::add);
+        
+        
+        return buildResultsMap(results, COUNT_METRIC);
+	}
 }
