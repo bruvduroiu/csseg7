@@ -41,9 +41,13 @@
                             <items>
                                 <AnchorPane fx:id="graphChoicePane" maxWidth="292.0" minHeight="348.0" minWidth="292.0" prefHeight="348.0" prefWidth="292.0" SplitPane.resizableWithParent="false">
                                     <children>
-                                        <Button layoutX="14.0" layoutY="371.0" mnemonicParsing="false" onAction="#handlePrintButtonAction" prefHeight="25.0" prefWidth="262.0" text="Print graph">
+                                        <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleChangeCampainButtonAction" prefHeight="25.0" prefWidth="262.0" text="Change Campaign"> 
                                  <tooltip>
                                     <Tooltip text="Click to upload a different campaign (currently loaded campaign will be lost)" />
+                                 </tooltip></Button>
+                                        <Button layoutX="14.0" layoutY="371.0" mnemonicParsing="false" onAction="#handlePrintButtonAction" prefHeight="25.0" prefWidth="262.0" text="Print graph">
+                                 <tooltip>
+                                    <Tooltip text="Click to print current graph" />
                                  </tooltip></Button>
                                         <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="286.0" prefWidth="262.0">
                                  <tooltip>
