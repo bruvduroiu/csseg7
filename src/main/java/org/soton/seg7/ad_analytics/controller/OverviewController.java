@@ -1,4 +1,5 @@
 package org.soton.seg7.ad_analytics.controller;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -7,19 +8,26 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.SnapshotParameters;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.scene.image.WritableImage;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import org.joda.time.DateTime;
 import org.soton.seg7.ad_analytics.model.AudienceSegment;
+import org.soton.seg7.ad_analytics.model.DBHandler;
 import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Filters;
+import org.soton.seg7.ad_analytics.model.Parser;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 import org.soton.seg7.ad_analytics.view.MainView;
 
@@ -46,10 +54,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.*;
 import java.math.BigDecimal;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class OverviewController {
 
@@ -79,6 +92,9 @@ public class OverviewController {
         }
     }
     private Graph currentGraph;
+
+    private static Map<DateTime, Double> queryData;
+    private static ArrayList<Double> clickCosts;
 
     private int ageFilter;
     private int incomeFilter;
@@ -111,6 +127,15 @@ public class OverviewController {
 
     private Map<DateTime, Double> num_impressions;
     private Map<DateTime, Double> cost_impressions;
+
+    @FXML
+    private AnchorPane background;
+    
+    @FXML
+    private VBox bx;
+    
+    @FXML
+    private StackPane overviewRoot;
 
     @FXML
     private Label bounceSettingsLabel;
@@ -210,6 +235,9 @@ public class OverviewController {
 
     @FXML
     private Button apply_button;
+
+    ProgressIndicator pi = new ProgressIndicator();
+    VBox box = new VBox(pi);
 
     // Reference to the main application.
     private MainView mainView;
@@ -363,7 +391,7 @@ public class OverviewController {
         contextDropdown.getSelectionModel().selectFirst();
         
         // Load the total cost stats and pie chart
-        loadTotalCost();
+        loadGraph(Graph.TOTAL_COST.toString());
         loadPieChart();
 
         try {
@@ -428,6 +456,9 @@ public class OverviewController {
     }
 
     private void loadGraph(String graph) {
+        runProgInd();
+
+
     	radioBounceTime.setVisible(false);
     	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
@@ -455,9 +486,9 @@ public class OverviewController {
         else if (graph.equals(Graph.COST_PER_ACQUISITION.toString()))
             loadCostPerAcquisition();
         else if (graph.equals(Graph.BOUNCE_RATE.toString())){
-        	bounceSettingsLabel.setVisible(true);
-        	radioBounceTime.setVisible(true);
-        	radioBouncePage.setVisible(true);
+            bounceSettingsLabel.setVisible(true);
+            radioBounceTime.setVisible(true);
+            radioBouncePage.setVisible(true);
             loadBounceRate();
         }
         else if (graph.equals(Graph.NUMBER_OF_BOUNCES.toString())) {
@@ -468,6 +499,39 @@ public class OverviewController {
         }
         else if (graph.equals(Graph.NUMBER_OF_UNIQUES.toString()))
         	loadNumberOfUniques();
+    }
+
+    protected void runProgInd() {
+        box.setAlignment(Pos.CENTER);
+        // Grey Background
+        bx.setDisable(true);
+        overviewRoot.getChildren().add(box);
+
+    }
+
+    protected void endProgInd() {
+        bx.setDisable(false);
+        overviewRoot.getChildren().remove(box);
+    }
+
+    private void queryDB(Callable<Boolean> query) {
+        //Submits Callable<Boolean> thread to a Future thread
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Executors.newSingleThreadExecutor().submit(query).get();
+                }catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                } finally {
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            endProgInd();
+                        }
+                    });
+                }
+            }
+        }).start();
     }
 
     private void loadBreakdown() {
@@ -621,6 +685,16 @@ public class OverviewController {
                 Map<DateTime, Double> costClicks = DBQuery.getClickCostOverTime();
                 Map<DateTime, Double> numConversions = DBQuery.getNumConversions();
                 Map<DateTime, Double> costImpressions = future_cost_impressions.get();
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getTotalCostOverTime(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
                 Map<DateTime, Double> costPerAcquisition = Stream.concat(costImpressions.keySet().stream(), costClicks.keySet().stream())
                         .distinct()
@@ -660,6 +734,7 @@ public class OverviewController {
             }
         }
     }
+
 
     private void loadBounceRate() {
         currentGraph = Graph.BOUNCE_RATE;
@@ -724,18 +799,27 @@ public class OverviewController {
 
         XYChart.Series<String,Double> series = new XYChart.Series<>();
 
-        try {
-            Map<DateTime, Double> numBounces;
-            if(radioBounceTime.isSelected())
-                numBounces = DBQuery.getNumBouncesByTime();
-            else
-                numBounces = DBQuery.getNumBouncesByPage();
-            ArrayList<DateTime> dates = new ArrayList<>(numBounces.keySet());
-            Collections.sort(dates);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    if(radioBounceTime.isSelected())
+                        queryData = DBQuery.getBounceRateByTime();
+                    else
+                        queryData = DBQuery.getBounceRateByPage();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
+        ArrayList<DateTime> dates = new ArrayList<>(queryData.keySet());
+        Collections.sort(dates);
             for (DateTime day : dates)
                 series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numBounces.get(day)));
 
+        for (DateTime day : dates)
+            series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), queryData.get(day)));
 
             lineChart.getData().clear();
             lineChart.getData().add(series);
@@ -761,6 +845,7 @@ public class OverviewController {
         }
     }
 
+
     private void loadCostPerThousandImpressions() {
         currentGraph = Graph.COST_PER_THOUSAND_IMPRESSIONS;
         histogram.setVisible(false);
@@ -778,6 +863,16 @@ public class OverviewController {
                                 / numImpressions.getOrDefault(k,0d) * 1000)));
                 ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
                 Collections.sort(dates);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getCostPerThousandImpressionsOverTime(getCurrentFilter()/100);
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
                 XYChart.Series<String, Double> series = new XYChart.Series<>();
                 for (DateTime day : dates)
@@ -820,6 +915,16 @@ public class OverviewController {
             lineChart.getData().clear();
             lineChart.getData().add(totalCost);
         } else {
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getTotalCostOverTime(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
             XYChart.Series<String, Double> series = new XYChart.Series<>();
 
@@ -859,6 +964,7 @@ public class OverviewController {
     }
 
     private void loadNumberOfConversions() {
+
         currentGraph = Graph.NUMBER_OF_CONVERSIONS;
         histogram.setVisible(false);
         lineChart.setVisible(true);
@@ -869,6 +975,16 @@ public class OverviewController {
             lineChart.getData().add(numberOfConversions);
         } else {
             XYChart.Series<String, Double> series = new XYChart.Series<>();
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getNumConversions();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
             try {
                 Map<DateTime, Double> conversionsMap = DBQuery.getNumConversions();
@@ -913,6 +1029,16 @@ public class OverviewController {
             try {
                 Map<DateTime, Double> numImpressions = future_num_impressions.get();
                 Map<DateTime, Double> numClicks = DBQuery.getNumClicks();
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getCTROverTime(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
                 Map<DateTime, Double> clickThroughRateMap = Stream.concat(numImpressions.keySet().stream(), numClicks.keySet().stream())
                         .distinct()
@@ -968,6 +1094,16 @@ public class OverviewController {
                 Map<DateTime, Double> numberOfClicks = DBQuery.getNumClicks();
                 ArrayList<DateTime> days = new ArrayList<>(numberOfClicks.keySet());
                 Collections.sort(days);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getNumClicks();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
                 for (DateTime day : days)
                     series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfClicks.get(day)));
@@ -1009,9 +1145,21 @@ public class OverviewController {
                 ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
                 Collections.sort(days);
 
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getNumImpressions(getCurrentFilter());
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
                 for (DateTime day : days)
                     series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
 
+            for (DateTime day : days)
+                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
 
                 this.numberOfImpressions = series;
             } catch (InterruptedException e) {
@@ -1054,6 +1202,16 @@ public class OverviewController {
                 Map<DateTime, Double> costPerClick = DBQuery.getClickCostOverTime();
                 ArrayList<DateTime> days = new ArrayList<>(costPerClick.keySet());
                 Collections.sort(days);
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    queryData = DBQuery.getClickCostOverTime();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
 
                 for (DateTime day : days)
                     series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)/100));
@@ -1094,68 +1252,70 @@ public class OverviewController {
         histogram.setBarGap(0);
 
         //collect all the data
-        try {
-
-            ArrayList<Double> clickCosts = DBQuery.getAllClickCosts();
-            Collections.sort(clickCosts);
-
-            double binRange = clickCosts.get(clickCosts.size() -1) / 15;
-            int[] group = new int[15];
-
-            // I cba with frequency density so just sorting the costs into frequency bars
-            for(double cost : clickCosts) {
-                if(cost <= binRange) {
-                    group[0]++;
-                }else if(cost <= binRange * 2) {
-                    group[1]++;
-                }else if(cost <= binRange * 3) {
-                    group[2]++;
-                }else if(cost <= binRange * 4) {
-                    group[3]++;
-                }else if(cost <= binRange * 5) {
-                    group[4]++;
-                }else if(cost <= binRange * 6) {
-                    group[5]++;
-                }else if(cost <= binRange * 7) {
-                    group[6]++;
-                }else if(cost <= binRange * 8) {
-                    group[7]++;
-                }else if(cost <= binRange * 9) {
-                    group[8]++;
-                }else if(cost <= binRange * 10) {
-                    group[9]++;
-                }else if(cost <= binRange * 11) {
-                    group[10]++;
-                }else if(cost <= binRange * 12) {
-                    group[11]++;
-                }else if(cost <= binRange * 13) {
-                    group[12]++;
-                }else if(cost <= binRange * 14) {
-                    group[13]++;
-                }else if(cost <= binRange * 15) {
-                    group[14]++;
-                } else {
-                    System.err.println("The histogram has loaded incorrectly, cost (" + cost + ") > upper bracket (" + binRange * 15 + ")");
+        queryDB(new Callable<Boolean>() {
+            public Boolean call() {
+                try {
+                    clickCosts = DBQuery.getAllClickCosts();
+                } catch (MongoAuthException e) {
+                    e.printStackTrace();
                 }
+                return true;
             }
+        });
 
-            //put all the data into the series
-            for(int i=0; i<15; i++) {
-                series.getData().add(new XYChart.Data(
-                        (
-                                (new BigDecimal(binRange * i).setScale(2, RoundingMode.HALF_UP).doubleValue())
-                                + "-"
-                                + (new BigDecimal(binRange * (i+1)).setScale(2, RoundingMode.HALF_UP).doubleValue())),
-                        group[i]));
+        Collections.sort(clickCosts);
+
+        double binRange = clickCosts.get(clickCosts.size() -1) / 15;
+        int[] group = new int[15];
+
+        for(double cost : clickCosts) {
+            if(cost <= binRange) {
+                group[0]++;
+            }else if(cost <= binRange * 2) {
+                group[1]++;
+            }else if(cost <= binRange * 3) {
+                group[2]++;
+            }else if(cost <= binRange * 4) {
+                group[3]++;
+            }else if(cost <= binRange * 5) {
+                group[4]++;
+            }else if(cost <= binRange * 6) {
+                group[5]++;
+            }else if(cost <= binRange * 7) {
+                group[6]++;
+            }else if(cost <= binRange * 8) {
+                group[7]++;
+            }else if(cost <= binRange * 9) {
+                group[8]++;
+            }else if(cost <= binRange * 10) {
+                group[9]++;
+            }else if(cost <= binRange * 11) {
+                group[10]++;
+            }else if(cost <= binRange * 12) {
+                group[11]++;
+            }else if(cost <= binRange * 13) {
+                group[12]++;
+            }else if(cost <= binRange * 14) {
+                group[13]++;
+            }else if(cost <= binRange * 15) {
+                group[14]++;
+            } else {
+                System.err.println("The histogram has loaded incorrectly, cost (" + cost + ") > upper bracket (" + binRange * 15 + ")");
             }
-
-            histogram.getData().clear();
-            histogram.getData().addAll(series);
-
         }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
+
+        //put all the data into the series
+        for(int i=0; i<15; i++) {
+            series.getData().add(new XYChart.Data(
+                (
+                    (new BigDecimal(binRange * i).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                    + "-"
+                    + (new BigDecimal(binRange * (i+1)).setScale(2, RoundingMode.HALF_UP).doubleValue())),
+                 group[i]));
         }
+
+        histogram.getData().clear();
+        histogram.getData().addAll(series);
     }
     
     private void loadNumberOfUniques() {
@@ -1204,7 +1364,6 @@ public class OverviewController {
 
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
-
     }
 
 
