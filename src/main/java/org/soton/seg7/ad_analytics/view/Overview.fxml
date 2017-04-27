@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.chart.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
@@ -22,9 +16,6 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -32,7 +23,6 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-
 
 <StackPane fx:id="overviewRoot" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.soton.seg7.ad_analytics.controller.OverviewController">
    <children>
@@ -49,7 +39,11 @@
                                             <AnchorPane fx:id="graphChoicePane" maxWidth="292.0" minHeight="348.0" minWidth="292.0" prefHeight="348.0" prefWidth="292.0" SplitPane.resizableWithParent="false">
                                                 <children>
                                                     <Button fx:id="changeCampaignButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleChangeCampainButtonAction" prefHeight="25.0" prefWidth="262.0" text="Change Campaign" />
-                                                    <ListView fx:id="graphList" layoutX="14.0" layoutY="47.0" prefHeight="348.0" prefWidth="262.0" />
+                                                    <ListView fx:id="graphList" layoutX="14.0" layoutY="82.0" prefHeight="236.0" prefWidth="262.0" />
+                                          <Button layoutX="12.0" layoutY="325.0" mnemonicParsing="false" onAction="#handleExportButtonAction" prefHeight="27.0" prefWidth="262.0" text="Save Graph (PNG)" />
+                                          <Button layoutX="12.0" layoutY="358.0" mnemonicParsing="false" onAction="#handleExportAllButtonAction" prefHeight="27.0" prefWidth="262.0" text="Save Report (PDF)" />
+                                          <Button layoutX="13.0" layoutY="391.0" mnemonicParsing="false" onAction="#handlePrintButtonAction" prefHeight="27.0" prefWidth="261.0" text="Print Report" />
+                                          <Button layoutX="15.0" layoutY="48.0" mnemonicParsing="false" onAction="#set_default_graph" prefHeight="27.0" prefWidth="258.0" text="Make Graph Default" />
                                                 </children>
                                             </AnchorPane>
                                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
@@ -106,69 +100,38 @@
                                         <items>
                                             <AnchorPane fx:id="graphDisplayPane" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                                                 <children>
-                                                    <GridPane layoutX="15.0" layoutY="16.0" prefHeight="57.0" prefWidth="465.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="30.0">
+                                                    <GridPane layoutX="15.0" layoutY="16.0" prefHeight="83.0" prefWidth="806.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="30.0">
                                                         <columnConstraints>
-                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="105.0" />
-                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="105.0" />
-                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="105.0" />
-                                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="105.0" />
-                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
-                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="70.0" />
-                                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="110.0" prefWidth="110.0" />
-                                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="150.0" />
+                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="207.02285766601562" minWidth="-Infinity" prefWidth="176.41598510742188" />
+                                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="207.02285766601562" minWidth="10.0" prefWidth="21.24713134765625" />
+                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="184.0" minWidth="-Infinity" prefWidth="154.75286865234375" />
+                                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="134.75665283203125" minWidth="-Infinity" prefWidth="7.2919921875" />
+                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="206.06390380859375" minWidth="-Infinity" prefWidth="199.26239013671875" />
+                                                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="64.89886474609375" minWidth="-Infinity" prefWidth="9.0487060546875" />
+                                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="184.8092041015625" minWidth="24.0343017578125" prefWidth="75.2489013671875" />
+                                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="211.9656982421875" minWidth="-Infinity" prefWidth="160.7510986328125" />
                                                         </columnConstraints>
                                                         <rowConstraints>
-                                                            <RowConstraints maxHeight="40.0" minHeight="10.0" prefHeight="31.0" vgrow="SOMETIMES" />
                                                             <RowConstraints maxHeight="63.0" minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
+                                                <RowConstraints maxHeight="63.0" minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
                                                         </rowConstraints>
                                                         <children>
-                                                            <Label text="Age Range :" />
-                                                            <Label text="Gender : " GridPane.columnIndex="1" />
-                                                            <Label text="Income Range :" GridPane.columnIndex="2" />
-                                                            <Label text="Start Date: " GridPane.columnIndex="4" />
-                                                            <Label text="End Date :" GridPane.columnIndex="5" />
-                                                            <ComboBox fx:id="ageRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.rowIndex="1" />
-                                                            <ComboBox fx:id="genderDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                                            <ComboBox fx:id="incomeRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                                                            <GridPane maxWidth="143.0" prefHeight="33.0" prefWidth="143.0" GridPane.columnIndex="4" GridPane.rowIndex="1">
-                                                                <columnConstraints>
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="30.0" minWidth="30.0" prefWidth="30.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="10.0" minWidth="0.0" prefWidth="0.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="40.0" minWidth="30.0" prefWidth="40.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="30.0" minWidth="30.0" prefWidth="30.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="10.0" minWidth="10.0" prefWidth="10.0" />
-                                                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" />
-                                                                </columnConstraints>
-                                                                <rowConstraints>
-                                                                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                                </rowConstraints>
-                                                   <children>
-                                                      <DatePicker fx:id="startDate" prefHeight="27.0" prefWidth="87.0" />
-                                                   </children>
-                                                            </GridPane>
-                                                            <GridPane maxWidth="143.0" prefHeight="33.0" prefWidth="143.0" GridPane.columnIndex="5" GridPane.rowIndex="1">
-                                                                <columnConstraints>
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="30.0" minWidth="30.0" prefWidth="30.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="10.0" minWidth="10.0" prefWidth="10.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="30.0" minWidth="30.0" prefWidth="30.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="10.0" minWidth="10.0" prefWidth="10.0" />
-                                                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" />
-                                                                </columnConstraints>
-                                                                <rowConstraints>
-                                                                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                                                </rowConstraints>
-                                                   <children>
-                                                      <DatePicker fx:id="endDate" />
-                                                   </children>
-                                                            </GridPane>
-                                                <Label text="Time Granularity :" GridPane.columnIndex="6" />
-                                                <Slider fx:id="granularitySlider" majorTickUnit="1.0" max="2.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" value="1.0" GridPane.columnIndex="6" GridPane.rowIndex="1" />
-                                                <Label fx:id="bounceSettingsLabel" text="Bounce registered by :" GridPane.columnIndex="7">
+                                                            <Label prefHeight="17.0" prefWidth="80.0" text="Age Range :" GridPane.halignment="LEFT" GridPane.rowIndex="1" />
+                                                            <Label text="Gender : " GridPane.columnIndex="2" GridPane.halignment="LEFT" GridPane.rowIndex="1" />
+                                                            <Label text="Income Range :" GridPane.columnIndex="4" GridPane.halignment="LEFT" GridPane.rowIndex="1" />
+                                                            <Label prefHeight="17.0" prefWidth="73.0" text="Start Date: " GridPane.halignment="LEFT" />
+                                                            <Label prefHeight="17.0" prefWidth="69.0" text="End Date :" GridPane.columnIndex="2" GridPane.halignment="LEFT" />
+                                                            <ComboBox fx:id="ageRangeDropdown" prefHeight="27.0" prefWidth="97.0" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+                                                            <ComboBox fx:id="genderDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+                                                            <ComboBox fx:id="incomeRangeDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="4" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+                                                <Label text="Time Granularity :" GridPane.columnIndex="4" GridPane.halignment="LEFT" />
+                                                <Slider fx:id="granularitySlider" majorTickUnit="1.0" max="2.0" minHeight="38.0" minWidth="95.0" minorTickCount="0" prefHeight="38.0" prefWidth="95.0" showTickLabels="true" showTickMarks="true" value="1.0" GridPane.columnIndex="5" GridPane.halignment="RIGHT" />
+                                                <Label fx:id="bounceSettingsLabel" prefHeight="30.0" prefWidth="55.0" text="Bounce:" GridPane.columnIndex="6" GridPane.halignment="RIGHT">
                                                    <GridPane.margin>
                                                       <Insets left="20.0" />
                                                    </GridPane.margin>
                                                 </Label>
-                                                <GridPane alignment="TOP_CENTER" GridPane.columnIndex="7" GridPane.rowIndex="1">
+                                                <GridPane alignment="TOP_CENTER" prefHeight="41.0" prefWidth="92.0" GridPane.columnIndex="7">
                                                   <columnConstraints>
                                                     <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                                                   </columnConstraints>
@@ -176,8 +139,11 @@
                                                     <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                                     <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                                   </rowConstraints>
+                                                   <opaqueInsets>
+                                                      <Insets />
+                                                   </opaqueInsets>
                                                    <children>
-                                                      <RadioButton fx:id="radioBounceTime" alignment="TOP_CENTER" contentDisplay="CENTER" mnemonicParsing="false" text="Time Spent">
+                                                      <RadioButton fx:id="radioBounceTime" alignment="TOP_CENTER" contentDisplay="CENTER" mnemonicParsing="false" prefHeight="15.0" prefWidth="82.0" text="Time Spent">
                                                          <GridPane.margin>
                                                             <Insets left="20.0" />
                                                          </GridPane.margin>
@@ -185,7 +151,7 @@
                                                             <Font size="11.0" />
                                                          </font>
                                                       </RadioButton>
-                                                      <RadioButton fx:id="radioBouncePage" mnemonicParsing="false" text="Pages Visited" GridPane.rowIndex="1">
+                                                      <RadioButton fx:id="radioBouncePage" mnemonicParsing="false" prefHeight="15.0" prefWidth="95.0" text="Pages Visited" GridPane.halignment="LEFT" GridPane.rowIndex="1">
                                                          <GridPane.margin>
                                                             <Insets left="20.0" />
                                                          </GridPane.margin>
@@ -194,12 +160,12 @@
                                                          </font>
                                                       </RadioButton>
                                                    </children>
-                                                   <opaqueInsets>
-                                                      <Insets />
-                                                   </opaqueInsets>
                                                 </GridPane>
-                                                <Label text="Context :" GridPane.columnIndex="3" />
-                                                <ComboBox fx:id="contextDropdown" prefHeight="27.0" prefWidth="89.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                                                <Label prefHeight="17.0" prefWidth="63.0" text="Context :" GridPane.columnIndex="6" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+                                                <ComboBox fx:id="contextDropdown" prefHeight="27.0" prefWidth="87.0" GridPane.columnIndex="7" GridPane.halignment="LEFT" GridPane.rowIndex="1" />
+                                                <DatePicker fx:id="startDate" prefHeight="27.0" prefWidth="106.0" GridPane.halignment="RIGHT" />
+                                                <DatePicker fx:id="endDate" prefHeight="27.0" prefWidth="79.0" GridPane.columnIndex="2" GridPane.halignment="RIGHT" />
+                                                <Button fx:id="apply_button" mnemonicParsing="false" text="Apply" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
                                                         </children>
                                                     </GridPane>
                                                     <AnchorPane layoutX="15.0" layoutY="108.0" prefHeight="291.0" prefWidth="668.0" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="108.0">
