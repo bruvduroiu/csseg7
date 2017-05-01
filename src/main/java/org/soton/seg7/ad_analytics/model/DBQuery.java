@@ -1,12 +1,15 @@
 package org.soton.seg7.ad_analytics.model;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import com.mongodb.*;
+import com.mongodb.util.JSON;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.json.JSONObject;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
+import javax.persistence.Basic;
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -38,6 +41,7 @@ public class DBQuery {
 
     private static final String OP_SUM = "$sum";
     private static final String OP_COUNT = "$count";
+    private static final String OP_AVG = "$avg";
 
     private static final String BOUNCE_COND_PAGE = "bounceRatePage";
     private static final String BOUNCE_COND_TIME = "bounceRateTime";
@@ -111,6 +115,22 @@ public class DBQuery {
         return buildResultsMap(results, COUNT_METRIC);
     }
 
+    public static Map<String, String> getBreakdown() throws MongoAuthException {
+
+        Map<String, String> results = new HashMap<>();
+        DBCollection breakdown = DBHandler.getDBConnection().getCollection("breakdown");
+
+        DBCursor cursor = breakdown.find();
+
+        while (cursor.hasNext()) {
+            BasicDBObject obj = (BasicDBObject) cursor.next();
+            results.put(obj.getString("_id"), obj.getString("value"));
+        }
+
+        return results;
+    }
+
+    @Deprecated
     public static Map<DateTime, Double> getCPAOverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> costImpressions = getImpressionCostOverTime(filter);
         Map<DateTime, Double> costClicks = getClickCostOverTime();
@@ -163,7 +183,8 @@ public class DBQuery {
                 .collect(Collectors.toMap(k->k, k->clickCost.getOrDefault(k,0d) + impressionCost.getOrDefault(k,0d)));
 
     }
-    
+
+    @Deprecated
     public static Map<DateTime, Double> getCostPerThousandImpressionsOverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> totalCost = getClickCostOverTime();
         Map<DateTime, Double> numImpressions = getNumImpressions(filter);
@@ -173,8 +194,8 @@ public class DBQuery {
                 .collect(Collectors.toMap(k->k, k->(totalCost.getOrDefault(k,0d) / numImpressions.getOrDefault(k,0d) * 1000)));
 
     }
-    
 
+    @Deprecated
     public static Map<DateTime, Double> getCTROverTime(Integer filter) throws MongoAuthException {
         Map<DateTime, Double> numImpressions = getNumImpressions(filter);
         Map<DateTime, Double> numClicks = getNumClicks();
@@ -183,9 +204,8 @@ public class DBQuery {
                 .distinct()
                 .collect(Collectors.toMap(k -> k, k -> numClicks.getOrDefault(k, 0d) / numImpressions.getOrDefault(k,1d)));
     }
-    
 
-    public static Map<DateTime, Double> getBounceRate(String condition) throws MongoAuthException {
+    public static Map<DateTime, Double> getBounceMetric(String operation, String condition) throws MongoAuthException {
         DBHandler handler = DBHandler.getDBConnection();
 
         List<DBObject> results =  new ArrayList<>();
@@ -194,18 +214,26 @@ public class DBQuery {
                 new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
                 new BasicDBObject("$group",
                         new BasicDBObject("_id", getGranularityAggregate())
-                                .append(condition, new BasicDBObject("$avg", "$"+condition)))))
+                                .append(condition, new BasicDBObject(operation, "$"+condition)))))
                 .results().forEach(results::add);
 
         return buildResultsMap(results, condition);
     }
 
     public static Map<DateTime, Double> getBounceRateByTime() throws MongoAuthException {
-        return getBounceRate(BOUNCE_COND_TIME);
+        return getBounceMetric(OP_AVG, BOUNCE_COND_TIME);
     }
 
     public static Map<DateTime, Double> getBounceRateByPage() throws MongoAuthException {
-        return getBounceRate(BOUNCE_COND_PAGE);
+        return getBounceMetric(OP_AVG, BOUNCE_COND_PAGE);
+    }
+
+    public static Map<DateTime, Double> getNumBouncesByTime() throws MongoAuthException {
+        return getBounceMetric(OP_SUM, BOUNCE_COND_TIME);
+    }
+
+    public static Map<DateTime, Double> getNumBouncesByPage() throws MongoAuthException {
+        return getBounceMetric(OP_SUM, BOUNCE_COND_PAGE);
     }
 
     public static Double getTotalCTR(Integer filter) throws MongoAuthException {
@@ -286,6 +314,8 @@ public class DBQuery {
                 group_metric
         )).results();
 
+        if (!results.iterator().hasNext())
+            return Double.NaN;
         BasicDBObject result = (BasicDBObject) results.iterator().next();
 
         return result.getDouble("total");
@@ -409,7 +439,7 @@ public class DBQuery {
 
         return timeGranularity;
     }
-
+    
     public static DateTimeFormatter getDateFormat() {
         if (granularity == GRANULARITY_MONTH)
             return DateTimeFormat.forPattern("yyyy-MM");
@@ -436,4 +466,59 @@ public class DBQuery {
 
         return dateQuery;
     }
+
+    public static void indexImpressions() {
+        try {
+            System.out.println("[DEBUG][INDEXING] Starting indexing process.");
+            DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
+
+            String[] indexes = {"Age", "Income", "Gender", "Context"};
+
+            Arrays.asList(indexes).forEach((index) -> impression_data.createIndex(
+                    new BasicDBObject(index,1),
+                    new BasicDBObject("background", true)));
+            System.out.println("[DEBUG][INDEXING] Created indexes.");
+        } catch (MongoAuthException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void makeBreakdown() throws MongoAuthException {
+        Map<String, String> result = new HashMap<>();
+
+        String map = "function() {" +
+                "emit(this.Age, 1);" +
+                "emit(this.Gender,1);" +
+                "emit(this.Income,1);" +
+                "emit(this.Context,1); }";
+
+        String reduce = "function(k,v) {return Array.sum(v);}";
+
+        DBCollection impression_data = DBHandler.getDBConnection().getCollection("impression_data");
+
+        MapReduceCommand cmd = new MapReduceCommand(impression_data,map,reduce,"breakdown", MapReduceCommand.OutputType.REPLACE, new BasicDBObject("$and", getDateFilterQuery()));
+
+        impression_data.mapReduce(cmd);
+
+    }
+
+	public static Map<DateTime, Double> getNumUniques() throws MongoAuthException {
+		DBHandler handler = DBHandler.getDBConnection();
+		List<DBObject> results =  new ArrayList<>();
+		
+        handler.getCollection(COL_CLICKS).aggregate(Arrays.asList(
+                new BasicDBObject("$match", new BasicDBObject("$and", getDateFilterQuery())),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", getGranularityAggregate()
+                                .append("ID", "$ID"))
+                                .append("num", new BasicDBObject("$sum", 1))),
+                new BasicDBObject("$group",
+                        new BasicDBObject("_id", "$_id")
+                        .append("num", new BasicDBObject("$sum", "$num")))
+                ))
+                .results().forEach(results::add);
+        
+        
+        return buildResultsMap(results, COUNT_METRIC);
+	}
 }
