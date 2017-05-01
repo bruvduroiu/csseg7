@@ -1,15 +1,24 @@
 package org.soton.seg7.ad_analytics.controller;
+import com.sun.javaws.progress.Progress;
+import com.sun.media.jfxmedia.events.PlayerStateEvent;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.scene.image.WritableImage;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -29,6 +38,7 @@ import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.pdf.PdfWriter;
+import sun.tools.serialver.SerialVer;
 
 import java.io.*;
 import java.math.RoundingMode;
@@ -215,6 +225,11 @@ public class OverviewController {
     @FXML
     private Button apply_button;
 
+    @FXML
+    private StackPane background;
+
+    private VBox box;
+
     // Reference to the main application.
     private MainView mainView;
 
@@ -257,6 +272,7 @@ public class OverviewController {
                 return null;
             }
         });
+
 
         list = graphList.getItems();
         list.clear();
@@ -318,6 +334,7 @@ public class OverviewController {
                 DBQuery.setDateRange(DateTime.parse(newVal.toString()), null);
             if (oldVal == null || !oldVal.equals(newVal))
                 wipeCaches();
+            initializeProgressIndicator();
             loadGraph(currentGraph.toString());
         });
 
@@ -328,6 +345,7 @@ public class OverviewController {
                 DBQuery.setDateRange(null, DateTime.parse(newVal.toString()));
             if (oldVal == null || !oldVal.equals(newVal))
                 wipeCaches();
+            initializeProgressIndicator();
             loadGraph(currentGraph.toString());
         });
 
@@ -371,7 +389,6 @@ public class OverviewController {
         readDefaultGraphPref();
         loadGraph(Graph.HOME.toString());
         loadPieChart();
-        loadBreakdown();
 
         try {
             // Display total cost of campaign in proper format
@@ -391,24 +408,25 @@ public class OverviewController {
 
         // Listen for selection changes and show the person details when changed.
         graphList.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> loadGraph(newValue));
+                (observable, oldValue, newValue) -> {
+                    initializeProgressIndicator();
+                    if (newValue != null)
+                        loadGraph(newValue);
+                });
         
         // Listen for time granularity change
-        granularitySlider.valueProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                Alert errorHours = new Alert(Alert.AlertType.INFORMATION);
-                errorHours.setHeaderText("Must select a date for which to view metrics by hour");
-                errorHours.setContentText("Please select a day for which to view the metrics by hour by using the Start Date Calendar tool.");
-                if (startDate.getValue() == null && newValue.intValue() == 0) {
-                    granularitySlider.setValue((double)oldValue);
-                    errorHours.showAndWait();
-                }
-                else {
-                    if (!oldValue.equals(newValue))
-                        wipeCaches();
-                    changeGranularity(newValue);
-                }
+        granularitySlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            Alert errorHours = new Alert(Alert.AlertType.INFORMATION);
+            errorHours.setHeaderText("Must select a date for which to view metrics by hour");
+            errorHours.setContentText("Please select a day for which to view the metrics by hour by using the Start Date Calendar tool.");
+            if (startDate.getValue() == null && newValue.intValue() == 0) {
+                granularitySlider.setValue((double)oldValue);
+                errorHours.showAndWait();
+            }
+            else {
+                if (!oldValue.equals(newValue))
+                    wipeCaches();
+                changeGranularity(newValue);
             }
         });
 
@@ -482,7 +500,7 @@ public class OverviewController {
     	radioBounceTime.setVisible(false);
     	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
-
+        initializeProgressIndicator();
 
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
@@ -509,7 +527,7 @@ public class OverviewController {
         	radioBouncePage.setVisible(true);
             loadBounceRate();
         } else if (graph.equals(Graph.HOME.toString())){
-                loadGraph(defaultGraph.toString());
+            loadGraph(defaultGraph.toString());
         }
         else if (graph.equals(Graph.NUMBER_OF_BOUNCES.toString())) {
             bounceSettingsLabel.setVisible(true);
@@ -576,6 +594,21 @@ public class OverviewController {
         }
     }
 
+    private void initializeProgressIndicator() {
+        if (background.getChildren().contains(box))
+            return;
+        ProgressIndicator pi = new ProgressIndicator();
+        box = new VBox(pi);
+        box.setAlignment(Pos.CENTER);
+        background.setDisable(true);
+        background.getChildren().add(box);
+    }
+
+    private void stopProgressIndicator() {
+        background.setDisable(false);
+        background.getChildren().remove(box);
+    }
+
     private void hideBreakdown() {
         if (!breakdownHidden) {
             breakdownHidden = true;
@@ -611,47 +644,66 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Cost per Acquisition / " + getGranularityString());
 
-        if (costPerAcquisition == null )
-            try {
-                Map<DateTime, Double> costClicks = DBQuery.getClickCostOverTime();
-                Map<DateTime, Double> numConversions = DBQuery.getNumConversions();
-                Map<DateTime, Double> costImpressions = future_cost_impressions.get();
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (costPerAcquisition == null )
+                            try {
+                                Map<DateTime, Double> costClicks = DBQuery.getClickCostOverTime();
+                                Map<DateTime, Double> numConversions = DBQuery.getNumConversions();
+                                Map<DateTime, Double> costImpressions = future_cost_impressions.get();
 
-                Map<DateTime, Double> costPerAcquisition = Stream.concat(costImpressions.keySet().stream(), costClicks.keySet().stream())
-                        .distinct()
-                        .collect(Collectors.toMap(k->k, k->((!numConversions.containsKey(k) || numConversions.get(k)==0) ? 0
-                                    : ((costImpressions.containsKey(k) ? costImpressions.getOrDefault(k,0d) : 0)
-                                + ((costClicks.containsKey(k)) ? costClicks.getOrDefault(k,0d) : 0))/numConversions.getOrDefault(k,1d))));
-                ArrayList<DateTime> dates = new ArrayList<>(costPerAcquisition.keySet());
-                Collections.sort(dates);
+                                Map<DateTime, Double> costPAcquisition = Stream.concat(costImpressions.keySet().stream(), costClicks.keySet().stream())
+                                        .distinct()
+                                        .collect(Collectors.toMap(k->k, k->((!numConversions.containsKey(k) || numConversions.get(k)==0) ? 0
+                                                : ((costImpressions.containsKey(k) ? costImpressions.getOrDefault(k,0d) : 0)
+                                                + ((costClicks.containsKey(k)) ? costClicks.getOrDefault(k,0d) : 0))/numConversions.getOrDefault(k,1d))));
+                                ArrayList<DateTime> dates = new ArrayList<>(costPAcquisition.keySet());
+                                Collections.sort(dates);
 
-                XYChart.Series<String, Double> series = new XYChart.Series<>();
-                for (DateTime day : dates)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerAcquisition.get(day) / 100));
+                                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                for (DateTime day : dates)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPAcquisition.get(day) / 100));
 
-                this.costPerAcquisition = series;
-            } catch (MongoAuthException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-            } catch (ExecutionException e) {
+                                costPerAcquisition = series;
+                            } catch (MongoAuthException e) {
+                                e.printStackTrace();
+                            } catch (InterruptedException e) {
+                            } catch (ExecutionException e) {
+                            }
+
+                        return costPerAcquisition;
+                    }
+                };
             }
+        };
 
-        lineChart.getData().clear();
-        lineChart.getData().add(costPerAcquisition);
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            stopProgressIndicator();
 
-        for (XYChart.Series<String, Double> s : lineChart.getData()) {
-            for (XYChart.Data<String, Double> d : s.getData()) {
-                Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                        d.getXValue().toString() + "\n" +
-                        "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
 
-                //Adding class on hover
-                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
 
-                //Removing class on exit
-                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
             }
-        }
+        }));
+
+        loaderService.start();
+
     }
 
     private void loadBounceRate() {
@@ -660,48 +712,60 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Bounce Rate / " + getGranularityString());
 
-        if (bounceRate != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(bounceRate);
-        } else {
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (bounceRate == null)
+                            try {
+                                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                Map<DateTime, Double> bncRate;
+                                if (radioBounceTime.isSelected())
+                                    bncRate = DBQuery.getBounceRateByTime();
+                                else
+                                    bncRate = DBQuery.getBounceRateByPage();
+                                ArrayList<DateTime> dates = new ArrayList<>(bncRate.keySet());
+                                Collections.sort(dates);
 
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
-
-            try {
-                Map<DateTime, Double> bounceRate;
-                if (radioBounceTime.isSelected())
-                    bounceRate = DBQuery.getBounceRateByTime();
-                else
-                    bounceRate = DBQuery.getBounceRateByPage();
-                ArrayList<DateTime> dates = new ArrayList<>(bounceRate.keySet());
-                Collections.sort(dates);
-
-                for (DateTime day : dates)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), bounceRate.get(day)));
+                                for (DateTime day : dates)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), bncRate.get(day)));
 
 
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.bounceRate = series;
+                                bounceRate = series;
 
-                for (XYChart.Series<String, Double> s : lineChart.getData()) {
-                    for (XYChart.Data<String, Double> d : s.getData()) {
-                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                                d.getXValue().toString() + "\n" +
-                                "Bounces Rate: " + Math.floor(d.getYValue() * 100) / 100));
-
-                        //Adding class on hover
-                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                        //Removing class on exit
-                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                            } catch (MongoAuthException e) {
+                                e.printStackTrace();
+                            }
+                        return bounceRate;
                     }
-                }
-
-            } catch (MongoAuthException e) {
-                e.printStackTrace();
+                };
             }
-        }
+        };
+
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+           stopProgressIndicator();
+
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue() + "\n" +
+                            "Bounces Rate: " + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
+            }
+        }));
+
+        loaderService.start();
     }
 
     private void loadNumberOfBounces() {
@@ -710,29 +774,45 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Number of Bounces / " + getGranularityString());
 
-        if (numberOfBounces != null ) {
+
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (numberOfBounces == null)
+                            try {
+                                XYChart.Series<String,Double> series = new XYChart.Series<>();
+                                Map<DateTime, Double> numBounces;
+                                if(radioBounceTime.isSelected())
+                                    numBounces = DBQuery.getNumBouncesByTime();
+                                else
+                                    numBounces = DBQuery.getNumBouncesByPage();
+                                ArrayList<DateTime> dates = new ArrayList<>(numBounces.keySet());
+                                Collections.sort(dates);
+
+                                for (DateTime day : dates)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numBounces.get(day)));
+
+
+                                numberOfBounces = series;
+
+                            }
+                            catch (MongoAuthException e) {
+                                e.printStackTrace();
+                            }
+                        return numberOfBounces;
+                    }
+                };
+            }
+        };
+
+
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            stopProgressIndicator();
             lineChart.getData().clear();
-            lineChart.getData().add(numberOfBounces);
-        }
-
-        XYChart.Series<String,Double> series = new XYChart.Series<>();
-
-        try {
-            Map<DateTime, Double> numBounces;
-            if(radioBounceTime.isSelected())
-                numBounces = DBQuery.getNumBouncesByTime();
-            else
-                numBounces = DBQuery.getNumBouncesByPage();
-            ArrayList<DateTime> dates = new ArrayList<>(numBounces.keySet());
-            Collections.sort(dates);
-
-            for (DateTime day : dates)
-                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numBounces.get(day)));
-
-
-            lineChart.getData().clear();
-            lineChart.getData().add(series);
-            this.numberOfBounces = series;
+            lineChart.getData().add(loaderService.getValue());
 
             for (XYChart.Series<String, Double> s : lineChart.getData()) {
                 for (XYChart.Data<String, Double> d : s.getData()) {
@@ -747,11 +827,9 @@ public class OverviewController {
                     d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
                 }
             }
+        }));
 
-        }
-        catch (MongoAuthException e) {
-            e.printStackTrace();
-        }
+        loaderService.start();
     }
 
     private void loadCostPerThousandImpressions() {
@@ -760,45 +838,65 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Cost per Thousand Impressions / Day");
-        if (costThousandImpressions == null )
-            try {
-                Map<DateTime, Double> totalCost = DBQuery.getClickCostOverTime();
-                Map<DateTime, Double> numImpressions = future_num_impressions.get();
 
-                Map<DateTime, Double> costPerThousandImpressionsOverTime = Stream.concat(totalCost.keySet().stream(), numImpressions.keySet().stream())
-                        .distinct()
-                        .collect(Collectors.toMap(k->k, k->((!numImpressions.containsKey(k)) ? 0 : ((totalCost.containsKey(k)) ? totalCost.getOrDefault(k,0d) : 0)
-                                / numImpressions.getOrDefault(k,0d) * 1000)));
-                ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
-                Collections.sort(dates);
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (costThousandImpressions == null )
+                            try {
+                                Map<DateTime, Double> totalCost = DBQuery.getClickCostOverTime();
+                                Map<DateTime, Double> numImpressions = future_num_impressions.get();
 
-                XYChart.Series<String, Double> series = new XYChart.Series<>();
-                for (DateTime day : dates)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
+                                Map<DateTime, Double> costPerThousandImpressionsOverTime = Stream.concat(totalCost.keySet().stream(), numImpressions.keySet().stream())
+                                        .distinct()
+                                        .collect(Collectors.toMap(k->k, k->((!numImpressions.containsKey(k)) ? 0 : ((totalCost.containsKey(k)) ? totalCost.getOrDefault(k,0d) : 0)
+                                                / numImpressions.getOrDefault(k,0d) * 1000)));
+                                ArrayList<DateTime> dates = new ArrayList<>(costPerThousandImpressionsOverTime.keySet());
+                                Collections.sort(dates);
 
-                this.costThousandImpressions = series;
-            } catch (MongoAuthException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-            } catch (ExecutionException e) {
+                                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                for (DateTime day : dates)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerThousandImpressionsOverTime.get(day)));
+
+                                costThousandImpressions = series;
+                            } catch (MongoAuthException e) {
+                                e.printStackTrace();
+                            } catch (InterruptedException e) {
+                            } catch (ExecutionException e) {
+                            }
+
+
+                        return costThousandImpressions;
+                    }
+                };
             }
+        };
 
-        lineChart.getData().clear();
-        lineChart.getData().add(costThousandImpressions);
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+            stopProgressIndicator();
 
-        for (XYChart.Series<String, Double> s : lineChart.getData()) {
-            for (XYChart.Data<String, Double> d : s.getData()) {
-                Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                        d.getXValue().toString() + "\n" +
-                        "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue() + "\n" +
+                            "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
 
-                //Adding class on hover
-                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
 
-                //Removing class on exit
-                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
             }
-        }
+        }));
+
+        loaderService.start();
+
     }
 
     private void loadTotalCost() {
@@ -807,46 +905,57 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Total Cost / Day");
 
-        if (totalCost != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(totalCost);
-        } else {
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (totalCost == null)
+                            try {
+                                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                Map<DateTime, Double> totalCostOverTime;
+                                if ((totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter())).size() == 0)
+                                    totalCost = new XYChart.Series<>();
+                                ArrayList<DateTime> dates = new ArrayList<>(totalCostOverTime.keySet());
+                                Collections.sort(dates);
 
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                for (DateTime day : dates)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day) / 100));
 
-            try {
-                Map<DateTime, Double> totalCostOverTime;
-                if ((totalCostOverTime = DBQuery.getTotalCostOverTime(getCurrentFilter())).size() == 0)
-                    return;
-                ArrayList<DateTime> dates = new ArrayList<>(totalCostOverTime.keySet());
-                Collections.sort(dates);
+                                totalCost = series;
+                            } catch (MongoAuthException e) {
+                                e.printStackTrace();
+                            }
 
-                for (DateTime day : dates)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), totalCostOverTime.get(day) / 100));
-
-
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.totalCost = series;
-
-                for (XYChart.Series<String, Double> s : lineChart.getData()) {
-                    for (XYChart.Data<String, Double> d : s.getData()) {
-                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                                d.getXValue().toString() + "\n" +
-                                        "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
-
-                        //Adding class on hover
-                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                        //Removing class on exit
-                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                        return totalCost;
                     }
-                }
-
-            } catch (MongoAuthException e) {
-                e.printStackTrace();
+                };
             }
-        }
+        };
+
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            stopProgressIndicator();
+
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
+            }
+        }));
+
+        loaderService.start();
     }
 
     private void loadNumberOfConversions() {
@@ -855,42 +964,56 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Number of Conversions / Day");
 
-        if (numberOfConversions != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(numberOfConversions);
-        } else {
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (numberOfConversions == null)
+                            try {
+                                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                Map<DateTime, Double> conversionsMap = DBQuery.getNumConversions();
+                                ArrayList<DateTime> days = new ArrayList<>(conversionsMap.keySet());
+                                Collections.sort(days);
 
-            try {
-                Map<DateTime, Double> conversionsMap = DBQuery.getNumConversions();
-                ArrayList<DateTime> days = new ArrayList<>(conversionsMap.keySet());
-                Collections.sort(days);
+                                for (DateTime day : days)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), conversionsMap.get(day)));
 
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), conversionsMap.get(day)));
+                                numberOfConversions = series;
+                            }
+                            catch (MongoAuthException e) {
+                                e.printStackTrace();
 
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-
-                for (XYChart.Series<String, Double> s : lineChart.getData()) {
-                    for (XYChart.Data<String, Double> d : s.getData()) {
-                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                                d.getXValue().toString() + "\n" +
-                                "Conversions: " + Math.floor(d.getYValue() * 100) / 100));
-
-                        //Adding class on hover
-                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                        //Removing class on exit
-                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                            }
+                        return numberOfConversions;
                     }
-                }
+                };
+            }
 
+        };
+
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            stopProgressIndicator();
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Conversions: " + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
             }
-            catch (MongoAuthException e) {
-                e.printStackTrace();
-            }
-        }
+        }));
+
+        loaderService.start();
     }
 
     private void loadClickThroughRate() {
@@ -900,47 +1023,64 @@ public class OverviewController {
 
         lineChart.setTitle("Click Through Rate / Day");
 
-        if (clickThroughRate == null )
-            try {
-                Map<DateTime, Double> numImpressions = future_num_impressions.get();
-                Map<DateTime, Double> numClicks = DBQuery.getNumClicks();
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (clickThroughRate == null )
+                            try {
+                                Map<DateTime, Double> numImpressions = future_num_impressions.get();
+                                Map<DateTime, Double> numClicks = DBQuery.getNumClicks();
 
-                Map<DateTime, Double> clickThroughRateMap = Stream.concat(numImpressions.keySet().stream(), numClicks.keySet().stream())
-                        .distinct()
-                        .collect(Collectors.toMap(k -> k, k -> (!numImpressions.containsKey(k)) ? 0 : ((numClicks.containsKey(k)) ? numClicks.getOrDefault(k, 0d) : 0) / numImpressions.getOrDefault(k,1d)));
-                ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
-                Collections.sort(days);
+                                Map<DateTime, Double> clickThroughRateMap = Stream.concat(numImpressions.keySet().stream(), numClicks.keySet().stream())
+                                        .distinct()
+                                        .collect(Collectors.toMap(k -> k, k -> (!numImpressions.containsKey(k)) ? 0 : ((numClicks.containsKey(k)) ? numClicks.getOrDefault(k, 0d) : 0) / numImpressions.getOrDefault(k,1d)));
+                                ArrayList<DateTime> days = new ArrayList<>(clickThroughRateMap.keySet());
+                                Collections.sort(days);
 
-                XYChart.Series<String, Double> series = new XYChart.Series<>();
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
+                                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                for (DateTime day : days)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), clickThroughRateMap.get(day)));
 
-                this.clickThroughRate = series;
+                                clickThroughRate = series;
+                            }
+                            catch (MongoAuthException e) {
+                                e.printStackTrace();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
+
+                        return clickThroughRate;
+                    }
+                };
             }
-            catch (MongoAuthException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+        };
+
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            stopProgressIndicator();
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Click-through Rate: " + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
             }
+        }));
 
-        lineChart.getData().clear();
-        lineChart.getData().add(clickThroughRate);
-
-        for (XYChart.Series<String, Double> s : lineChart.getData()) {
-            for (XYChart.Data<String, Double> d : s.getData()) {
-                Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                        d.getXValue().toString() + "\n" +
-                        "Click-through Rate: " + Math.floor(d.getYValue() * 100) / 100));
-
-                //Adding class on hover
-                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                //Removing class on exit
-                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
-            }
-        }
+        loaderService.start();
     }
 
     private void loadNumberOfClicks() {
@@ -949,42 +1089,56 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Number of Clicks / Day");
-        if (numberOfClicks != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(numberOfClicks);
-        } else {
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        XYChart.Series<String, Double> series = new XYChart.Series<>();
 
-            try {
-                Map<DateTime, Double> numberOfClicks = DBQuery.getNumClicks();
-                ArrayList<DateTime> days = new ArrayList<>(numberOfClicks.keySet());
-                Collections.sort(days);
+                        try {
+                            Map<DateTime, Double> numClicks = DBQuery.getNumClicks();
+                            ArrayList<DateTime> days = new ArrayList<>(numClicks.keySet());
+                            Collections.sort(days);
 
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfClicks.get(day)));
+                            for (DateTime day : days)
+                                series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numClicks.get(day)));
 
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.numberOfClicks = series;
+                            numberOfClicks = series;
 
-                for (XYChart.Series<String, Double> s : lineChart.getData()) {
-                    for (XYChart.Data<String, Double> d : s.getData()) {
-                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                                d.getXValue().toString() + "\n" +
-                                "Clicks: " + Math.floor(d.getYValue() * 100) / 100));
-
-                        //Adding class on hover
-                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                        //Removing class on exit
-                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                        }
+                        catch (MongoAuthException e) {
+                            e.printStackTrace();
+                        }
+                        return numberOfClicks;
                     }
+                };
+            }
+        };
+
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            stopProgressIndicator();
+
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue() + "\n" +
+                            "Clicks: " + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
                 }
             }
-            catch (MongoAuthException e) {
-                e.printStackTrace();
-            }
-        }
+        }));
+
+        loaderService.start();
     }
 
     private void loadNumberOfImpressions() {
@@ -993,39 +1147,58 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Number of Impressions / Day");
-        if (numberOfImpressions == null )
-            try {
-                XYChart.Series<String, Double> series = new XYChart.Series<>();
-                Map<DateTime, Double> numberOfImpressions = future_num_impressions.get();
-                ArrayList<DateTime> days = new ArrayList<>(numberOfImpressions.keySet());
-                Collections.sort(days);
 
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfImpressions.get(day)));
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        XYChart.Series<String, Double> series = new XYChart.Series<>();
+                        if (numberOfImpressions == null)
+                            try {
+                                Map<DateTime, Double> numOfImpressions = future_num_impressions.get();
+                                ArrayList<DateTime> days = new ArrayList<>(numOfImpressions.keySet());
+                                Collections.sort(days);
+
+                                for (DateTime day : days)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numOfImpressions.get(day)));
 
 
-                this.numberOfImpressions = series;
-            } catch (InterruptedException e) {
-            } catch (ExecutionException e) {
+                                numberOfImpressions = series;
+                            } catch (InterruptedException e) {
+                            } catch (ExecutionException e) {
+                            }
+
+                        return numberOfImpressions;
+                    }
+                };
             }
+        };
 
-        lineChart.getData().clear();
-        lineChart.getData().add(this.numberOfImpressions);
+        loaderService.setOnSucceeded(event -> Platform.runLater(() -> {
+            stopProgressIndicator();
 
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Impressions: " + Math.floor(d.getYValue() * 100) / 100));
 
-        for (XYChart.Series<String, Double> s : lineChart.getData()) {
-            for (XYChart.Data<String, Double> d : s.getData()) {
-                Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                        d.getXValue().toString() + "\n" +
-                        "Impressions: " + Math.floor(d.getYValue() * 100) / 100));
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(e -> d.getNode().getStyleClass().add("onHover"));
 
-                //Adding class on hover
-                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                //Removing class on exit
-                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(e -> d.getNode().getStyleClass().remove("onHover"));
+                }
             }
-        }
+        }));
+
+        loaderService.start();
+
+
     }
 
     private void loadCostPerClick() {
@@ -1034,42 +1207,59 @@ public class OverviewController {
         lineChart.setVisible(true);
 
         lineChart.setTitle("Cost per Click / Day");
-        if (costPerClick != null ) {
-            lineChart.getData().clear();
-            lineChart.getData().add(costPerClick);
-        } else {
-            XYChart.Series<String, Double> series = new XYChart.Series<>();
 
-            try {
-                Map<DateTime, Double> costPerClick = DBQuery.getClickCostOverTime();
-                ArrayList<DateTime> days = new ArrayList<>(costPerClick.keySet());
-                Collections.sort(days);
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (costPerClick == null) {
+                            XYChart.Series<String, Double> series = new XYChart.Series<>();
 
-                for (DateTime day : days)
-                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), costPerClick.get(day)/100));
+                            try {
+                                Map<DateTime, Double> cPerClk = DBQuery.getClickCostOverTime();
+                                ArrayList<DateTime> days = new ArrayList<>(cPerClk.keySet());
+                                Collections.sort(days);
 
-                lineChart.getData().clear();
-                lineChart.getData().add(series);
-                this.costPerClick = series;
+                                for (DateTime day : days)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), cPerClk.get(day)/100));
+                                costPerClick = series;
 
-                for (XYChart.Series<String, Double> s : lineChart.getData()) {
-                    for (XYChart.Data<String, Double> d : s.getData()) {
-                        Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                                d.getXValue().toString() + "\n" +
-                                "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+                            }
+                            catch (MongoAuthException e) {
+                                e.printStackTrace();
+                            }
+                        }
 
-                        //Adding class on hover
-                        d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                        //Removing class on exit
-                        d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                        return costPerClick;
                     }
+                };
+            }
+        };
+
+        loaderService.setOnSucceeded(event -> Platform.runLater(() -> {
+            stopProgressIndicator();
+
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Cost: £" + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(e -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(e -> d.getNode().getStyleClass().remove("onHover"));
                 }
             }
-            catch (MongoAuthException e) {
-                e.printStackTrace();
-            }
-        }
+        }));
+
+        loaderService.start();
     }
 
 
@@ -1142,6 +1332,8 @@ public class OverviewController {
             histogram.getData().clear();
             histogram.getData().addAll(series);
 
+            Platform.runLater(this::stopProgressIndicator);
+
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -1154,36 +1346,56 @@ public class OverviewController {
         lineChart.setVisible(true);
         lineChart.setTitle("Number of clicks from unique visitors");
 
-		XYChart.Series<String, Double> series = new XYChart.Series<>();
-		try {
-			Map<DateTime, Double> numberOfUniques = DBQuery.getNumUniques();
-			ArrayList<DateTime> days = new ArrayList<>(numberOfUniques.keySet());
-			Collections.sort(days);
+        Service<XYChart.Series> loaderService = new Service<XYChart.Series>() {
+            @Override
+            protected Task<XYChart.Series> createTask() {
+                return new Task<XYChart.Series>() {
+                    @Override
+                    protected XYChart.Series call() throws Exception {
+                        if (numberOfUniques == null)
+                            try {
+                                XYChart.Series<String, Double> series = new XYChart.Series<>();
+                                Map<DateTime, Double> numUniques = DBQuery.getNumUniques();
+                                ArrayList<DateTime> days = new ArrayList<>(numUniques.keySet());
+                                Collections.sort(days);
 
-			for (DateTime day : days)
-			    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numberOfUniques.get(day)));
+                                for (DateTime day : days)
+                                    series.getData().add(new XYChart.Data<>(day.toString(DBQuery.getDateFormat()), numUniques.get(day)));
+                                numberOfUniques = series;
 
-			lineChart.getData().clear();
-			lineChart.getData().add(series);
-			this.numberOfUniques = series;
-		} catch (MongoAuthException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        
-        for (XYChart.Series<String, Double> s : lineChart.getData()) {
-            for (XYChart.Data<String, Double> d : s.getData()) {
-                Tooltip.install(d.getNode(), new Tooltip("Date: " +
-                        d.getXValue().toString() + "\n" +
-                        "Clicks: " + Math.floor(d.getYValue() * 100) / 100));
+                            } catch (MongoAuthException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
 
-                //Adding class on hover
-                d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
-
-                //Removing class on exit
-                d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                        return numberOfUniques;
+                    }
+                };
             }
-        }
+        };
+
+
+        loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+            stopProgressIndicator();
+
+            lineChart.getData().clear();
+            lineChart.getData().add(loaderService.getValue());
+            for (XYChart.Series<String, Double> s : lineChart.getData()) {
+                for (XYChart.Data<String, Double> d : s.getData()) {
+                    Tooltip.install(d.getNode(), new Tooltip("Date: " +
+                            d.getXValue().toString() + "\n" +
+                            "Clicks: " + Math.floor(d.getYValue() * 100) / 100));
+
+                    //Adding class on hover
+                    d.getNode().setOnMouseEntered(event -> d.getNode().getStyleClass().add("onHover"));
+
+                    //Removing class on exit
+                    d.getNode().setOnMouseExited(event -> d.getNode().getStyleClass().remove("onHover"));
+                }
+            }
+        }));
+
+        loaderService.start();
     }
 
 
@@ -1436,6 +1648,7 @@ public class OverviewController {
         if (getCurrentFilter() != prev_filter) {
             wipeCaches();
             loadGraph(currentGraph.toString());
+            initializeProgressIndicator();
         }
 
     }

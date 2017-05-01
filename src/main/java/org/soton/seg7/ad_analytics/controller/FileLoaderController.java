@@ -1,7 +1,11 @@
 package org.soton.seg7.ad_analytics.controller;
 
 import java.io.File;
+import java.util.Stack;
 
+import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -15,6 +19,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import org.soton.seg7.ad_analytics.model.DBHandler;
+import org.soton.seg7.ad_analytics.model.DBQuery;
 import org.soton.seg7.ad_analytics.model.Parser;
 import org.soton.seg7.ad_analytics.model.exceptions.MongoAuthException;
 
@@ -31,6 +36,14 @@ public class FileLoaderController {
 	private Label ServerLogT;
 	@FXML
 	private Label ImpressionLogT;
+
+	@FXML
+	private VBox bx;
+
+	private VBox box;
+
+	@FXML
+	private StackPane root;
 
 	private File directory;
 	
@@ -74,25 +87,50 @@ public class FileLoaderController {
 			nullFilesErrorBox.setContentText("Please upload an impression log, server log and click log.");
 			nullFilesErrorBox.showAndWait();
 		} else if (Parser.isValidClickLog(clickLog) && Parser.isValidImpressionLog(impressionLog) && Parser.isValidServerLog(serverLog)) {
-			DBHandler handler = null;
-			try {
-				handler = DBHandler.getDBConnection();
-				handler.dropCollection("impression_log");
-				handler.dropCollection("server_log");
-				handler.dropCollection("click_log");
-				handler.dropCollection("impression_data");
-				handler.dropCollection("server_data");
-				handler.dropCollection("click_data");
-			} catch (MongoAuthException e) {
-				e.printStackTrace();
-			}
-			Parser.parseCSV(clickLog);
-			Parser.parseCSV(serverLog);
-			Parser.parseCSV(impressionLog);
-			// close the dialog.
-			Node  source = (Node)  event.getSource();
-			Stage stage  = (Stage) source.getScene().getWindow();
-			stage.close();
+
+			ProgressIndicator pi = new ProgressIndicator();
+			box = new VBox(pi);
+			box.setAlignment(Pos.CENTER);
+			// Grey Background
+			bx.setDisable(true);
+			root.getChildren().add(box);
+
+			Service<Boolean> loaderService = new Service<Boolean>() {
+				@Override
+				protected Task<Boolean> createTask() {
+				    return new Task<Boolean>() {
+						@Override
+						protected Boolean call() throws Exception {
+							DBHandler handler = null;
+							try {
+								handler = DBHandler.getDBConnection();
+								handler.dropDatabase();
+								handler.enableSharding();
+								handler.shardCollection("impression_data");
+								Parser.parseCSV(clickLog);
+								Parser.parseCSV(serverLog);
+								Parser.parseCSV(impressionLog);
+								DBQuery.indexImpressions();
+								DBQuery.makeBreakdown();
+							} catch (MongoAuthException e) {
+								e.printStackTrace();
+							}
+							return true;
+						}
+					};
+				}
+			};
+
+			loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
+				bx.setDisable(false);
+				root.getChildren().remove(box);
+
+                // close the dialog.
+				Node  source = (Node)  event.getSource();
+				Stage stage  = (Stage) source.getScene().getWindow();
+				stage.close();
+			}));
+            loaderService.start();
     	} else {
 			Alert invalidFileErrorBox = new Alert(Alert.AlertType.ERROR);
 			invalidFileErrorBox.setTitle("Invalid File/s Error");

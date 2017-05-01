@@ -14,6 +14,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.joda.time.DateTime;
@@ -29,7 +30,7 @@ public class MainView extends Application {
     private static Stage primaryStage;
     private BorderPane rootLayout;
 
-    private static final boolean DEBUG_ON = false;
+    private static final boolean DEBUG_ON = true;
 
     private ObservableList<Graph> graphData = FXCollections.observableArrayList();
 
@@ -76,7 +77,7 @@ public class MainView extends Application {
             // Load overview.
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(MainView.class.getResource("Overview.fxml"));
-            AnchorPane overview = (AnchorPane) loader.load();
+            StackPane overview = loader.load();
             
          // Give the controller access to the main app.
             OverviewController controller = loader.getController();
@@ -143,7 +144,7 @@ public class MainView extends Application {
             // Load overview.
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(MainView.class.getResource("FileLoaderView.fxml"));
-            AnchorPane fileLoad = loader.load();
+            StackPane fileLoad = loader.load();
 
             Stage loadFileStage = new Stage();
             loadFileStage.setTitle("Load files");
