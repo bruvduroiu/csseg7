@@ -273,7 +273,6 @@ public class OverviewController {
             }
         });
 
-        apply_button.setOnAction((ActionEvent event) -> initializeProgressIndicator());
 
         list = graphList.getItems();
         list.clear();
@@ -335,6 +334,7 @@ public class OverviewController {
                 DBQuery.setDateRange(DateTime.parse(newVal.toString()), null);
             if (oldVal == null || !oldVal.equals(newVal))
                 wipeCaches();
+            initializeProgressIndicator();
             loadGraph(currentGraph.toString());
         });
 
@@ -345,6 +345,7 @@ public class OverviewController {
                 DBQuery.setDateRange(null, DateTime.parse(newVal.toString()));
             if (oldVal == null || !oldVal.equals(newVal))
                 wipeCaches();
+            initializeProgressIndicator();
             loadGraph(currentGraph.toString());
         });
 
@@ -388,7 +389,6 @@ public class OverviewController {
         readDefaultGraphPref();
         loadGraph(Graph.HOME.toString());
         loadPieChart();
-        loadBreakdown();
 
         try {
             // Display total cost of campaign in proper format
@@ -499,6 +499,7 @@ public class OverviewController {
     	radioBounceTime.setVisible(false);
     	radioBouncePage.setVisible(false);
         bounceSettingsLabel.setVisible(false);
+        initializeProgressIndicator();
 
         if (graph.equals(Graph.COST_PER_CLICK.toString()))
             loadCostPerClick();
@@ -593,6 +594,8 @@ public class OverviewController {
     }
 
     private void initializeProgressIndicator() {
+        if (background.getChildren().contains(box))
+            return;
         ProgressIndicator pi = new ProgressIndicator();
         box = new VBox(pi);
         box.setAlignment(Pos.CENTER);
@@ -681,7 +684,7 @@ public class OverviewController {
             stopProgressIndicator();
 
             lineChart.getData().clear();
-            lineChart.getData().add(costPerAcquisition);
+            lineChart.getData().add(loaderService.getValue());
 
             for (XYChart.Series<String, Double> s : lineChart.getData()) {
                 for (XYChart.Data<String, Double> d : s.getData()) {
@@ -698,7 +701,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
 
     }
 
@@ -761,7 +764,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
     private void loadNumberOfBounces() {
@@ -825,7 +828,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
     private void loadCostPerThousandImpressions() {
@@ -873,7 +876,8 @@ public class OverviewController {
 
         loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
             lineChart.getData().clear();
-            lineChart.getData().add(costThousandImpressions);
+            lineChart.getData().add(loaderService.getValue());
+            stopProgressIndicator();
 
             for (XYChart.Series<String, Double> s : lineChart.getData()) {
                 for (XYChart.Data<String, Double> d : s.getData()) {
@@ -890,7 +894,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
 
     }
 
@@ -950,7 +954,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
     private void loadNumberOfConversions() {
@@ -1008,7 +1012,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
     private void loadClickThroughRate() {
@@ -1058,7 +1062,7 @@ public class OverviewController {
         loaderService.setOnSucceeded(e -> Platform.runLater(() -> {
             stopProgressIndicator();
             lineChart.getData().clear();
-            lineChart.getData().add(clickThroughRate);
+            lineChart.getData().add(loaderService.getValue());
 
             for (XYChart.Series<String, Double> s : lineChart.getData()) {
                 for (XYChart.Data<String, Double> d : s.getData()) {
@@ -1075,7 +1079,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
     private void loadNumberOfClicks() {
@@ -1133,7 +1137,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
     private void loadNumberOfImpressions() {
@@ -1254,7 +1258,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
 
@@ -1327,6 +1331,8 @@ public class OverviewController {
             histogram.getData().clear();
             histogram.getData().addAll(series);
 
+            Platform.runLater(this::stopProgressIndicator);
+
         }
         catch (MongoAuthException e) {
             e.printStackTrace();
@@ -1388,7 +1394,7 @@ public class OverviewController {
             }
         }));
 
-        loaderService.restart();
+        loaderService.start();
     }
 
 
@@ -1641,6 +1647,7 @@ public class OverviewController {
         if (getCurrentFilter() != prev_filter) {
             wipeCaches();
             loadGraph(currentGraph.toString());
+            initializeProgressIndicator();
         }
 
     }

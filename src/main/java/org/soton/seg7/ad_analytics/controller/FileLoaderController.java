@@ -125,11 +125,11 @@ public class FileLoaderController {
 				bx.setDisable(false);
 				root.getChildren().remove(box);
 
+                // close the dialog.
 				Node  source = (Node)  event.getSource();
 				Stage stage  = (Stage) source.getScene().getWindow();
 				stage.close();
 			}));
-			// close the dialog.
             loaderService.start();
     	} else {
 			Alert invalidFileErrorBox = new Alert(Alert.AlertType.ERROR);

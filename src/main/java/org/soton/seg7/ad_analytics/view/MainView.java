@@ -30,7 +30,7 @@ public class MainView extends Application {
     private static Stage primaryStage;
     private BorderPane rootLayout;
 
-    private static final boolean DEBUG_ON = false;
+    private static final boolean DEBUG_ON = true;
 
     private ObservableList<Graph> graphData = FXCollections.observableArrayList();
 
