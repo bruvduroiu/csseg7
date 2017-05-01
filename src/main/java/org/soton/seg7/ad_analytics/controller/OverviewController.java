@@ -410,7 +410,8 @@ public class OverviewController {
         graphList.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     initializeProgressIndicator();
-                    loadGraph(newValue);
+                    if (newValue != null)
+                        loadGraph(newValue);
                 });
         
         // Listen for time granularity change
